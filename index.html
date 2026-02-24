@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDRRM Dashboard</title>
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+   <h1>MDRRM Dashboard</h1>
+    <ul id="usersList"></ul>
+
+    <a href="change-password.html">Change Password</a>
+    <br><br>
+    <button id="logoutBtn">Logout</button>
+
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Budget</h3>
+            <p id="totalBudget">0</p>
+        </div>
+        <div class="card">
+            <h3>Total Spent</h3>
+            <p id="totalSpent">0</p>
+        </div>
+        <div class="card">
+            <h3>Remaining</h3>
+            <p id="remaining">0</p>
+        </div>
+        <div class="card">
+            <h3>Categories</h3>
+            <p id="categoryCount">0</p>
+        </div>
+        <div class="card">
+            <h3>Expenses</h3>
+            <p id="expenseCount">0</p>
+        </div>
+    </div>
+
+    <div class="charts">
+        <canvas id="budgetPie" width="400" height="400"></canvas>
+        <canvas id="categoryBar" width="400" height="400"></canvas>
+    </div>
+
+
+    <script src="/js/loginUserInfo.js"></script>
+    
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
