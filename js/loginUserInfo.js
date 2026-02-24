@@ -14,6 +14,57 @@ async function apiRequest(url, options = {}) {
     return response.json();
 }
 
+// Show error modal with message
+function showErrorModal(message) {
+    const errorModal = document.getElementById('errorModal');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (errorModal && errorMessage) {
+        errorMessage.textContent = message;
+        errorModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close error modal
+function closeErrorModal() {
+    const errorModal = document.getElementById('errorModal');
+    if (errorModal) {
+        errorModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Set up error modal handlers
+function setupErrorModalHandlers() {
+    const errorModal = document.getElementById('errorModal');
+    if (!errorModal) return;
+    
+    const errorModalClose = document.getElementById('errorModalClose');
+    const errorModalConfirm = document.getElementById('errorModalConfirm');
+    
+    if (errorModalClose) {
+        errorModalClose.addEventListener('click', function() {
+            closeErrorModal();
+            window.location.href = 'login.html';
+        });
+    }
+    
+    if (errorModalConfirm) {
+        errorModalConfirm.addEventListener('click', function() {
+            closeErrorModal();
+            window.location.href = 'login.html';
+        });
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeErrorModal();
+        }
+    });
+}
+
 // Check JWT and redirect if missing
 const token = localStorage.getItem('jwtToken');
 if (!token) {
@@ -38,15 +89,25 @@ async function loadUserInfo() {
             updateUserName(user.fullName);
         }
 
+        // Only append to usersList if it exists (for dashboard page)
         const ul = document.getElementById('usersList');
-        const li = document.createElement('li');
-        li.textContent = `${user.fullName} ${user.email} (${user.number})`;
-        ul.appendChild(li);
+        if (ul) {
+            const li = document.createElement('li');
+            li.textContent = `${user.fullName} ${user.email} (${user.number})`;
+            ul.appendChild(li);
+        }
     } catch (err) {
         console.error(err);
-        alert('Failed to load user info. Redirecting to login.');
+        
+        // Set up error modal handlers before showing error
+        setupErrorModalHandlers();
+        
+        // Show error modal instead of alert
+        const errorMessage = 'Failed to load user info. Your session may have expired. Please login again.';
+        showErrorModal(errorMessage);
+        
+        // Clear invalid token
         localStorage.removeItem('jwtToken');
-        window.location.href = 'login.html';
     }
 }
 
