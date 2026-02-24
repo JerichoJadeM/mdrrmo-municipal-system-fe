@@ -14,8 +14,43 @@ async function loadDashboard() {
     document.getElementById("categoryCount").innerText = data.categoryCount;
     document.getElementById("expenseCount").innerText = data.expenseCount;
 
+    // Load calamities count this year
+    await loadCalamitiesThisYear();
+
     renderPie(data.totalSpent, data.remaining);
     renderBar(data.categoryBreakdown);
+}
+
+async function loadCalamitiesThisYear() {
+    try {
+        const response = await fetch("http://localhost:8080/api/calamities", {
+            headers: {
+                "Authorization": "Bearer " + localStorage.getItem("jwtToken")
+            }
+        });
+
+        if (!response.ok) {
+            console.error("Failed to fetch calamities");
+            return;
+        }
+
+        const calamities = await response.json();
+        
+        // Get current year
+        const currentYear = new Date().getFullYear();
+        
+        // Filter calamities for this year
+        const calamitiesThisYear = calamities.filter(calamity => {
+            const calamityYear = new Date(calamity.date).getFullYear();
+            return calamityYear === currentYear;
+        });
+        
+        // Update the calamity count card
+        document.getElementById("calamityCount").innerText = calamitiesThisYear.length;
+    } catch (error) {
+        console.error("Error loading calamities this year:", error);
+        document.getElementById("calamityCount").innerText = "0";
+    }
 }
 
 function renderPie(spent, remaining) {
