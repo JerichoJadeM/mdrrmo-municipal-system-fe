@@ -26,6 +26,18 @@ async function loadUserInfo() {
         const user = await apiRequest('http://localhost:8080/api/users/info');
         console.log(user);
 
+        // Store user info in localStorage for navbar to use
+        localStorage.setItem('userName', user.fullName);
+        localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('userNumber', user.number);
+
+        // Update navbar user name if navbar script is loaded
+        if (typeof window.updateUserName === 'function') {
+            window.updateUserName(user.fullName);
+        } else if (typeof updateUserName === 'function') {
+            updateUserName(user.fullName);
+        }
+
         const ul = document.getElementById('usersList');
         const li = document.createElement('li');
         li.textContent = `${user.fullName} ${user.email} (${user.number})`;
@@ -39,9 +51,3 @@ async function loadUserInfo() {
 }
 
 loadUserInfo();
-
-// Logout button
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('jwtToken');
-    window.location.href = 'login.html';
-});

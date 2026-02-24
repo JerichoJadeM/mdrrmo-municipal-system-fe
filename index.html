@@ -3,50 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDRRM Dashboard</title>
+    <title>MDRRM Dashboard - Weather Forecasting & Emergency Response</title>
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-   <h1>MDRRM Dashboard</h1>
-    <ul id="usersList"></ul>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <!-- User Profile Section (Left) -->
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userDropdownBtn">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="user-name" id="userNameDisplay">User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="change-password.html" class="dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    <a href="change-password.html">Change Password</a>
-    <br><br>
-    <button id="logoutBtn">Logout</button>
+            <!-- System Title (Center) -->
+            <div class="navbar-title">
+                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            </div>
 
+            <!-- Menu Toggle (Mobile) -->
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
 
-    <div class="cards">
-        <div class="card">
-            <h3>Total Budget</h3>
-            <p id="totalBudget">0</p>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
-        <div class="card">
-            <h3>Total Spent</h3>
-            <p id="totalSpent">0</p>
+        <ul class="sidebar-menu">
+            <li class="menu-item active">
+                <a href="#dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#weather">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#alerts">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts & Warnings</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#resources">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <section class="dashboard-header">
+                <h2>Dashboard Overview</h2>
+                <p class="subtitle">Weather Forecasting & Emergency Response System</p>
+            </section>
+
+            <!-- Stats Cards Grid -->
+            <section class="cards-section">
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Total Budget</h3>
+                            <p class="card-value" id="totalBudget">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Total Spent</h3>
+                            <p class="card-value" id="totalSpent">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-piggy-bank"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Remaining</h3>
+                            <p class="card-value" id="remaining">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Categories</h3>
+                            <p class="card-value" id="categoryCount">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Expenses</h3>
+                            <p class="card-value" id="expenseCount">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Budget Distribution</h3>
+                        <canvas id="budgetPie"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Expense by Category</h3>
+                        <canvas id="categoryBar"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users List Section (if needed) -->
+            <section class="users-section" id="usersSection" style="display:none;">
+                <h3>Users</h3>
+                <ul id="usersList"></ul>
+            </section>
         </div>
-        <div class="card">
-            <h3>Remaining</h3>
-            <p id="remaining">0</p>
-        </div>
-        <div class="card">
-            <h3>Categories</h3>
-            <p id="categoryCount">0</p>
-        </div>
-        <div class="card">
-            <h3>Expenses</h3>
-            <p id="expenseCount">0</p>
+    </main>
+
+    <!-- Overlay for mobile menu -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="modal-close" id="logoutModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="logoutCancel">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-logout" id="logoutConfirm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
         </div>
     </div>
-
-    <div class="charts">
-        <canvas id="budgetPie" width="400" height="400"></canvas>
-        <canvas id="categoryBar" width="400" height="400"></canvas>
-    </div>
-
 
     <script src="/js/loginUserInfo.js"></script>
-    
     <script src="js/dashboard.js"></script>
+    <script src="js/navbar.js"></script>
 </body>
 </html>
