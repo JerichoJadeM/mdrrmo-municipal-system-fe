@@ -1,0 +1,118 @@
+.cards-section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.four-columns {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.three-columns {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.two-columns {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Weather status */
+.status-bar {
+    background: #1f2d3d;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 25px;
+    font-size: 14px;
+}
+
+.status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 20px;
+}
+
+.status-left,
+.status-right {
+    display: flex;
+    align-items: center;
+}
+
+.alert-level span {
+    font-weight: bold;
+}
+
+/* cards */
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card-icon {
+    font-size: 28px;
+}
+
+.card-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.card.danger {
+    border-left: 6px solid #e74c3c;
+}
+
+.card.warning {
+    border-left: 6px solid #f39c12;
+}
+
+.card.critical {
+    border-left: 6px solid #8e44ad;
+}
+
+.card.info {
+    border-left: 6px solid #3498db;
+}
+
+.card.small {
+    font-size: 0.9em;
+}
+
+
+/* Analytics */
+.analytics-section {
+    margin-top: 40px;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.chart-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
