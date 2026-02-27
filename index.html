@@ -26,6 +26,14 @@
                             <i class="fas fa-user"></i>
                             <span>Profile</span>
                         </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notification</span>
+                        </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-message"></i>
+                            <span>Messages</span>
+                        </a>
                         <a href="change-password.html" class="dropdown-item">
                             <i class="fas fa-key"></i>
                             <span>Change Password</span>
@@ -42,6 +50,14 @@
             <!-- System Title (Center) -->
             <div class="navbar-title">
                 <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            </div>
+
+            <!-- Notifications & Messages -->
+            <div class="navbar-notifications">
+                <button class="notification-btn" id="notificationBtn" title="Notifications & Messages">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
             </div>
 
             <!-- Menu Toggle (Mobile) -->
@@ -106,83 +122,157 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="container">
-            <!-- Dashboard Header -->
-            <section class="dashboard-header">
-                <h2>Dashboard Overview</h2>
-                <p class="subtitle">Weather Forecasting & Emergency Response System</p>
-            </section>
+            <!-- MODIFICATION: Dashboard Header + Weather Status Widget Side by Side -->
+            <div class="dashboard-header-container">
+                <!-- Dashboard Header (Left) -->
+                <section class="dashboard-header">
+                    <h2>Dashboard Overview</h2>
+                    <p class="subtitle">Weather Forecasting & Emergency Response System</p>
+                </section>
+
+                <!-- Weather Status Widget (Right) -->
+                <section class="status-widget">
+                    <div class="status-widget-content">
+                        <div class="status-widget-row">
+                            <div class="status-widget-item">
+                                <i class="fas fa-clock"></i>
+                                <div class="status-widget-label">Time</div>
+                                <div class="status-widget-value" id="currentTime">--:--:--</div>
+                            </div>
+
+                            <div class="status-widget-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div class="status-widget-label">Location</div>
+                                <div class="status-widget-value" id="currentLocation">Municipality</div>
+                            </div>
+
+                            <div class="status-widget-item">
+                                <i class="fas fa-thermometer-half"></i>
+                                <div class="status-widget-label">Temperature</div>
+                                <div class="status-widget-value" id="currentTemp">-- °C</div>
+                            </div>
+
+                            <div class="status-widget-item">
+                                <i class="fas fa-cloud"></i>
+                                <div class="status-widget-label">Condition</div>
+                                <div class="status-widget-value" id="currentWeather">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
 
             <!-- Stats Cards Grid -->
-            <section class="cards-section">
-                <div class="cards-grid">
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
+            <section class="cards-section top-row">
+                <h3 class="section-title">Live Operations</h3>
+                <div class="cards-grid four-columns">
+                    
+                    <div class="card danger">
+                        <div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div>
                         <div class="card-content">
-                            <h3>Total Budget</h3>
-                            <p class="card-value" id="totalBudget">0</p>
+                            <h4>Active Incidents</h4>
+                            <p class="card-value" id="activeIncidents">0</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
+
+                    <div class="card warning">
+                        <div class="card-icon"><i class="fas fa-fire"></i></div>
                         <div class="card-content">
-                            <h3>Total Spent</h3>
-                            <p class="card-value" id="totalSpent">0</p>
+                            <h4>High Severity</h4>
+                            <p class="card-value" id="highSeverityCount">0</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-piggy-bank"></i>
-                        </div>
+
+                    <div class="card critical">
+                        <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
                         <div class="card-content">
-                            <h3>Remaining</h3>
-                            <p class="card-value" id="remaining">0</p>
+                            <h4>Municipal Risk Level</h4>
+                            <p class="card-value" id="riskLevel">LOW</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-list"></i>
-                        </div>
+
+                    <div class="card info">
+                        <div class="card-icon"><i class="fas fa-cloud-rain"></i></div>
                         <div class="card-content">
-                            <h3>Categories</h3>
-                            <p class="card-value" id="categoryCount">0</p>
+                            <h4>Weather Alert</h4>
+                            <p class="card-value" id="weatherAlert">NORMAL</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-receipt"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>Expenses</h3>
-                            <p class="card-value" id="expenseCount">0</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">
-                            <i class="fas fa-fire"></i>
-                        </div>
-                        <div class="card-content">
-                            <h3>Calamities This Year</h3>
-                            <p class="card-value" id="calamityCount">0</p>
-                        </div>
-                    </div>
+
                 </div>
             </section>
 
-            <!-- Charts Section -->
-            <section class="charts-section">
-                <div class="charts-grid">
+            <!-- Resource & Financial Cards Grid -->
+            <div class="stats-cards-grid">
+                <!--Resource Readiness-->
+                <div class="card resource-card">
+                    <div class="card-header">
+                        <i class="fas fa-tools"></i>
+                        <h4>Resource Readiness</h4>
+                    </div>
+                    <div class="card-body-merged">
+                        <div class="stat-item">
+                            <span class="stat-label">Vehicles</span>
+                            <span class="stat-value" id="availableVehicles">0</span>
+                        </div>
+                        <div class="stat-item danger-text">
+                            <span class="stat-label">Low Stock</span>
+                            <span class="stat-value" id="lowStockItems">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Responders</span>
+                            <span class="stat-value" id="activeResponders">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Overview -->
+                <div class="card financial-card">
+                    <div class="card-header">
+                        <i class="fas fa-wallet"></i>
+                        <h4>Financial Overview</h4>
+                    </div>
+                    <div class="financial-display">
+                        <div class="budget-main">
+                            <p class="stat-label">Total Budget</p>
+                            <h2 id="totalBudget">₱ 0.00</h2>
+                        </div>
+                        <div class="budget-sub">
+                            <p>Remaining balance: <span id="remaining">₱ 0</span></p>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="budgetProgress" style="width: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section-->
+             <section class="analytics-section">
+                <h3 class="section-title">Analytics & Trends</h3>
+
+                <div class="analytics-grid">
+
                     <div class="chart-container">
-                        <h3>Budget Distribution</h3>
+                        <h4>Incident Trend (Last 30 Days)</h4>
+                        <canvas id="incidentTrendChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <h4>Incidents by Type</h4>
+                        <canvas id="incidentTypeChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <h4>Budget Utilization</h4>
                         <canvas id="budgetPie"></canvas>
                     </div>
+
                     <div class="chart-container">
-                        <h3>Expense by Category</h3>
+                        <h4>Expenses by Category</h4>
                         <canvas id="categoryBar"></canvas>
                     </div>
+
                 </div>
             </section>
 
@@ -193,6 +283,74 @@
             </section>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <!-- Footer Left: Company Info -->
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer Center: Quick Links -->
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="#reports">Reports</a></li>
+                        <li><a href="#resources">Resources</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Center: Support -->
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Right: Contact -->
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+                </div>
+            </div>
+
+            <!-- Footer Bottom: Copyright -->
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- Overlay for mobile menu -->
     <div class="overlay" id="overlay"></div>
@@ -223,7 +381,7 @@
     </div>
 
     <script src="/js/loginUserInfo.js"></script>
-    <script src="/js/dashboard.js"></script>
     <script src="/js/navbar.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>
