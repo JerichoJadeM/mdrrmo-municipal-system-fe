@@ -150,6 +150,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Notification and Message Badge Management
+    const notificationBtn = document.getElementById('notificationBtn');
+    const messageBtn = document.getElementById('messageBtn');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const messageBadge = document.getElementById('messageBadge');
+
+    // Function to update notification badge
+    window.updateNotificationBadge = function(count) {
+        if (notificationBadge) {
+            if (count > 0) {
+                notificationBadge.textContent = count >= 99 ? '99+' : count;
+                notificationBadge.style.display = 'flex';
+            } else {
+                notificationBadge.style.display = 'none';
+            }
+        }
+    };
+
+    // Function to update message badge
+    window.updateMessageBadge = function(count) {
+        if (messageBadge) {
+            if (count > 0) {
+                messageBadge.textContent = count >= 99 ? '99+' : count;
+                messageBadge.style.display = 'flex';
+            } else {
+                messageBadge.style.display = 'none';
+            }
+        }
+    };
+
+    // Notification button click handler
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', function() {
+            console.log('Notifications clicked');
+            // Add notification panel or dropdown functionality here
+        });
+    }
+
+    // Message button click handler
+    if (messageBtn) {
+        messageBtn.addEventListener('click', function() {
+            console.log('Messages clicked');
+            // Add message panel or dropdown functionality here
+        });
+    }
+
     // Handle window resize for responsive behavior
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 768) {

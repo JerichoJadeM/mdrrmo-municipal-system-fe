@@ -102,46 +102,50 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: var(--spacing-md);
     order: 2;
 }
 
-.notification-btn {
+.notification-btn,
+.message-btn {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: none;
+    border: none;
     color: var(--text-light);
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 18px;
     padding: 0;
 }
 
-.notification-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-sm);
+.notification-btn:hover,
+.message-btn:hover {
+    transform: scale(1.1);
+    opacity: 0.9;
 }
 
-.notification-btn:active {
+.notification-btn:active,
+.message-btn:active {
     transform: scale(0.95);
 }
 
-.notification-badge {
+.notification-badge,
+.message-badge {
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: -6px;
+    right: -6px;
     background: var(--accent-red);
     color: var(--text-light);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -179,11 +183,11 @@ html, body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: none;
+    border: none;
     color: var(--text-light);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: 6px;
+    padding: 0;
+    border-radius: 0;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 14px;
@@ -192,8 +196,8 @@ html, body {
 }
 
 .user-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-sm);
+    transform: scale(1.05);
+    opacity: 0.9;
 }
 
 .user-btn i:first-child {
@@ -276,19 +280,21 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: none;
+    border: none;
     color: var(--text-light);
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 0;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 18px;
+    padding: 0;
 }
 
 .menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    opacity: 0.8;
+    transform: scale(1.1);
 }
 
 .menu-toggle:active {
@@ -301,8 +307,7 @@ html, body {
 }
 
 .menu-toggle.active {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-sm);
+    opacity: 0.9;
 }
 
 /* ===================================
@@ -1443,6 +1448,15 @@ html, body {
         box-sizing: border-box;
     }
 
+    .sidebar.collapsed ~ .main-content {
+        margin-left: 80px;
+        max-width: calc(100vw - 80px);
+    }
+
+    .sidebar.collapsed ~ .footer {
+        margin-left: 80px;
+    }
+
     .container {
         max-width: 100%;
         margin: 0 auto;
@@ -1708,6 +1722,10 @@ html, body {
     .sidebar {
         width: 300px;
         top: 72px;
+    }
+
+    .sidebar.collapsed ~ .footer {
+        margin-left: 80px;
     }
 
     .container {
@@ -2666,8 +2684,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+    flex-direction: row;
+    gap: var(--spacing-md);
     padding: var(--spacing-lg);
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-light);
@@ -2687,7 +2705,6 @@ html, body {
     font-weight: 600;
     color: var(--text-dark);
     margin: 0;
-    width: 100%;
     text-align: center;
 }
 
