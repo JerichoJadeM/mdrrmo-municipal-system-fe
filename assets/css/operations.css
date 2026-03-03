@@ -1,0 +1,76 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f5f6fa;
+}
+
+.operations-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.incident-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.incident-card.active {
+    border-color: #007bff;
+    background: #eef5ff;
+}
+
+.status-stepper {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.step {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 4px solid #ccc;
+    font-weight: bold;
+    color: #888;
+}
+
+.step.completed {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.step.current {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.activity-feed {
+    max-height: 400px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.feed-item {
+    border-left: 3px solid #007bff;
+    padding-left: 10px;
+    margin-bottom: 12px;
+}
+
+button {
+    padding: 10px 14px;
+    margin-top: 10px;
+    cursor: pointer;
+}

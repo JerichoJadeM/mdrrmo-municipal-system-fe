@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations - MDRRMO</title>
+    <link rel="stylesheet" href="assets/css/operations.css">
+</head>
+<body>
+
+    <main class="operations-page">
+
+        <section class="incident-list-panel">
+            <h2>Active Incidents</h2>
+            <div id="incidentList"></div>
+        </section>
+
+        <section class="dispatch-panel">
+            <h2>Dispatch Console</h2>
+
+            <form id="dispatchForm">
+                <input type="hidden" id="selectedIncidentId">
+
+                <label for="responderId">Responder ID</label>
+                <input type="number" id="responderId" required>
+
+                <button type="submit">Dispatch Responder</button>
+            </form>
+
+            <div class="incident-actions">
+                <button id="arriveBtn" disabled>Mark Arrived</button>
+                <button id="resolveBtn" disabled>Resolve Incident</button>
+            </div>
+        </section>
+
+        <section class="incident-details-panel">
+            <h2>Incident Status</h2>
+
+            <div id="statusStepper" class="status-stepper">
+                <div class="step" data-step="ONGOING">Reported</div>
+                <div class="step" data-step="IN_PROGRESS">Dispatched</div>
+                <div class="step" data-step="ON_SITE">On-Site</div>
+                <div class="step" data-step="RESOLVED">Resolved</div>
+            </div>
+
+            <h3>Activity Feed</h3>
+            <div id="activityFeed" class="activity-feed"></div>
+        </section>
+
+    </main>
+
+    <script src="js/operations.js"></script>
+</body>
+</html>
