@@ -26,175 +26,190 @@ async function apiRequest(url, options = {}) {
 }
 
 async function loadIncidents() {
-    const incidents = await apiRequest(`${API_BASE}/incidents`);
+    try {
+        const incidents = await apiRequest(`${API_BASE}/incidents`);
 
-    const container = document.getElementById("incidentList");
-    container.innerHTML = "";
+        const container = document.getElementById("incidentList");
+        if (!container) {
+            console.error("incidentList container not found");
+            return;
+        }
 
-    incidents
-        .filter(i => i.status !== "RESOLVED")
-        .forEach(incident => {
-            const card = document.createElement("div");
-            card.className = "incident-card";
-            card.dataset.id = incident.id;
+        container.innerHTML = "";
 
-            card.innerHTML = `
-                <strong>${incident.type}</strong><br>
-                Barangay: ${incident.barangay}<br>
-                Severity: ${incident.severity}<br>
-                Status: ${incident.status}
-            `;
+        incidents
+            .filter(i => i.status !== "RESOLVED")
+            .forEach(incident => {
+                const card = document.createElement("div");
+                card.className = "incident-card";
+                card.dataset.id = incident.id;
 
-            card.addEventListener("click", () => selectIncident(incident, card));
+                card.innerHTML = `
+                    <strong>${incident.type}</strong><br>
+                    Barangay: ${incident.barangay}<br>
+                    Severity: ${incident.severity}<br>
+                    Status: ${incident.status}
+                `;
 
-            container.appendChild(card);
-        });
-}
+                card.addEventListener("click", () => selectIncident(incident, card));
 
-async function loadIncidents() {
-    const incidents = await apiRequest(`${API_BASE}/incidents`);
-
-    const container = document.getElementById("incidentList");
-    container.innerHTML = "";
-
-    incidents
-        .filter(i => i.status !== "RESOLVED")
-        .forEach(incident => {
-            const card = document.createElement("div");
-            card.className = "incident-card";
-            card.dataset.id = incident.id;
-
-            card.innerHTML = `
-                <strong>${incident.type}</strong><br>
-                Barangay: ${incident.barangay}<br>
-                Severity: ${incident.severity}<br>
-                Status: ${incident.status}
-            `;
-
-            card.addEventListener("click", () => selectIncident(incident, card));
-
-            container.appendChild(card);
-        });
+                container.appendChild(card);
+            });
+    } catch (error) {
+        console.error("Error loading incidents:", error);
+    }
 }
 
 async function selectIncident(incident, cardElement) {
     currentIncident = incident;
 
-    document.getElementById("selectedIncidentId").value = incident.id;
-
-    document.querySelectorAll(".incident-card").forEach(card => {
-        card.classList.remove("active");
-    });
-    cardElement.classList.add("active");
-
-    document.getElementById("arriveBtn").disabled =
-        incident.status !== "IN_PROGRESS";
-
-    document.getElementById("resolveBtn").disabled =
-        !(incident.status === "IN_PROGRESS" || incident.status === "ON_SITE");
-
-    updateStatusStepper(incident.status);
-    await loadActivityFeed(incident.id);
-}
-
-async function selectIncident(incident, cardElement) {
-    currentIncident = incident;
-
-    document.getElementById("selectedIncidentId").value = incident.id;
-
-    document.querySelectorAll(".incident-card").forEach(card => {
-        card.classList.remove("active");
-    });
-    cardElement.classList.add("active");
-
-    document.getElementById("arriveBtn").disabled =
-        incident.status !== "IN_PROGRESS";
-
-    document.getElementById("resolveBtn").disabled =
-        !(incident.status === "IN_PROGRESS" || incident.status === "ON_SITE");
-
-    updateStatusStepper(incident.status);
-    await loadActivityFeed(incident.id);
-}
-
-document.getElementById("dispatchForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const incidentId = document.getElementById("selectedIncidentId").value;
-    const responderId = document.getElementById("responderId").value;
-
-    if (!incidentId) {
-        alert("Select an incident first.");
-        return;
+    const selectedIdInput = document.getElementById("selectedIncidentId");
+    if (selectedIdInput) {
+        selectedIdInput.value = incident.id;
     }
 
-    await apiRequest(`${API_BASE}/incidents/${incidentId}/dispatch`, {
-        method: "PUT",
-        body: JSON.stringify({
-            responderId: Number(responderId)
-        })
+    document.querySelectorAll(".incident-card").forEach(card => {
+        card.classList.remove("active");
     });
+    cardElement.classList.add("active");
 
-    await refreshSelectedIncident(incidentId);
-});
+    const arriveBtn = document.getElementById("arriveBtn");
+    const resolveBtn = document.getElementById("resolveBtn");
 
-document.getElementById("arriveBtn").addEventListener("click", async () => {
-    if (!currentIncident) return;
+    if (arriveBtn) {
+        arriveBtn.disabled = incident.status !== "IN_PROGRESS";
+    }
 
-    await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/arrive`, {
-        method: "PUT"
-    });
+    if (resolveBtn) {
+        resolveBtn.disabled = !(incident.status === "IN_PROGRESS" || incident.status === "ON_SITE");
+    }
 
-    await refreshSelectedIncident(currentIncident.id);
-});
+    updateStatusStepper(incident.status);
+    await loadActivityFeed(incident.id);
+}
 
-document.getElementById("resolveBtn").addEventListener("click", async () => {
-    if (!currentIncident) return;
+function initFormListeners() {
+    const dispatchForm = document.getElementById("dispatchForm");
+    if (dispatchForm) {
+        dispatchForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/resolve`, {
-        method: "PUT"
-    });
+            const incidentId = document.getElementById("selectedIncidentId").value;
+            const responderId = document.getElementById("responderId").value;
 
-    await refreshSelectedIncident(currentIncident.id);
-});
+            if (!incidentId) {
+                alert("Select an incident first.");
+                return;
+            }
+
+            try {
+                await apiRequest(`${API_BASE}/incidents/${incidentId}/dispatch`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        responderId: Number(responderId)
+                    })
+                });
+
+                await refreshSelectedIncident(incidentId);
+            } catch (error) {
+                console.error("Error dispatching responder:", error);
+                alert("Failed to dispatch responder.");
+            }
+        });
+    }
+
+    const arriveBtn = document.getElementById("arriveBtn");
+    if (arriveBtn) {
+        arriveBtn.addEventListener("click", async () => {
+            if (!currentIncident) return;
+
+            try {
+                await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/arrive`, {
+                    method: "PUT"
+                });
+
+                await refreshSelectedIncident(currentIncident.id);
+            } catch (error) {
+                console.error("Error marking arrival:", error);
+                alert("Failed to mark arrival.");
+            }
+        });
+    }
+
+    const resolveBtn = document.getElementById("resolveBtn");
+    if (resolveBtn) {
+        resolveBtn.addEventListener("click", async () => {
+            if (!currentIncident) return;
+
+            try {
+                await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/resolve`, {
+                    method: "PUT"
+                });
+
+                await refreshSelectedIncident(currentIncident.id);
+            } catch (error) {
+                console.error("Error resolving incident:", error);
+                alert("Failed to resolve incident.");
+            }
+        });
+    }
+}
 
 async function refreshSelectedIncident(incidentId) {
-    const incidents = await apiRequest(`${API_BASE}/incidents`);
-    const updated = incidents.find(i => i.id === Number(incidentId));
+    try {
+        const incidents = await apiRequest(`${API_BASE}/incidents`);
+        const updated = incidents.find(i => i.id === Number(incidentId));
 
-    await loadIncidents();
+        await loadIncidents();
 
-    if (updated) {
-        currentIncident = updated;
-        updateStatusStepper(updated.status);
-        document.getElementById("arriveBtn").disabled =
-            updated.status !== "IN_PROGRESS";
+        if (updated) {
+            currentIncident = updated;
+            updateStatusStepper(updated.status);
+            
+            const arriveBtn = document.getElementById("arriveBtn");
+            if (arriveBtn) {
+                arriveBtn.disabled = updated.status !== "IN_PROGRESS";
+            }
 
-        document.getElementById("resolveBtn").disabled =
-            !(updated.status === "IN_PROGRESS" || updated.status === "ON_SITE");
+            const resolveBtn = document.getElementById("resolveBtn");
+            if (resolveBtn) {
+                resolveBtn.disabled = !(updated.status === "IN_PROGRESS" || updated.status === "ON_SITE");
+            }
 
-        await loadActivityFeed(updated.id);
+            await loadActivityFeed(updated.id);
+        }
+    } catch (error) {
+        console.error("Error refreshing incident:", error);
     }
 }
 
 async function loadActivityFeed(incidentId) {
-    const actions = await apiRequest(`${API_BASE}/incidents/${incidentId}/actions`);
+    try {
+        const actions = await apiRequest(`${API_BASE}/incidents/${incidentId}/actions`);
 
-    const feed = document.getElementById("activityFeed");
-    feed.innerHTML = "";
+        const feed = document.getElementById("activityFeed");
+        if (!feed) {
+            console.error("activityFeed container not found");
+            return;
+        }
 
-    actions.forEach(action => {
-        const item = document.createElement("div");
-        item.className = "feed-item";
+        feed.innerHTML = "";
 
-        item.innerHTML = `
-            <strong>${action.actionType}</strong><br>
-            ${action.description}<br>
-            <small>${new Date(action.actionTime).toLocaleString()}</small>
-        `;
+        actions.forEach(action => {
+            const item = document.createElement("div");
+            item.className = "feed-item";
 
-        feed.appendChild(item);
-    });
+            item.innerHTML = `
+                <strong>${action.actionType}</strong><br>
+                ${action.description}<br>
+                <small>${new Date(action.actionTime).toLocaleString()}</small>
+            `;
+
+            feed.appendChild(item);
+        });
+    } catch (error) {
+        console.error("Error loading activity feed:", error);
+    }
 }
 
 function updateStatusStepper(status) {
@@ -222,11 +237,13 @@ async function initOperationsPage() {
     }
 
     try {
+        initFormListeners();
         await loadIncidents();
     } catch (error) {
-        console.error(error);
+        console.error("Error initializing operations page:", error);
         alert("Failed to load operations data.");
     }
 }
 
-initOperationsPage();
+// Initialize when DOM is ready
+document.addEventListener("DOMContentLoaded", initOperationsPage);

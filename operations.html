@@ -4,51 +4,298 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Operations - MDRRMO</title>
+    <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/operations.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-    <main class="operations-page">
-
-        <section class="incident-list-panel">
-            <h2>Active Incidents</h2>
-            <div id="incidentList"></div>
-        </section>
-
-        <section class="dispatch-panel">
-            <h2>Dispatch Console</h2>
-
-            <form id="dispatchForm">
-                <input type="hidden" id="selectedIncidentId">
-
-                <label for="responderId">Responder ID</label>
-                <input type="number" id="responderId" required>
-
-                <button type="submit">Dispatch Responder</button>
-            </form>
-
-            <div class="incident-actions">
-                <button id="arriveBtn" disabled>Mark Arrived</button>
-                <button id="resolveBtn" disabled>Resolve Incident</button>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <!-- User Profile Section (Left) -->
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userDropdownBtn">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="user-name" id="userNameDisplay">User</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notification</span>
+                        </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-message"></i>
+                            <span>Messages</span>
+                        </a>
+                        <a href="change-password.html" class="dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </section>
 
-        <section class="incident-details-panel">
-            <h2>Incident Status</h2>
-
-            <div id="statusStepper" class="status-stepper">
-                <div class="step" data-step="ONGOING">Reported</div>
-                <div class="step" data-step="IN_PROGRESS">Dispatched</div>
-                <div class="step" data-step="ON_SITE">On-Site</div>
-                <div class="step" data-step="RESOLVED">Resolved</div>
+            <!-- System Title (Center) -->
+            <div class="navbar-title">
+                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
             </div>
 
-            <h3>Activity Feed</h3>
-            <div id="activityFeed" class="activity-feed"></div>
-        </section>
+            <!-- Notifications & Messages -->
+            <div class="navbar-notifications">
+                <button class="notification-btn" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="message-btn" id="messageBtn" title="Messages">
+                    <i class="fas fa-envelope"></i>
+                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
+                </button>
+            </div>
 
+            <!-- Menu Toggle (Mobile) -->
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="index.html">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <li class="menu-item">
+                <a href="#weather">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#alerts">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts & Warnings</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#disaster">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Disaster Management</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="operations.html">
+                    <i class="fas fa-tasks"></i>
+                    <span>Operations</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#resources">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#admin">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Operations Header -->
+            <section class="dashboard-header">
+                <h2>Operations Management</h2>
+                <p class="subtitle">Real-time Incident Dispatch & Response Coordination</p>
+            </section>
+
+            <!-- Operations Content -->
+            <div class="operations-page">
+                <section class="incident-list-panel">
+                    <h3>Active Incidents</h3>
+                    <div id="incidentList"></div>
+                </section>
+
+                <section class="dispatch-panel">
+                    <h3>Dispatch Console</h3>
+
+                    <form id="dispatchForm">
+                        <input type="hidden" id="selectedIncidentId">
+
+                        <label for="responderId">Responder ID</label>
+                        <input type="number" id="responderId" required>
+
+                        <button type="submit">Dispatch Responder</button>
+                    </form>
+
+                    <div class="incident-actions">
+                        <button id="arriveBtn" disabled>Mark Arrived</button>
+                        <button id="resolveBtn" disabled>Resolve Incident</button>
+                    </div>
+                </section>
+
+                <section class="incident-details-panel">
+                    <h3>Incident Details</h3>
+
+                    <h4>Activity Feed</h4>
+                    <div id="activityFeed" class="activity-feed"></div>
+                </section>
+            </div>
+
+            <!-- Incident Status Row -->
+            <div class="incident-status-row">
+                <section class="incident-status-panel">
+                    <h3>Incident Status</h3>
+
+                    <div id="statusStepper" class="status-stepper">
+                        <div class="step" data-step="ONGOING">Reported</div>
+                        <div class="step" data-step="IN_PROGRESS">Dispatched</div>
+                        <div class="step" data-step="ON_SITE">On-Site</div>
+                        <div class="step" data-step="RESOLVED">Resolved</div>
+                    </div>
+                </section>
+        </div>
     </main>
 
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <!-- Footer Left: Company Info -->
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer Center: Quick Links -->
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="#reports">Reports</a></li>
+                        <li><a href="#resources">Resources</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Center: Support -->
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Right: Contact -->
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+                </div>
+            </div>
+
+            <!-- Footer Bottom: Copyright -->
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Overlay for mobile menu -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="modal-close" id="logoutModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="logoutCancel">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-logout" id="logoutConfirm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/loginUserInfo.js"></script>
+    <script src="/js/navbar.js"></script>
     <script src="js/operations.js"></script>
 </body>
 </html>
