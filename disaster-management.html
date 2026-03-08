@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Management - MDRRMO</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/disaster-management.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userDropdownBtn">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="user-name" id="userNameDisplay">User</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notification</span>
+                        </a>
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-message"></i>
+                            <span>Messages</span>
+                        </a>
+                        <a href="change-password.html" class="dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navbar-title">
+                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            </div>
+
+            <div class="navbar-notifications">
+                <button class="notification-btn" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="message-btn" id="messageBtn" title="Messages">
+                    <i class="fas fa-envelope"></i>
+                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
+                </button>
+            </div>
+
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="index.html">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#weather">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#alerts">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts & Warnings</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="disaster-management.html">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Disaster Management</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="operations.html">
+                    <i class="fas fa-tasks"></i>
+                    <span>Operations</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#resources">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#admin">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="dashboard-header">
+                <h2>Incident & Calamity Management</h2>
+                <p class="subtitle">Record and monitor calamities and incidents reported from the ground</p>
+            </section>
+
+            <section class="dm-summary-grid">
+                <div class="dm-summary-card">
+                    <h3>Total Calamities</h3>
+                    <p id="totalCalamitiesCount">0</p>
+                </div>
+                <div class="dm-summary-card">
+                    <h3>Total Incidents</h3>
+                    <p id="totalIncidentsCount">0</p>
+                </div>
+                <div class="dm-summary-card">
+                    <h3>High Severity Calamities</h3>
+                    <p id="highSeverityCalamitiesCount">0</p>
+                </div>
+                <div class="dm-summary-card">
+                    <h3>Ongoing Incidents</h3>
+                    <p id="ongoingIncidentsCount">0</p>
+                </div>
+            </section>
+
+            <section class="dm-main-layout">
+                <section class="dm-library-panel">
+                    <div class="dm-library-header">
+                        <h3>Event Library</h3>
+                    </div>
+
+                    <div class="dm-library-tabs">
+                        <button class="dm-tab-dual active" id="tabCalamities" data-tab="calamities">
+                            Calamities
+                        </button>
+                        <button class="dm-tab-dual" id="tabIncidents" data-tab="incidents">
+                            Incidents
+                        </button>
+                    </div>
+
+                    <div class="dm-library-toolbar">
+                        <input
+                            type="text"
+                            id="eventFilter"
+                            class="dm-filter-input"
+                            placeholder="Filter current list..."
+                            autocomplete="off"
+                        >
+
+                        <select id="eventSort" class="dm-sort-select">
+                            <option value="latest">Latest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="severity-high">Severity: High to Low</option>
+                            <option value="severity-low">Severity: Low to High</option>
+                            <option value="type-az">Type: A to Z</option>
+                        </select>
+
+                        <button class="dm-add-btn" id="openLibraryModalBtn">
+                            <i id="libraryAddBtnIcon" class="fas fa-cloud-showers-heavy"></i>
+                            <span id="libraryAddBtnText">Add Calamity</span>
+                        </button>
+
+                    </div>
+
+                    <div id="calamityList" class="dm-list"></div>
+                    <div id="incidentManagementList" class="dm-list hidden"></div>
+                </section>
+
+                <section class="dm-profile-panel">
+                    <div class="dm-profile-header">
+                        <h3>Event Profile</h3>
+                    </div>
+
+                    <div id="eventProfileEmpty" class="dm-empty">
+                        Select a calamity or incident to view its details.
+                    </div>
+
+                    <div id="eventProfileContent" class="hidden">
+                        <div class="dm-profile-card">
+                            <div class="dm-profile-card-header">
+                                <h4 id="profileTitle">-</h4>
+                                <span id="profileSeverityBadge" class="severity-badge severity-default">-</span>
+                            </div>
+
+                            <div id="profileMeta" class="dm-item-meta"></div>
+
+                            <div class="dm-profile-section">
+                                <h4>Summary</h4>
+                                <div id="profileSummary" class="dm-profile-summary"></div>
+                            </div>
+
+                            <div class="dm-profile-section">
+                                <h4>Description</h4>
+                                <p id="profileDescription" class="dm-item-description">-</p>
+                            </div>
+
+                            <div class="dm-profile-section hidden" id="incidentTimelineSection">
+                                <h4>Incident Timeline</h4>
+                                <div id="incidentTimeline" class="dm-timeline"></div>
+                            </div>
+                        </div>
+
+                        <div class="dm-profile-actions hidden" id="eventProfileActions">
+                            <button class="dm-view-btn" id="openViewEventModalBtn">
+                                <i class="fas fa-eye"></i>
+                                View Full Details
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </main>
+
+    <div class="modal" id="calamityModal">
+        <div class="modal-content dm-modal-content">
+            <div class="modal-header">
+                <h3>Add Calamity</h3>
+                <button class="modal-close" id="closeCalamityModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="calamityForm" class="dm-form">
+                <div class="dm-form-grid">
+                    <div>
+                        <label for="calamityType">Type</label>
+                        <select id="calamityTypeSelect" required></select>
+                        <input type="text" id="calamityTypeOther" class="hidden" placeholder="Enter calamity type">
+                    </div>
+                    <div>
+                        <label for="calamityBarangay">Barangay</label>
+                        <select id="calamityBarangay" required></select>
+                    </div>
+                    <div>
+                        <label for="calamitySeverity">Severity</label>
+                        <select id="calamitySeverity" required>
+                            <option value="">Select severity</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="calamityDate">Date</label>
+                        <input type="date" id="calamityDate" required>
+                    </div>
+                    <div>
+                        <label for="calamityDamageCost">Damage Cost</label>
+                        <input type="number" id="calamityDamageCost" min="0" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="calamityCasualties">Casualties</label>
+                        <input type="number" id="calamityCasualties" min="0" required>
+                    </div>
+
+                    <div>
+                        <label for="calamityCoordinator">Assign Coordinator</label>
+                        <select id="calamityCoordinator">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label for="calamityDescription">Description</label>
+                <textarea id="calamityDescription" rows="4" required></textarea>
+
+                <div class="dm-form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelCalamityBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Calamity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="incidentModal">
+        <div class="modal-content dm-modal-content">
+            <div class="modal-header">
+                <h3>Add Incident</h3>
+                <button class="modal-close" id="closeIncidentModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="incidentForm" class="dm-form">
+                <div class="dm-form-grid">
+                    <div>
+                        <label for="incidentType">Type</label>
+                        <select id="incidentTypeSelect" required></select>
+                        <input type="text" id="incidentTypeOther" class="hidden" placeholder="Enter incident type">
+                    </div>
+                    <div>
+                        <label for="incidentBarangay">Barangay</label>
+                        <select id="incidentBarangay" required></select>
+                    </div>
+                    <div>
+                        <label for="incidentSeverity">Severity</label>
+                        <select id="incidentSeverity" required>
+                            <option value="">Select severity</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="incidentResponder">Assign Responder</label>
+                        <select id="incidentResponder">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label for="incidentDescription">Description</label>
+                <textarea id="incidentDescription" rows="4" required></textarea>
+
+                <div class="dm-form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelIncidentBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Incident</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="viewEventModal">
+        <div class="modal-content dm-modal-content">
+            <div class="modal-header">
+                <h3 id="viewEventModalTitle">Event Details</h3>
+                <button class="modal-close" id="closeViewEventModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="dm-view-content">
+                <div class="dm-view-header">
+                    <h4 id="viewEventTitle">-</h4>
+                    <span id="viewEventSeverityBadge" class="severity-badge severity-default">-</span>
+                </div>
+
+                <div id="viewEventMeta" class="dm-item-meta"></div>
+
+                <div class="dm-profile-section">
+                    <h4>Summary</h4>
+                    <div id="viewEventSummary" class="dm-profile-summary"></div>
+                </div>
+
+                <div class="dm-profile-section">
+                    <h4>Description</h4>
+                    <p id="viewEventDescription" class="dm-item-description">-</p>
+                </div>
+
+                <div class="dm-profile-section hidden" id="viewIncidentTimelineSection">
+                    <h4>Incident Timeline</h4>
+                    <div id="viewIncidentTimeline" class="dm-timeline"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="#reports">Reports</a></li>
+                        <li><a href="#resources">Resources</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/loginUserInfo.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/disaster-management.js"></script>
+</body>
+</html>
