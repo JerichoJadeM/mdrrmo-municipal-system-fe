@@ -34,9 +34,68 @@ let coordinators = [];
 let responders = [];
 let calamities = [];
 let incidents = [];
+
 let activeTab = "calamities";
 let selectedEvent = null;
 let selectedEventType = null;
+
+let currentUserRoles = [];
+
+let editMode = false;
+let editingEventId = null;
+let editingEventType = null;
+
+let selectedMultiBarangays = [];
+
+let activeSingleBarangayResults = [];
+let activeMultiBarangayResults = [];
+let activeIncidentBarangayResults = [];
+
+let activeSingleBarangayIndex = -1;
+let activeMultiBarangayIndex = -1;
+let activeIncidentBarangayIndex = -1;
+
+function showMessage(message, type = "success") {
+    const box = document.getElementById("dmMessage");
+    if (!box) return;
+
+    box.textContent = message;
+    box.className = `dm-message dm-message-${type}`;
+    box.classList.remove("hidden");
+
+    setTimeout(() => {
+        box.classList.add("hidden");
+    }, 3000);
+}
+
+function extractErrorMessage(error) {
+    try {
+        const parsed = JSON.parse(error.message);
+        return parsed.message || parsed.error || "Something went wrong.";
+    } catch {
+        return error.message || "Something went wrong.";
+    }
+}
+
+function getCurrentUserRoles() {
+    try {
+        const raw = localStorage.getItem("userAuthorities") || sessionStorage.getItem("userAuthorities");
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+            return parsed.map(role => String(role).toUpperCase());
+        }
+
+        return [];
+    } catch {
+        return [];
+    }
+}
+
+function canManageEvents() {
+    return currentUserRoles.includes("ROLE_ADMIN") || currentUserRoles.includes("ROLE_MANAGER");
+}
 
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem("jwtToken");
@@ -76,6 +135,36 @@ function populateTypeSelect(selectId, values) {
     });
 }
 
+function populateBarangaySelect(selectId, includeDefault = true) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    select.innerHTML = includeDefault ? `<option value="">Select barangay</option>` : "";
+
+    barangays.forEach((barangay) => {
+        const option = document.createElement("option");
+        option.value = barangay.id;
+        option.textContent = barangay.name;
+        select.appendChild(option);
+    });
+}
+
+function populateUserSelect(selectId, users, defaultLabel = "Unassigned") {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    select.innerHTML = `<option value="">${defaultLabel}</option>`;
+
+    users.forEach((user) => {
+        const option = document.createElement("option");
+        option.value = user.id;
+        option.textContent = user.assignmentStatus
+            ? `${user.fullName} (${user.assignmentStatus})`
+            : user.fullName;
+        select.appendChild(option);
+    });
+}
+
 function setupOtherTypeToggle(selectId, otherInputId) {
     const select = document.getElementById(selectId);
     const otherInput = document.getElementById(otherInputId);
@@ -110,36 +199,6 @@ function getSelectedType(selectId, otherInputId) {
     return (select.value || "").trim();
 }
 
-function populateBarangaySelect(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-
-    select.innerHTML = `<option value="">Select barangay</option>`;
-
-    barangays.forEach((barangay) => {
-        const option = document.createElement("option");
-        option.value = barangay.id;
-        option.textContent = barangay.name;
-        select.appendChild(option);
-    });
-}
-
-function populateUserSelect(selectId, users, defaultLabel = "Unassigned") {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-
-    select.innerHTML = `<option value="">${defaultLabel}</option>`;
-
-    users.forEach((user) => {
-        const option = document.createElement("option");
-        option.value = user.id;
-        option.textContent = user.assignmentStatus
-            ? `${user.fullName} (${user.assignmentStatus})`
-            : user.fullName;
-        select.appendChild(option);
-    });
-}
-
 async function loadBarangays() {
     barangays = await apiRequest(`${API_BASE}/barangays`);
     populateBarangaySelect("calamityBarangay");
@@ -158,14 +217,43 @@ async function loadResponders() {
 
 async function loadCalamities() {
     calamities = await apiRequest(`${API_BASE}/calamities`);
+
+    if (selectedEventType === "calamity" && selectedEvent?.id != null) {
+        const latestSelected = calamities.find(c => String(c.id) === String(selectedEvent.id));
+        selectedEvent = latestSelected || null;
+
+        if (!latestSelected) {
+            selectedEventType = null;
+        }
+    }
+
     updateSummaryCards();
     renderCurrentTab();
+    renderEventProfile();
+
+    console.log("Latest calamities from backend:", calamities.map(c => ({
+    id: c.id,
+    type: c.type,
+    date: c.date,
+    status: c.status
+})));
 }
 
 async function loadIncidents() {
     incidents = await apiRequest(`${API_BASE}/incidents`);
+
+    if (selectedEventType === "incident" && selectedEvent?.id != null) {
+        const latestSelected = incidents.find(i => String(i.id) === String(selectedEvent.id));
+        selectedEvent = latestSelected || null;
+
+        if (!latestSelected) {
+            selectedEventType = null;
+        }
+    }
+
     updateSummaryCards();
     renderCurrentTab();
+    renderEventProfile();
 }
 
 function getSeverityClass(severity) {
@@ -266,12 +354,15 @@ function getFilteredAndSortedCalamities() {
 
         const searchableText = [
             calamity.type,
-            calamity.barangayName,
+            calamity.eventName,
+            calamity.primaryBarangayName,
+            ...(calamity.affectedBarangayNames || []),
             calamity.coordinatorName,
             calamity.severity,
             calamity.status,
             calamity.description,
-            calamity.date
+            calamity.date,
+            calamity.affectedAreaType
         ].filter(Boolean).join(" ").toLowerCase();
 
         return searchableText.includes(keyword);
@@ -314,50 +405,67 @@ function renderCalamities() {
         return;
     }
 
+    const table = document.createElement("table");
+    table.className = "dm-library-table";
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Severity</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Affected Area</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
     sorted.forEach((calamity) => {
-        const severityClass = getSeverityClass(calamity.severity);
-        const item = document.createElement("div");
-        item.className = "dm-item";
+        const tr = document.createElement("tr");
 
-        if (selectedEventType === "calamity" && selectedEvent?.id === calamity.id) {
-            item.classList.add("active");
-        }
-
-        item.innerHTML = `
-            <div class="dm-item-header">
-                <h4 class="dm-item-title">${calamity.type || "-"}</h4>
-                <span class="severity-badge ${severityClass}">${calamity.severity || "-"}</span>
-            </div>
-
-            <div class="dm-item-meta">
-                <div>
-                    <strong>Barangay</strong>
-                    <span>${calamity.barangayName || "-"}</span>
-                </div>
-                <div>
-                    <strong>Status</strong>
-                    <span>${calamity.status || "-"}</span>
-                </div>
-                <div>
-                    <strong>Date</strong>
-                    <span>${formatDate(calamity.date)}</span>
-                </div>
-            </div>
-
-            <div class="dm-item-description">
-                <strong>Description:</strong> ${calamity.description || "-"}
-            </div>
+        tr.innerHTML = `
+            <td><span class="severity-badge ${getSeverityClass(calamity.severity)}">${calamity.severity || "-"}</span></td>
+            <td>${calamity.type || "-"}</td>
+            <td>${calamity.status || "-"}</td>
+            <td>${formatAffectedArea(calamity)}</td>
+            <td>${formatDate(calamity.date)}</td>
+            <td class="dm-actions-cell">
+                <button type="button" class="dm-row-view-btn">View Full Details</button>
+            </td>
         `;
 
-        item.addEventListener("click", () => {
+        tr.querySelector(".dm-row-view-btn")?.addEventListener("click", () => {
             selectedEvent = calamity;
             selectedEventType = "calamity";
-            renderCurrentTab();
             renderEventProfile();
+            openViewEventModal();
         });
 
-        container.appendChild(item);
+        tbody.appendChild(tr);
     });
+
+    container.appendChild(table);
+}
+
+function formatAffectedArea(calamity) {
+    const areaType = (calamity.affectedAreaType || "").toUpperCase();
+    const affectedNames = calamity.affectedBarangayNames || [];
+
+    if (areaType === "MUNICIPALITY") {
+        return "Whole Municipality";
+    }
+
+    if (areaType === "MULTI_BARANGAY") {
+        if (!affectedNames.length) return "-";
+        if (affectedNames.length === 1) return affectedNames[0];
+        return `${affectedNames.length} Barangays`;
+    }
+
+    return calamity.primaryBarangayName || "-";
 }
 
 function renderIncidents() {
@@ -372,50 +480,50 @@ function renderIncidents() {
         return;
     }
 
+    const table = document.createElement("table");
+    table.className = "dm-library-table";
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Severity</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Barangay</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
     sorted.forEach((incident) => {
-        const severityClass = getSeverityClass(incident.severity);
-        const item = document.createElement("div");
-        item.className = "dm-item";
+        const tr = document.createElement("tr");
 
-        if (selectedEventType === "incident" && selectedEvent?.id === incident.id) {
-            item.classList.add("active");
-        }
-
-        item.innerHTML = `
-            <div class="dm-item-header">
-                <h4 class="dm-item-title">${incident.type || "-"}</h4>
-                <span class="severity-badge ${severityClass}">${incident.severity || "-"}</span>
-            </div>
-
-            <div class="dm-item-meta">
-                <div>
-                    <strong>Barangay</strong>
-                    <span>${incident.barangay || "-"}</span>
-                </div>
-                <div>
-                    <strong>Status</strong>
-                    <span>${incident.status || "-"}</span>
-                </div>
-                <div>
-                    <strong>Reported At</strong>
-                    <span>${formatDateTime(incident.reportedAt)}</span>
-                </div>
-            </div>
-
-            <div class="dm-item-description">
-                <strong>Description:</strong> ${incident.description || "-"}
-            </div>
+        tr.innerHTML = `
+            <td><span class="severity-badge ${getSeverityClass(incident.severity)}">${incident.severity || "-"}</span></td>
+            <td>${incident.type || "-"}</td>
+            <td>${incident.status || "-"}</td>
+            <td>${incident.barangay || "-"}</td>
+            <td>${formatDateTime(incident.reportedAt)}</td>
+            <td class="dm-actions-cell">
+                <button type="button" class="dm-row-view-btn">View Full Details</button>
+            </td>
         `;
 
-        item.addEventListener("click", () => {
+        tr.querySelector(".dm-row-view-btn")?.addEventListener("click", () => {
             selectedEvent = incident;
             selectedEventType = "incident";
-            renderCurrentTab();
             renderEventProfile();
+            openViewEventModal();
         });
 
-        container.appendChild(item);
+        tbody.appendChild(tr);
     });
+
+    container.appendChild(table);
 }
 
 function renderCurrentTab() {
@@ -470,7 +578,6 @@ async function loadIncidentTimeline(incidentId) {
         console.error("Error loading incident timeline:", error);
         const section = document.getElementById("incidentTimelineSection");
         const container = document.getElementById("incidentTimeline");
-
         if (section && container) {
             container.innerHTML = `<div class="dm-empty">Unable to load timeline.</div>`;
             section.classList.remove("hidden");
@@ -510,7 +617,6 @@ async function loadIncidentTimelineToModal(incidentId) {
         console.error("Error loading incident timeline for modal:", error);
         const section = document.getElementById("viewIncidentTimelineSection");
         const container = document.getElementById("viewIncidentTimeline");
-
         if (section && container) {
             container.innerHTML = `<div class="dm-empty">Unable to load timeline.</div>`;
             section.classList.remove("hidden");
@@ -552,8 +658,8 @@ function renderEventProfile() {
     if (selectedEventType === "calamity") {
         meta.innerHTML = `
             <div>
-                <strong>Barangay</strong>
-                <span>${selectedEvent.barangayName || "-"}</span>
+                <strong>Affected Area</strong>
+                <span>${selectedEvent.affectedAreaType || "-"}</span>
             </div>
             <div>
                 <strong>Status</strong>
@@ -571,12 +677,20 @@ function renderEventProfile() {
                 <span>Calamity</span>
             </div>
             <div class="dm-profile-summary-item">
+                <strong>Typhoon Name</strong>
+                <span>${selectedEvent.eventName || "-"}</span>
+            </div>
+            <div class="dm-profile-summary-item">
                 <strong>Assigned Coordinator</strong>
                 <span>${selectedEvent.coordinatorName || "-"}</span>
             </div>
             <div class="dm-profile-summary-item">
                 <strong>Estimated Damage Cost</strong>
                 <span>${formatCurrency(selectedEvent.damageCost)}</span>
+            </div>
+            <div class="dm-profile-summary-item">
+                <strong>Affected Barangays</strong>
+                <span>${selectedEvent.affectedBarangayNames?.length ? selectedEvent.affectedBarangayNames.join(", ") : "-"}</span>
             </div>
             <div class="dm-profile-summary-item">
                 <strong>Severity</strong>
@@ -628,6 +742,17 @@ function renderEventProfile() {
     }
 }
 
+function updateViewModalActionsVisibility() {
+    const editBtn = document.getElementById("editEventBtn");
+    const deleteBtn = document.getElementById("deleteEventBtn");
+
+    if (!editBtn || !deleteBtn) return;
+
+    const allowed = canManageEvents();
+    editBtn.classList.toggle("hidden", !allowed);
+    deleteBtn.classList.toggle("hidden", !allowed);
+}
+
 function openViewEventModal() {
     if (!selectedEvent || !selectedEventType) return;
 
@@ -650,8 +775,8 @@ function openViewEventModal() {
     if (selectedEventType === "calamity") {
         meta.innerHTML = `
             <div>
-                <strong>Barangay</strong>
-                <span>${selectedEvent.barangayName || "-"}</span>
+                <strong>Affected Area</strong>
+                <span>${selectedEvent.affectedAreaType || "-"}</span>
             </div>
             <div>
                 <strong>Status</strong>
@@ -669,12 +794,20 @@ function openViewEventModal() {
                 <span>Calamity</span>
             </div>
             <div class="dm-profile-summary-item">
+                <strong>Typhoon Name</strong>
+                <span>${selectedEvent.eventName || "-"}</span>
+            </div>
+            <div class="dm-profile-summary-item">
                 <strong>Assigned Coordinator</strong>
                 <span>${selectedEvent.coordinatorName || "-"}</span>
             </div>
             <div class="dm-profile-summary-item">
                 <strong>Estimated Damage Cost</strong>
                 <span>${formatCurrency(selectedEvent.damageCost)}</span>
+            </div>
+            <div class="dm-profile-summary-item">
+                <strong>Affected Barangays</strong>
+                <span>${selectedEvent.affectedBarangayNames?.length ? selectedEvent.affectedBarangayNames.join(", ") : "-"}</span>
             </div>
             <div class="dm-profile-summary-item">
                 <strong>Severity</strong>
@@ -727,6 +860,7 @@ function openViewEventModal() {
         loadIncidentTimelineToModal(selectedEvent.id);
     }
 
+    updateViewModalActionsVisibility();
     openModal("viewEventModal");
 }
 
@@ -735,6 +869,7 @@ function openModal(modalId) {
     if (!modal) return;
 
     modal.classList.add("active");
+    modal.style.display = "flex";
     document.body.style.overflow = "hidden";
 }
 
@@ -743,6 +878,7 @@ function closeModal(modalId) {
     if (!modal) return;
 
     modal.classList.remove("active");
+    modal.style.display = "none";
 
     const stillOpenModal = document.querySelector(".modal.active");
     if (!stillOpenModal) {
@@ -750,50 +886,662 @@ function closeModal(modalId) {
     }
 }
 
+function filterBarangays(keyword, excludeIds = []) {
+    const normalizedKeyword = (keyword || "").trim().toLowerCase();
+
+    return barangays.filter((barangay) => {
+        const notExcluded = !excludeIds.includes(barangay.id);
+        const matchesKeyword =
+            !normalizedKeyword || (barangay.name || "").toLowerCase().includes(normalizedKeyword);
+
+        return notExcluded && matchesKeyword;
+    });
+}
+
+function hideSearchResults(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = "";
+    container.classList.add("hidden");
+}
+
+function renderSingleSelectedBarangay(barangay) {
+    const selectedBox = document.getElementById("calamityBarangaySelected");
+    const input = document.getElementById("calamityBarangayInput");
+    const select = document.getElementById("calamityBarangay");
+
+    if (!selectedBox || !input || !select) return;
+
+    if (!barangay) {
+        selectedBox.innerHTML = "";
+        selectedBox.classList.add("hidden");
+        return;
+    }
+
+    select.value = String(barangay.id);
+    input.value = barangay.name;
+    selectedBox.innerHTML = `<strong>Selected:</strong> ${barangay.name}`;
+    selectedBox.classList.remove("hidden");
+}
+
+function renderSelectedMultiBarangays() {
+    const container = document.getElementById("calamityBarangaysSelected");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    selectedMultiBarangays.forEach((barangay) => {
+        const chip = document.createElement("div");
+        chip.className = "dm-chip";
+        chip.innerHTML = `
+            <span>${barangay.name}</span>
+            <button type="button" class="dm-chip-remove" aria-label="Remove ${barangay.name}">&times;</button>
+        `;
+
+        chip.querySelector(".dm-chip-remove")?.addEventListener("click", () => {
+            selectedMultiBarangays = selectedMultiBarangays.filter((b) => b.id !== barangay.id);
+            renderSelectedMultiBarangays();
+        });
+
+        container.appendChild(chip);
+    });
+}
+
+function clearEditingState() {
+    editMode = false;
+    editingEventId = null;
+    editingEventType = null;
+}
+
 function resetCalamityForm() {
     document.getElementById("calamityForm")?.reset();
-    document.getElementById("calamityTypeOther")?.classList.add("hidden");
-    document.getElementById("calamityTypeOther").required = false;
+
+    clearEditingState();
+
+    const calamityTypeOther = document.getElementById("calamityTypeOther");
+    const typhoonWrapper = document.getElementById("typhoonNameWrapper");
+    const calamityEventName = document.getElementById("calamityEventName");
+    const singleInput = document.getElementById("calamityBarangayInput");
+    const singleSelected = document.getElementById("calamityBarangaySelected");
+    const singleResults = document.getElementById("calamityBarangayResults");
+    const multiInput = document.getElementById("calamityBarangaysInput");
+    const multiSelected = document.getElementById("calamityBarangaysSelected");
+    const multiResults = document.getElementById("calamityBarangaysResults");
+    const singleSelect = document.getElementById("calamityBarangay");
+    const areaType = document.getElementById("calamityAffectedAreaType");
+    const singleWrapper = document.getElementById("singleBarangayWrapper");
+    const multiWrapper = document.getElementById("multiBarangayWrapper");
+    const coordinator = document.getElementById("calamityCoordinator");
+    const severity = document.getElementById("calamitySeverity");
+    const date = document.getElementById("calamityDate");
+    const damageCost = document.getElementById("calamityDamageCost");
+    const casualties = document.getElementById("calamityCasualties");
+    const description = document.getElementById("calamityDescription");
+    const typeSelect = document.getElementById("calamityTypeSelect");
+
+    if (typeSelect) typeSelect.value = "";
+    if (severity) severity.value = "";
+    if (date) date.value = "";
+    if (damageCost) damageCost.value = "";
+    if (casualties) casualties.value = "";
+    if (description) description.value = "";
+    if (coordinator) coordinator.value = "";
+
+    calamityTypeOther?.classList.add("hidden");
+    if (calamityTypeOther) {
+        calamityTypeOther.required = false;
+        calamityTypeOther.value = "";
+    }
+
+    typhoonWrapper?.classList.add("hidden");
+    if (calamityEventName) {
+        calamityEventName.required = false;
+        calamityEventName.value = "";
+    }
+
+    if (singleInput) singleInput.value = "";
+    if (singleSelect) singleSelect.value = "";
+
+    if (singleSelected) {
+        singleSelected.innerHTML = "";
+        singleSelected.classList.add("hidden");
+    }
+
+    if (multiInput) multiInput.value = "";
+    if (multiSelected) multiSelected.innerHTML = "";
+
+    hideSearchResults("calamityBarangayResults");
+    hideSearchResults("calamityBarangaysResults");
+
+    selectedMultiBarangays = [];
+    activeSingleBarangayResults = [];
+    activeMultiBarangayResults = [];
+    activeSingleBarangayIndex = -1;
+    activeMultiBarangayIndex = -1;
+
+    if (areaType) areaType.value = "";
+    singleWrapper?.classList.remove("hidden");
+    multiWrapper?.classList.add("hidden");
+
+    const header = document.querySelector("#calamityModal .modal-header h3");
+    if (header) header.textContent = "Add Calamity";
 }
 
 function resetIncidentForm() {
     document.getElementById("incidentForm")?.reset();
-    document.getElementById("incidentTypeOther")?.classList.add("hidden");
-    document.getElementById("incidentTypeOther").required = false;
+
+    clearEditingState();
+
+    const incidentTypeOther = document.getElementById("incidentTypeOther");
+    const incidentInput = document.getElementById("incidentBarangayInput");
+    const incidentResults = document.getElementById("incidentBarangayResults");
+    const incidentSelect = document.getElementById("incidentBarangay");
+    const responder = document.getElementById("incidentResponder");
+    const severity = document.getElementById("incidentSeverity");
+    const description = document.getElementById("incidentDescription");
+    const typeSelect = document.getElementById("incidentTypeSelect");
+
+    if (typeSelect) typeSelect.value = "";
+    if (severity) severity.value = "";
+    if (description) description.value = "";
+    if (incidentInput) incidentInput.value = "";
+    if (incidentSelect) incidentSelect.value = "";
+    if (responder) responder.value = "";
+
+    incidentTypeOther?.classList.add("hidden");
+    if (incidentTypeOther) {
+        incidentTypeOther.required = false;
+        incidentTypeOther.value = "";
+    }
+
+    hideSearchResults("incidentBarangayResults");
+
+    activeIncidentBarangayResults = [];
+    activeIncidentBarangayIndex = -1;
+
+    const header = document.querySelector("#incidentModal .modal-header h3");
+    if (header) header.textContent = "Add Incident";
+}
+
+
+function selectSingleBarangay(barangay) {
+    renderSingleSelectedBarangay(barangay);
+    hideSearchResults("calamityBarangayResults");
+    activeSingleBarangayResults = [];
+    activeSingleBarangayIndex = -1;
+}
+
+function addMultiBarangay(barangay) {
+    const exists = selectedMultiBarangays.some((b) => b.id === barangay.id);
+    if (exists) return;
+
+    selectedMultiBarangays.push(barangay);
+    renderSelectedMultiBarangays();
+
+    const input = document.getElementById("calamityBarangaysInput");
+    if (input) input.value = "";
+
+    hideSearchResults("calamityBarangaysResults");
+    activeMultiBarangayResults = [];
+    activeMultiBarangayIndex = -1;
+}
+
+function selectIncidentBarangay(barangay) {
+    const input = document.getElementById("incidentBarangayInput");
+    const select = document.getElementById("incidentBarangay");
+
+    if (input) input.value = barangay.name;
+    if (select) select.value = String(barangay.id);
+
+    hideSearchResults("incidentBarangayResults");
+    activeIncidentBarangayResults = [];
+    activeIncidentBarangayIndex = -1;
+}
+
+function initPickerInput(inputId, resultsId, stateName, onSelect, toggleId, excludeIdsGetter = () => []) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(toggleId);
+    if (!input) return;
+
+    const getState = () => {
+        if (stateName === "single") {
+            return { results: activeSingleBarangayResults, index: activeSingleBarangayIndex };
+        }
+        if (stateName === "multi") {
+            return { results: activeMultiBarangayResults, index: activeMultiBarangayIndex };
+        }
+        return { results: activeIncidentBarangayResults, index: activeIncidentBarangayIndex };
+    };
+
+    const setState = (results, index) => {
+        if (stateName === "single") {
+            activeSingleBarangayResults = results;
+            activeSingleBarangayIndex = index;
+        } else if (stateName === "multi") {
+            activeMultiBarangayResults = results;
+            activeMultiBarangayIndex = index;
+        } else {
+            activeIncidentBarangayResults = results;
+            activeIncidentBarangayIndex = index;
+        }
+    };
+
+    const refresh = (showAll = false) => {
+        const keyword = showAll ? "" : input.value;
+        const results = filterBarangays(keyword, excludeIdsGetter());
+        setState(results, -1);
+        renderSearchResults(resultsId, results, onSelect, -1);
+    };
+
+    input.addEventListener("input", () => refresh(false));
+    input.addEventListener("focus", () => refresh(false));
+
+    toggle?.addEventListener("click", () => {
+        input.focus();
+        refresh(true);
+    });
+
+    input.addEventListener("keydown", (e) => {
+        const state = getState();
+        if (!state.results.length) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const newIndex = Math.min(state.index + 1, state.results.length - 1);
+            setState(state.results, newIndex);
+            renderSearchResults(resultsId, state.results, onSelect, newIndex);
+        }
+
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            const newIndex = Math.max(state.index - 1, 0);
+            setState(state.results, newIndex);
+            renderSearchResults(resultsId, state.results, onSelect, newIndex);
+        }
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const selected = state.results[state.index] || state.results[0];
+            if (selected) onSelect(selected);
+        }
+    });
+}
+
+function renderSearchResults(containerId, items, onSelect, activeIndex = -1) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = "";
+    container.classList.remove("hidden");
+
+    if (!items.length) {
+        container.innerHTML = `<div class="dm-search-result-empty">No barangay found.</div>`;
+        return;
+    }
+
+    items.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = `dm-search-result-item ${index === activeIndex ? "active" : ""}`;
+        row.textContent = item.name;
+        row.addEventListener("click", () => onSelect(item));
+        container.appendChild(row);
+    });
+}
+
+function initDropdownSync() {
+    const calamitySingle = document.getElementById("calamityBarangay");
+    const incident = document.getElementById("incidentBarangay");
+
+    calamitySingle?.addEventListener("change", () => {
+        const barangay = barangays.find((b) => String(b.id) === calamitySingle.value);
+        if (barangay) renderSingleSelectedBarangay(barangay);
+    });
+
+    incident?.addEventListener("change", () => {
+        const barangay = barangays.find((b) => String(b.id) === incident.value);
+        if (barangay) {
+            const input = document.getElementById("incidentBarangayInput");
+            if (input) input.value = barangay.name;
+        }
+    });
+}
+
+function initGlobalSearchPickerClose() {
+    document.addEventListener("click", (e) => {
+        const singleWrapper = document.getElementById("singleBarangayWrapper");
+        const multiWrapper = document.getElementById("multiBarangayWrapper");
+        const incidentWrapper = document.querySelector("#incidentModal .dm-picker-block");
+
+        if (singleWrapper && !singleWrapper.contains(e.target)) {
+            hideSearchResults("calamityBarangayResults");
+        }
+
+        if (multiWrapper && !multiWrapper.contains(e.target)) {
+            hideSearchResults("calamityBarangaysResults");
+        }
+
+        if (incidentWrapper && !incidentWrapper.contains(e.target)) {
+            hideSearchResults("incidentBarangayResults");
+        }
+    });
+}
+
+function openEditCalamityModal(calamity) {
+    const latestCalamity = calamities.find(c => c.id === calamity.id);
+    if (!latestCalamity) {
+        showMessage("This calamity no longer exists.", "error");
+        closeModal("viewEventModal");
+        clearEditingState();
+        return;
+    }
+
+    editMode = true;
+    editingEventId = latestCalamity.id;
+    editingEventType = "calamity";
+
+    const header = document.querySelector("#calamityModal .modal-header h3");
+    if (header) header.textContent = "Edit Calamity";
+
+    const typeSelect = document.getElementById("calamityTypeSelect");
+    const typeOther = document.getElementById("calamityTypeOther");
+    const eventName = document.getElementById("calamityEventName");
+    const areaType = document.getElementById("calamityAffectedAreaType");
+
+    if (typeSelect) {
+        typeSelect.value = CALAMITY_TYPES.includes(latestCalamity.type) ? latestCalamity.type : "Others";
+    }
+
+    if (!CALAMITY_TYPES.includes(latestCalamity.type)) {
+        typeOther?.classList.remove("hidden");
+        if (typeOther) typeOther.value = latestCalamity.type || "";
+    } else {
+        typeOther?.classList.add("hidden");
+        if (typeOther) typeOther.value = "";
+    }
+
+    if (eventName) eventName.value = latestCalamity.eventName || "";
+    if (areaType) areaType.value = latestCalamity.affectedAreaType || "BARANGAY";
+    document.getElementById("calamitySeverity").value = latestCalamity.severity || "";
+    document.getElementById("calamityDate").value = latestCalamity.date || "";
+    document.getElementById("calamityDamageCost").value = latestCalamity.damageCost ?? "";
+    document.getElementById("calamityCasualties").value = latestCalamity.casualties ?? "";
+    document.getElementById("calamityDescription").value = latestCalamity.description || "";
+    document.getElementById("calamityCoordinator").value = latestCalamity.coordinatorId || "";
+
+    areaType?.dispatchEvent(new Event("change"));
+
+    const singleBarangayId =
+        latestCalamity.barangayId ??
+        latestCalamity.primaryBarangayId ??
+        null;
+
+    if (latestCalamity.affectedAreaType === "BARANGAY" && singleBarangayId) {
+        const barangay = barangays.find(b => String(b.id) === String(singleBarangayId));
+        if (barangay) {
+            renderSingleSelectedBarangay(barangay);
+        }
+    } else {
+        renderSingleSelectedBarangay(null);
+    }
+
+    if (latestCalamity.affectedAreaType === "MULTI_BARANGAY" && Array.isArray(latestCalamity.affectedBarangayIds)) {
+        selectedMultiBarangays = barangays.filter(b =>
+            latestCalamity.affectedBarangayIds.some(id => String(id) === String(b.id))
+        );
+        renderSelectedMultiBarangays();
+    } else {
+        selectedMultiBarangays = [];
+        renderSelectedMultiBarangays();
+    }
+
+    closeModal("viewEventModal");
+    openModal("calamityModal");
+}
+
+function openEditIncidentModal(incident) {
+    const latestIncident = incidents.find(i => i.id === incident.id);
+    if (!latestIncident) {
+        showMessage("This incident no longer exists.", "error");
+        closeModal("viewEventModal");
+        clearEditingState();
+        return;
+    }
+
+    editMode = true;
+    editingEventId = latestIncident.id;
+    editingEventType = "incident";
+
+    const header = document.querySelector("#incidentModal .modal-header h3");
+    if (header) header.textContent = "Edit Incident";
+
+    const typeSelect = document.getElementById("incidentTypeSelect");
+    const typeOther = document.getElementById("incidentTypeOther");
+
+    if (typeSelect) {
+        typeSelect.value = INCIDENT_TYPES.includes(latestIncident.type) ? latestIncident.type : "Others";
+    }
+
+    if (!INCIDENT_TYPES.includes(latestIncident.type)) {
+        typeOther?.classList.remove("hidden");
+        if (typeOther) typeOther.value = latestIncident.type || "";
+    } else {
+        typeOther?.classList.add("hidden");
+        if (typeOther) typeOther.value = "";
+    }
+
+    document.getElementById("incidentSeverity").value = latestIncident.severity || "";
+    document.getElementById("incidentDescription").value = latestIncident.description || "";
+    document.getElementById("incidentResponder").value = latestIncident.assignedResponderId || "";
+
+    if (latestIncident.barangayId) {
+        const barangay = barangays.find(b => String(b.id) === String(latestIncident.barangayId));
+        if (barangay) {
+            document.getElementById("incidentBarangay").value = String(barangay.id);
+            document.getElementById("incidentBarangayInput").value = barangay.name;
+        }
+    } else {
+        document.getElementById("incidentBarangay").value = "";
+        document.getElementById("incidentBarangayInput").value = "";
+    }
+
+    closeModal("viewEventModal");
+    openModal("incidentModal");
+}
+
+function initManageEventButtons() {
+    document.getElementById("editEventBtn")?.addEventListener("click", async () => {
+        if (!selectedEvent || !selectedEventType || !canManageEvents()) return;
+
+        try {
+            if (selectedEventType === "calamity") {
+                await loadCalamities();
+
+                const latestCalamity = calamities.find(
+                    c => String(c.id) === String(selectedEvent.id)
+                );
+
+                if (!latestCalamity) {
+                    showMessage("This calamity no longer exists.", "error");
+                    closeModal("viewEventModal");
+                    selectedEvent = null;
+                    selectedEventType = null;
+                    renderEventProfile();
+                    return;
+                }
+
+                selectedEvent = latestCalamity;
+                openEditCalamityModal(latestCalamity);
+            } else {
+                await loadIncidents();
+
+                const latestIncident = incidents.find(
+                    i => String(i.id) === String(selectedEvent.id)
+                );
+
+                if (!latestIncident) {
+                    showMessage("This incident no longer exists.", "error");
+                    closeModal("viewEventModal");
+                    selectedEvent = null;
+                    selectedEventType = null;
+                    renderEventProfile();
+                    return;
+                }
+
+                selectedEvent = latestIncident;
+                openEditIncidentModal(latestIncident);
+            }
+        } catch (error) {
+            console.error("Error preparing edit event:", error);
+            showMessage(extractErrorMessage(error), "error");
+        }
+    });
+
+    document.getElementById("deleteEventBtn")?.addEventListener("click", async () => {
+        if (!selectedEvent || !selectedEventType || !canManageEvents()) return;
+
+        const confirmed = window.confirm("Are you sure you want to delete this event?");
+        if (!confirmed) return;
+
+        try {
+            if (selectedEventType === "calamity") {
+                await loadCalamities();
+
+                const latestCalamity = calamities.find(
+                    c => String(c.id) === String(selectedEvent.id)
+                );
+
+                if (!latestCalamity) {
+                    showMessage("This calamity no longer exists.", "error");
+                    closeModal("viewEventModal");
+                    selectedEvent = null;
+                    selectedEventType = null;
+                    renderEventProfile();
+                    return;
+                }
+
+                await apiRequest(`${API_BASE}/calamities/${latestCalamity.id}`, {
+                    method: "DELETE"
+                });
+
+                await loadCalamities();
+            } else {
+                await loadIncidents();
+
+                const latestIncident = incidents.find(
+                    i => String(i.id) === String(selectedEvent.id)
+                );
+
+                if (!latestIncident) {
+                    showMessage("This incident no longer exists.", "error");
+                    closeModal("viewEventModal");
+                    selectedEvent = null;
+                    selectedEventType = null;
+                    renderEventProfile();
+                    return;
+                }
+
+                await apiRequest(`${API_BASE}/incidents/${latestIncident.id}`, {
+                    method: "DELETE"
+                });
+
+                await loadIncidents();
+            }
+
+            closeModal("viewEventModal");
+            selectedEvent = null;
+            selectedEventType = null;
+
+            renderEventProfile();
+            renderCurrentTab();
+
+            showMessage("Event deleted successfully.", "success");
+        } catch (error) {
+            console.error("Error deleting event:", error);
+            showMessage(extractErrorMessage(error), "error");
+        }
+    });
 }
 
 function initModalButtons() {
-    document.getElementById("closeCalamityModalBtn")?.addEventListener("click", () => closeModal("calamityModal"));
-    document.getElementById("cancelCalamityBtn")?.addEventListener("click", () => closeModal("calamityModal"));
+    document.getElementById("closeCalamityModalBtn")?.addEventListener("click", () => {
+        closeModal("calamityModal");
+        resetCalamityForm();
+    });
 
-    document.getElementById("closeIncidentModalBtn")?.addEventListener("click", () => closeModal("incidentModal"));
-    document.getElementById("cancelIncidentBtn")?.addEventListener("click", () => closeModal("incidentModal"));
+    document.getElementById("cancelCalamityBtn")?.addEventListener("click", () => {
+        closeModal("calamityModal");
+        resetCalamityForm();
+    });
 
-    document.getElementById("closeViewEventModalBtn")?.addEventListener("click", () => closeModal("viewEventModal"));
+    document.getElementById("closeIncidentModalBtn")?.addEventListener("click", () => {
+        closeModal("incidentModal");
+        resetIncidentForm();
+    });
+
+    document.getElementById("cancelIncidentBtn")?.addEventListener("click", () => {
+        closeModal("incidentModal");
+        resetIncidentForm();
+    });
+
+    document.getElementById("closeViewEventModalBtn")?.addEventListener("click", () => {
+        closeModal("viewEventModal");
+    });
 
     document.getElementById("calamityModal")?.addEventListener("click", (e) => {
-        if (e.target.id === "calamityModal") closeModal("calamityModal");
+        if (e.target.id === "calamityModal") {
+            closeModal("calamityModal");
+            resetCalamityForm();
+        }
     });
 
     document.getElementById("incidentModal")?.addEventListener("click", (e) => {
-        if (e.target.id === "incidentModal") closeModal("incidentModal");
+        if (e.target.id === "incidentModal") {
+            closeModal("incidentModal");
+            resetIncidentForm();
+        }
     });
 
     document.getElementById("viewEventModal")?.addEventListener("click", (e) => {
-        if (e.target.id === "viewEventModal") closeModal("viewEventModal");
+        if (e.target.id === "viewEventModal") {
+            closeModal("viewEventModal");
+        }
     });
 
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
+        if (e.key !== "Escape") return;
+
+        const calamityModal = document.getElementById("calamityModal");
+        const incidentModal = document.getElementById("incidentModal");
+        const viewEventModal = document.getElementById("viewEventModal");
+
+        if (calamityModal?.classList.contains("active")) {
             closeModal("calamityModal");
+            resetCalamityForm();
+        }
+
+        if (incidentModal?.classList.contains("active")) {
             closeModal("incidentModal");
+            resetIncidentForm();
+        }
+
+        if (viewEventModal?.classList.contains("active")) {
             closeModal("viewEventModal");
         }
     });
 }
 
+
 function initLibraryAddButton() {
-    document.getElementById("openLibraryModalBtn")?.addEventListener("click", () => {
+    const addBtn = document.getElementById("openLibraryModalBtn");
+    if (!addBtn) return;
+
+    addBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        clearEditingState();
+
         if (activeTab === "calamities") {
             resetCalamityForm();
             openModal("calamityModal");
@@ -803,6 +1551,7 @@ function initLibraryAddButton() {
         }
     });
 }
+
 
 function initViewModalButtons() {
     document.getElementById("openViewEventModalBtn")?.addEventListener("click", () => {
@@ -854,6 +1603,65 @@ function initTypeControls() {
     setupOtherTypeToggle("incidentTypeSelect", "incidentTypeOther");
 }
 
+function initTyphoonFieldToggle() {
+    const typeSelect = document.getElementById("calamityTypeSelect");
+    const wrapper = document.getElementById("typhoonNameWrapper");
+    const input = document.getElementById("calamityEventName");
+
+    if (!typeSelect || !wrapper || !input) return;
+
+    const toggle = () => {
+        const selectedType = getSelectedType("calamityTypeSelect", "calamityTypeOther");
+        if (selectedType.toUpperCase() === "TYPHOON") {
+            wrapper.classList.remove("hidden");
+            input.required = true;
+        } else {
+            wrapper.classList.add("hidden");
+            input.required = false;
+            input.value = "";
+        }
+    };
+
+    typeSelect.addEventListener("change", toggle);
+    document.getElementById("calamityTypeOther")?.addEventListener("input", toggle);
+    toggle();
+}
+
+function initAffectedAreaTypeToggle() {
+    const areaTypeSelect = document.getElementById("calamityAffectedAreaType");
+    const singleWrapper = document.getElementById("singleBarangayWrapper");
+    const multiWrapper = document.getElementById("multiBarangayWrapper");
+
+    if (!areaTypeSelect || !singleWrapper || !multiWrapper) return;
+
+    const toggle = () => {
+        const value = areaTypeSelect.value;
+
+        if (value === "BARANGAY") {
+            singleWrapper.classList.remove("hidden");
+            multiWrapper.classList.add("hidden");
+        } else if (value === "MULTI_BARANGAY") {
+            singleWrapper.classList.add("hidden");
+            multiWrapper.classList.remove("hidden");
+        } else if (value === "MUNICIPALITY") {
+            singleWrapper.classList.add("hidden");
+            multiWrapper.classList.add("hidden");
+            selectedMultiBarangays = [];
+            renderSelectedMultiBarangays();
+        } else {
+            singleWrapper.classList.remove("hidden");
+            multiWrapper.classList.add("hidden");
+        }
+    };
+
+    areaTypeSelect.addEventListener("change", toggle);
+    toggle();
+}
+
+function getSelectedMultiBarangayIds() {
+    return selectedMultiBarangays.map((barangay) => barangay.id);
+}
+
 function initFormHandlers() {
     const calamityForm = document.getElementById("calamityForm");
     if (calamityForm) {
@@ -861,9 +1669,25 @@ function initFormHandlers() {
             e.preventDefault();
 
             try {
+                const wasEditMode = editMode;
+                const currentEditingId = editingEventId;
+                const currentEditingType = editingEventType;
+
+                const affectedAreaType = document.getElementById("calamityAffectedAreaType").value;
+                const type = getSelectedType("calamityTypeSelect", "calamityTypeOther");
+                const eventName = document.getElementById("calamityEventName").value.trim();
+                const barangayIdValue = document.getElementById("calamityBarangay")?.value || "";
+
                 const payload = {
-                    type: getSelectedType("calamityTypeSelect", "calamityTypeOther"),
-                    barangayId: Number(document.getElementById("calamityBarangay").value),
+                    type,
+                    eventName: type.toUpperCase() === "TYPHOON" ? eventName : null,
+                    affectedAreaType,
+                    barangayId: affectedAreaType === "BARANGAY" && barangayIdValue
+                        ? Number(barangayIdValue)
+                        : null,
+                    barangayIds: affectedAreaType === "MULTI_BARANGAY"
+                        ? getSelectedMultiBarangayIds()
+                        : [],
                     coordinatorId: document.getElementById("calamityCoordinator").value
                         ? Number(document.getElementById("calamityCoordinator").value)
                         : null,
@@ -874,8 +1698,29 @@ function initFormHandlers() {
                     description: document.getElementById("calamityDescription").value.trim()
                 };
 
-                const savedCalamity = await apiRequest(`${API_BASE}/calamities`, {
-                    method: "POST",
+                const validEditId =
+                    wasEditMode &&
+                    currentEditingType === "calamity" &&
+                    Number.isInteger(Number(currentEditingId)) &&
+                    Number(currentEditingId) > 0;
+
+                const endpoint = validEditId
+                    ? `${API_BASE}/calamities/${Number(currentEditingId)}`
+                    : `${API_BASE}/calamities`;
+
+                const method = validEditId ? "PUT" : "POST";
+
+                console.log("Calamity save mode", {
+                    editMode: wasEditMode,
+                    editingEventId: currentEditingId,
+                    editingEventType: currentEditingType,
+                    validEditId,
+                    endpoint,
+                    method
+                });
+
+                const savedCalamity = await apiRequest(endpoint, {
+                    method,
                     body: JSON.stringify(payload)
                 });
 
@@ -885,13 +1730,19 @@ function initFormHandlers() {
 
                 activeTab = "calamities";
                 selectedEventType = "calamity";
-                selectedEvent = savedCalamity || sortEvents(calamities, "calamity")[0] || null;
+
+                if (savedCalamity?.id) {
+                    selectedEvent = calamities.find(c => String(c.id) === String(savedCalamity.id)) || savedCalamity;
+                } else {
+                    selectedEvent = sortEvents(calamities, "calamity")[0] || null;
+                }
 
                 renderCurrentTab();
                 renderEventProfile();
+                showMessage(validEditId ? "Calamity updated successfully." : "Calamity record saved successfully.", "success");
             } catch (error) {
                 console.error("Error saving calamity:", error);
-                alert(error.message || "Failed to save calamity.");
+                showMessage(extractErrorMessage(error), "error");
             }
         });
     }
@@ -902,6 +1753,10 @@ function initFormHandlers() {
             e.preventDefault();
 
             try {
+                const wasEditMode = editMode;
+                const currentEditingId = editingEventId;
+                const currentEditingType = editingEventType;
+
                 const payload = {
                     type: getSelectedType("incidentTypeSelect", "incidentTypeOther"),
                     barangayId: Number(document.getElementById("incidentBarangay").value),
@@ -912,8 +1767,29 @@ function initFormHandlers() {
                     description: document.getElementById("incidentDescription").value.trim()
                 };
 
-                const savedIncident = await apiRequest(`${API_BASE}/incidents`, {
-                    method: "POST",
+                const validEditId =
+                    wasEditMode &&
+                    currentEditingType === "incident" &&
+                    Number.isInteger(Number(currentEditingId)) &&
+                    Number(currentEditingId) > 0;
+
+                const endpoint = validEditId
+                    ? `${API_BASE}/incidents/${Number(currentEditingId)}`
+                    : `${API_BASE}/incidents`;
+
+                const method = validEditId ? "PUT" : "POST";
+
+                console.log("Incident save mode", {
+                    editMode: wasEditMode,
+                    editingEventId: currentEditingId,
+                    editingEventType: currentEditingType,
+                    validEditId,
+                    endpoint,
+                    method
+                });
+
+                const savedIncident = await apiRequest(endpoint, {
+                    method,
                     body: JSON.stringify(payload)
                 });
 
@@ -923,13 +1799,19 @@ function initFormHandlers() {
 
                 activeTab = "incidents";
                 selectedEventType = "incident";
-                selectedEvent = savedIncident || sortEvents(incidents, "incident")[0] || null;
+
+                if (savedIncident?.id) {
+                    selectedEvent = incidents.find(i => String(i.id) === String(savedIncident.id)) || savedIncident;
+                } else {
+                    selectedEvent = sortEvents(incidents, "incident")[0] || null;
+                }
 
                 renderCurrentTab();
                 renderEventProfile();
+                showMessage(validEditId ? "Incident updated successfully." : "Incident record saved successfully.", "success");
             } catch (error) {
                 console.error("Error saving incident:", error);
-                alert(error.message || "Failed to save incident.");
+                showMessage(extractErrorMessage(error), "error");
             }
         });
     }
@@ -942,13 +1824,46 @@ async function initDisasterManagementPage() {
     }
 
     try {
+        currentUserRoles = getCurrentUserRoles();
+
         initModalButtons();
         initLibraryAddButton();
         initViewModalButtons();
+        initManageEventButtons();
         initTabHandlers();
         initFilterHandler();
         initSortHandler();
         initTypeControls();
+        initTyphoonFieldToggle();
+        initAffectedAreaTypeToggle();
+
+        initPickerInput(
+            "calamityBarangayInput",
+            "calamityBarangayResults",
+            "single",
+            selectSingleBarangay,
+            "calamityBarangayToggle"
+        );
+
+        initPickerInput(
+            "calamityBarangaysInput",
+            "calamityBarangaysResults",
+            "multi",
+            addMultiBarangay,
+            "calamityBarangaysToggle",
+            () => selectedMultiBarangays.map((b) => b.id)
+        );
+
+        initPickerInput(
+            "incidentBarangayInput",
+            "incidentBarangayResults",
+            "incident",
+            selectIncidentBarangay,
+            "incidentBarangayToggle"
+        );
+
+        initDropdownSync();
+        initGlobalSearchPickerClose();
         initFormHandlers();
 
         await loadBarangays();

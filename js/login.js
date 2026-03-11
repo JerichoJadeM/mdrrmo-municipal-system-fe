@@ -145,14 +145,37 @@ form.addEventListener('submit', async (e) => {
         // Save JWT in localStorage or sessionStorage
         if (data.token) {
             localStorage.setItem('jwtToken', data.token);
-            
-            // Show success message and redirect
+
+            try {
+                const userInfoResponse = await fetch('http://localhost:8080/api/users/info', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${data.token}`
+                    }
+                });
+
+                if (userInfoResponse.ok) {
+                    const userInfo = await userInfoResponse.json();
+
+                    localStorage.setItem('userName', userInfo.fullName || '');
+                    localStorage.setItem('userEmail', userInfo.email || '');
+                    localStorage.setItem('userNumber', userInfo.number || '');
+                    localStorage.setItem('userAuthorities', JSON.stringify(userInfo.authorities || []));
+                } else {
+                    localStorage.setItem('userAuthorities', JSON.stringify([]));
+                }
+            } catch (e) {
+                localStorage.setItem('userAuthorities', JSON.stringify([]));
+            }
+
             showNotification('Login successful! Redirecting...', 'success', 2000);
-            
+
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1500);
-        } else {
+        }
+         else {
             showNotification('Login response invalid. Please contact support.', 'error', 5000);
             submitBtn.disabled = false;
         }

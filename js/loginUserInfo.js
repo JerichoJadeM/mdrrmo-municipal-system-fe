@@ -81,6 +81,7 @@ async function loadUserInfo() {
         localStorage.setItem('userName', user.fullName);
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userNumber', user.number);
+        localStorage.setItem('userAuthorities', JSON.stringify(user.authorities || []));
 
         // Update navbar user name if navbar script is loaded
         if (typeof window.updateUserName === 'function') {

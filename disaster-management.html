@@ -196,7 +196,6 @@
                             <i id="libraryAddBtnIcon" class="fas fa-cloud-showers-heavy"></i>
                             <span id="libraryAddBtnText">Add Calamity</span>
                         </button>
-
                     </div>
 
                     <div id="calamityList" class="dm-list"></div>
@@ -249,6 +248,7 @@
         </div>
     </main>
 
+    <!-- Calamity Modal -->
     <div class="modal" id="calamityModal">
         <div class="modal-content dm-modal-content">
             <div class="modal-header">
@@ -257,17 +257,79 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+
             <form id="calamityForm" class="dm-form">
                 <div class="dm-form-grid">
                     <div>
-                        <label for="calamityType">Type</label>
+                        <label for="calamityTypeSelect">Type</label>
                         <select id="calamityTypeSelect" required></select>
-                        <input type="text" id="calamityTypeOther" class="hidden" placeholder="Enter calamity type">
+                        <input
+                            type="text"
+                            id="calamityTypeOther"
+                            class="hidden dm-other-input"
+                            placeholder="Enter calamity type"
+                        >
                     </div>
+
+                    <div id="typhoonNameWrapper" class="hidden">
+                        <label for="calamityEventName">Typhoon Name</label>
+                        <input type="text" id="calamityEventName" placeholder="Enter typhoon name">
+                    </div>
+
                     <div>
-                        <label for="calamityBarangay">Barangay</label>
-                        <select id="calamityBarangay" required></select>
+                        <label for="calamityAffectedAreaType">Affected Area</label>
+                        <select id="calamityAffectedAreaType" required>
+                            <option value="">Select affected area</option>
+                            <option value="BARANGAY">Single Barangay</option>
+                            <option value="MULTI_BARANGAY">Multiple Barangays</option>
+                            <option value="MUNICIPALITY">Whole Municipality</option>
+                        </select>
                     </div>
+
+                    <div id="singleBarangayWrapper" class="dm-picker-block">
+                        <label>Barangay</label>
+                        <div id="calamityBarangaySelected" class="dm-selected-single hidden"></div>
+                        <div class="dm-picker-input-wrap">
+                            <input
+                                type="text"
+                                id="calamityBarangayInput"
+                                class="dm-picker-input"
+                                placeholder="Search or select barangay"
+                                autocomplete="off"
+                            >
+                            <button type="button" class="dm-picker-toggle" id="calamityBarangayToggle" aria-label="Toggle barangay options">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="calamityBarangayResults" class="dm-search-results hidden"></div>
+                        <select id="calamityBarangay" class="hidden"></select>
+                    </div>
+
+                    <div id="multiBarangayWrapper" class="hidden dm-picker-block">
+                        <label>Barangay</label>
+                        <div id="calamityBarangaysSelected" class="dm-selected-chips"></div>
+                        <div class="dm-picker-input-wrap">
+                            <input
+                                type="text"
+                                id="calamityBarangaysInput"
+                                class="dm-picker-input"
+                                placeholder="Search or select barangay"
+                                autocomplete="off"
+                            >
+                            <button type="button" class="dm-picker-toggle" id="calamityBarangaysToggle" aria-label="Toggle barangay options">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="calamityBarangaysResults" class="dm-search-results hidden"></div>
+                    </div>
+
+                    <div>
+                        <label for="calamityCoordinator">Assign Coordinator</label>
+                        <select id="calamityCoordinator">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label for="calamitySeverity">Severity</label>
                         <select id="calamitySeverity" required>
@@ -277,24 +339,20 @@
                             <option value="HIGH">High</option>
                         </select>
                     </div>
+
                     <div>
                         <label for="calamityDate">Date</label>
                         <input type="date" id="calamityDate" required>
                     </div>
+
                     <div>
                         <label for="calamityDamageCost">Damage Cost</label>
                         <input type="number" id="calamityDamageCost" min="0" step="0.01" required>
                     </div>
+
                     <div>
                         <label for="calamityCasualties">Casualties</label>
                         <input type="number" id="calamityCasualties" min="0" required>
-                    </div>
-
-                    <div>
-                        <label for="calamityCoordinator">Assign Coordinator</label>
-                        <select id="calamityCoordinator">
-                            <option value="">Unassigned</option>
-                        </select>
                     </div>
                 </div>
 
@@ -309,6 +367,7 @@
         </div>
     </div>
 
+    <!-- Incident Modal -->
     <div class="modal" id="incidentModal">
         <div class="modal-content dm-modal-content">
             <div class="modal-header">
@@ -317,17 +376,38 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+
             <form id="incidentForm" class="dm-form">
                 <div class="dm-form-grid">
                     <div>
-                        <label for="incidentType">Type</label>
+                        <label for="incidentTypeSelect">Type</label>
                         <select id="incidentTypeSelect" required></select>
-                        <input type="text" id="incidentTypeOther" class="hidden" placeholder="Enter incident type">
+                        <input
+                            type="text"
+                            id="incidentTypeOther"
+                            class="hidden dm-other-input"
+                            placeholder="Enter incident type"
+                        >
                     </div>
-                    <div>
-                        <label for="incidentBarangay">Barangay</label>
-                        <select id="incidentBarangay" required></select>
+
+                    <div class="dm-picker-block">
+                        <label>Barangay</label>
+                        <div class="dm-picker-input-wrap">
+                            <input
+                                type="text"
+                                id="incidentBarangayInput"
+                                class="dm-picker-input"
+                                placeholder="Search or select barangay"
+                                autocomplete="off"
+                            >
+                            <button type="button" class="dm-picker-toggle" id="incidentBarangayToggle" aria-label="Toggle barangay options">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="incidentBarangayResults" class="dm-search-results hidden"></div>
+                        <select id="incidentBarangay" class="hidden" required></select>
                     </div>
+
                     <div>
                         <label for="incidentSeverity">Severity</label>
                         <select id="incidentSeverity" required>
@@ -357,6 +437,7 @@
         </div>
     </div>
 
+    <!-- View Details Modal -->
     <div class="modal" id="viewEventModal">
         <div class="modal-content dm-modal-content">
             <div class="modal-header">
@@ -389,6 +470,17 @@
                     <div id="viewIncidentTimeline" class="dm-timeline"></div>
                 </div>
             </div>
+
+            <div class="dm-modal-footer-actions" id="viewEventModalActions">
+                <button type="button" class="btn btn-secondary hidden" id="editEventBtn">
+                    <i class="fas fa-pen"></i>
+                    Edit
+                </button>
+                <button type="button" class="btn btn-danger hidden" id="deleteEventBtn">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
+            </div>
         </div>
     </div>
 
@@ -400,61 +492,17 @@
                 <div class="footer-section footer-info">
                     <h3>MDRRM System</h3>
                     <p>Disaster Risk Reduction and Management Operations</p>
-                    <div class="footer-socials">
-                        <a href="#" class="social-link" title="Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="social-link" title="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="social-link" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="footer-section footer-links">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#alerts">Alerts</a></li>
-                        <li><a href="#reports">Reports</a></li>
-                        <li><a href="#resources">Resources</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section footer-support">
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#help">Help Center</a></li>
-                        <li><a href="#contact">Contact Us</a></li>
-                        <li><a href="#privacy">Privacy Policy</a></li>
-                        <li><a href="#terms">Terms of Service</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section footer-contact">
-                    <h4>Contact</h4>
-                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
-                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
                 </div>
             </div>
-
             <div class="footer-bottom">
                 <div class="footer-copyright">
                     <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
                 </div>
-                <div class="footer-bottom-links">
-                    <a href="#sitemap">Sitemap</a>
-                    <span class="divider">|</span>
-                    <a href="#accessibility">Accessibility</a>
-                    <span class="divider">|</span>
-                    <a href="#copyright">Copyright</a>
-                </div>
             </div>
         </div>
     </footer>
+
+    <div id="dmMessage" class="dm-message hidden"></div>
 
     <script src="/js/loginUserInfo.js"></script>
     <script src="/js/navbar.js"></script>
