@@ -1,6 +1,35 @@
 const API_BASE = "http://localhost:8080/api";
 
-let currentIncident = null;
+const BOARD_MODES = {
+    INCIDENTS: "INCIDENTS",
+    CALAMITIES: "CALAMITIES"
+};
+
+const INCIDENT_STATUS_ORDER = ["ONGOING", "IN_PROGRESS", "ON_SITE", "RESOLVED"];
+const CALAMITY_STATUS_ORDER = ["ACTIVE", "MONITORING", "RESOLVED", "ENDED"];
+
+/**
+ * Adjust this if your responder search endpoint is different.
+ * Expected response: [{ id, firstName, lastName, fullName, assignmentStatus }]
+ */
+const RESPONDER_SEARCH_URL = `${API_BASE}/users/available-responders?keyword=`;
+
+let currentBoardMode = BOARD_MODES.INCIDENTS;
+
+let currentSelection = {
+    type: null, // INCIDENT | CALAMITY
+    data: null
+};
+
+let dragContext = {
+    type: null,
+    id: null,
+    sourceStatus: null,
+    targetStatus: null,
+    data: null
+};
+
+let pendingDispatchIncident = null;
 
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem("jwtToken");
@@ -8,7 +37,7 @@ async function apiRequest(url, options = {}) {
     options.headers = {
         ...(options.headers || {}),
         "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
     };
 
     const response = await fetch(url, options);
@@ -26,243 +55,159 @@ async function apiRequest(url, options = {}) {
     return null;
 }
 
-function updateActionButtons(status = null) {
-    const normalizedStatus = (status || "").toUpperCase();
-
-    const arriveBtn = document.getElementById("arriveBtn");
-    const resolveBtn = document.getElementById("resolveBtn");
-
-    if (arriveBtn) {
-        arriveBtn.disabled = normalizedStatus !== "IN_PROGRESS";
-    }
-
-    if (resolveBtn) {
-        resolveBtn.disabled = !(
-            normalizedStatus === "IN_PROGRESS" ||
-            normalizedStatus === "ON_SITE"
-        );
-    }
-}
-
-async function loadIncidents(selectedIncidentId = null) {
-    try {
-        const incidents = await apiRequest(`${API_BASE}/incidents`);
-
-        const container = document.getElementById("incidentList");
-        const filterInput = document.getElementById("incidentFilter");
-
-        if (!container) {
-            console.error("incidentList container not found");
-            return [];
-        }
-
-        const filterKeyword = (filterInput?.value || "").trim().toLowerCase();
-
-        const activeIncidents = incidents.filter(incident => {
-            const status = (incident.status || "").trim().toUpperCase();
-
-            if (status === "RESOLVED") {
-                return false;
-            }
-
-            if (!filterKeyword) {
-                return true;
-            }
-
-            const searchableText = [
-                incident.type,
-                incident.barangay,
-                incident.severity,
-                incident.status,
-                incident.assignedResponderName,
-                incident.description
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            return searchableText.includes(filterKeyword);
-        });
-
-        container.innerHTML = "";
-
-        if (activeIncidents.length === 0) {
-            container.innerHTML = "<p>No active incidents found.</p>";
-            return incidents;
-        }
-
-        activeIncidents.forEach(incident => {
-            const card = document.createElement("div");
-            card.className = "incident-card";
-            card.dataset.id = incident.id;
-
-            if (selectedIncidentId && incident.id === Number(selectedIncidentId)) {
-                card.classList.add("active");
-            }
-
-            const severityClass = getSeverityClass(incident.severity);
-
-            card.innerHTML = `
-                <strong>${incident.type}</strong><br>
-                Barangay: ${incident.barangay}<br>
-                Severity: <span class="severity-badge ${severityClass}">${incident.severity || "-"}</span><br>
-                Status: ${incident.status}
-            `;
-
-            card.addEventListener("click", () => selectIncident(incident, card));
-            container.appendChild(card);
-        });
-
-        return incidents;
-    } catch (error) {
-        console.error("Error loading incidents:", error);
-        return [];
-    }
+function formatDateTime(dateTime) {
+    if (!dateTime) return "-";
+    const parsed = new Date(dateTime);
+    if (isNaN(parsed.getTime())) return dateTime;
+    return parsed.toLocaleString();
 }
 
 function getSeverityClass(severity) {
     const normalized = (severity || "").trim().toUpperCase();
-
     if (normalized === "HIGH") return "severity-high";
     if (normalized === "MEDIUM") return "severity-medium";
     if (normalized === "LOW") return "severity-low";
-
     return "severity-default";
 }
 
-function initIncidentFilter() {
-    const filterInput = document.getElementById("incidentFilter");
-    if (!filterInput) return;
+function formatCalamityArea(calamity) {
+    const areaType = (calamity.affectedAreaType || "").toUpperCase();
+    const affectedNames = calamity.affectedBarangayNames || [];
 
-    filterInput.addEventListener("input", async () => {
-        const selectedIncidentId = document.getElementById("selectedIncidentId")?.value || null;
-        await loadIncidents(selectedIncidentId);
-    });
-}
-
-console.log("Rendered cards:", document.querySelectorAll(".incident-card").length);
-
-async function selectIncident(incident, cardElement) {
-    currentIncident = incident;
-
-    const selectedIdInput = document.getElementById("selectedIncidentId");
-    if (selectedIdInput) {
-        selectedIdInput.value = incident.id;
+    if (areaType === "MUNICIPALITY") return "Whole Municipality";
+    if (areaType === "MULTI_BARANGAY") {
+        if (!affectedNames.length) return "-";
+        if (affectedNames.length === 1) return affectedNames[0];
+        return `${affectedNames.length} Barangays`;
     }
 
-    document.querySelectorAll(".incident-card").forEach(card => {
+    return calamity.primaryBarangayName || calamity.barangay || "-";
+}
+
+function clearCardSelections() {
+    document.querySelectorAll(".board-card").forEach(card => {
         card.classList.remove("active");
     });
-
-    if (cardElement) {
-        cardElement.classList.add("active");
-    }
-
-    renderDispatchIncidentSummary(incident);
-    toggleIncidentStatus(true);
-    updateActionButtons(incident.status);
-    updateStatusStepper(incident.status);
-    await loadActivityFeed(incident.id);
 }
 
-// helper for showing the stepper only when active incident is clicked
-function toggleIncidentStatus(show) {
-    const statusInline = document.getElementById("incidentStatusInline");
-    if (!statusInline) return;
-
-    statusInline.classList.toggle("hidden", !show);
-}
-
-function hasAssignedResponder(incident) {
-    return !!(
-        incident &&
-        (
-            incident.assignedResponderId ||
-            incident.assignedResponderName ||
-            incident.responderId ||
-            incident.responderName
-        )
-    );
+function clearDropzoneStates() {
+    document.querySelectorAll(".board-dropzone").forEach(zone => {
+        zone.classList.remove("drag-over", "drop-invalid");
+    });
 }
 
 function confirmAction(message) {
     return window.confirm(message);
 }
 
-async function refreshSelectedIncident(incidentId) {
-    try {
-        const incidents = await loadIncidents(incidentId);
-        const updated = incidents.find(i => i.id === Number(incidentId));
+function setBoardMode(mode) {
+    currentBoardMode = mode;
 
-        const selectedIdInput = document.getElementById("selectedIncidentId");
-        const activityFeed = document.getElementById("activityFeed");
+    const incidentModeBtn = document.getElementById("incidentModeBtn");
+    const calamityModeBtn = document.getElementById("calamityModeBtn");
+    const incidentBoardSection = document.getElementById("incidentBoardSection");
+    const calamityBoardSection = document.getElementById("calamityBoardSection");
 
-        if (!updated) {
-            currentIncident = null;
+    incidentModeBtn?.classList.remove("active");
+    calamityModeBtn?.classList.remove("active");
 
-            if (selectedIdInput) {
-                selectedIdInput.value = "";
-            }
+    incidentBoardSection?.classList.add("hidden");
+    calamityBoardSection?.classList.add("hidden");
 
-            renderDispatchIncidentSummary(null);
-            toggleIncidentStatus(false);
-            updateActionButtons(null);
-            updateStatusStepper(null);
-
-            if (activityFeed) {
-                activityFeed.innerHTML = "<p>No incident selected.</p>";
-            }
-
-            return;
-        }
-
-        const normalizedStatus = (updated.status || "").toUpperCase();
-
-        if (normalizedStatus === "RESOLVED") {
-            currentIncident = null;
-
-            if (selectedIdInput) {
-                selectedIdInput.value = "";
-            }
-
-            renderDispatchIncidentSummary(null);
-            toggleIncidentStatus(false);
-            updateActionButtons(null);
-            updateStatusStepper("RESOLVED");
-
-            if (activityFeed) {
-                activityFeed.innerHTML = "<p>This incident has been resolved.</p>";
-            }
-
-            return;
-        }
-
-        currentIncident = updated;
-
-        if (selectedIdInput) {
-            selectedIdInput.value = updated.id;
-        }
-
-        renderDispatchIncidentSummary(updated);
-        toggleIncidentStatus(true);
-        updateActionButtons(updated.status);
-        updateStatusStepper(updated.status);
-        await loadActivityFeed(updated.id);
-    } catch (error) {
-        console.error("Error refreshing incident:", error);
+    if (mode === BOARD_MODES.INCIDENTS) {
+        incidentModeBtn?.classList.add("active");
+        incidentBoardSection?.classList.remove("hidden");
+    } else if (mode === BOARD_MODES.CALAMITIES) {
+        calamityModeBtn?.classList.add("active");
+        calamityBoardSection?.classList.remove("hidden");
     }
 }
 
-async function loadActivityFeed(incidentId) {
+function initBoardModeToggle() {
+    const incidentModeBtn = document.getElementById("incidentModeBtn");
+    const calamityModeBtn = document.getElementById("calamityModeBtn");
+
+    incidentModeBtn?.addEventListener("click", () => setBoardMode(BOARD_MODES.INCIDENTS));
+    calamityModeBtn?.addEventListener("click", () => setBoardMode(BOARD_MODES.CALAMITIES));
+}
+
+function renderSelectedEventSummary(type, data) {
+    const summaryBox = document.getElementById("selectedEventSummary");
+    const summaryContent = document.getElementById("selectedEventSummaryContent");
+
+    if (!summaryBox || !summaryContent) return;
+
+    if (!type || !data) {
+        summaryBox.classList.add("hidden");
+        summaryContent.innerHTML = "";
+        return;
+    }
+
+    if (type === "INCIDENT") {
+        summaryContent.innerHTML = `
+            <div class="dispatch-summary-grid">
+                <div class="dispatch-summary-item">
+                    <strong>Type</strong>
+                    <span>${data.type || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Barangay</strong>
+                    <span>${data.barangay || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Status</strong>
+                    <span>${data.status || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Assigned Responder</strong>
+                    <span>${data.assignedResponderName || data.responderName || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Reported At</strong>
+                    <span>${formatDateTime(data.reportedAt)}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Severity</strong>
+                    <span>${data.severity || "-"}</span>
+                </div>
+            </div>
+        `;
+    } else if (type === "CALAMITY") {
+        summaryContent.innerHTML = `
+            <div class="dispatch-summary-grid">
+                <div class="dispatch-summary-item">
+                    <strong>Type</strong>
+                    <span>${data.type || data.calamityName || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Affected Area</strong>
+                    <span>${formatCalamityArea(data)}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Status</strong>
+                    <span>${data.status || "-"}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Start Date</strong>
+                    <span>${formatDateTime(data.startDate || data.createdAt)}</span>
+                </div>
+                <div class="dispatch-summary-item">
+                    <strong>Severity</strong>
+                    <span>${data.severity || "-"}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    summaryBox.classList.remove("hidden");
+}
+
+async function loadIncidentActivityFeed(incidentId) {
+    const feed = document.getElementById("activityFeed");
+    if (!feed) return;
+
     try {
         const actions = await apiRequest(`${API_BASE}/incidents/${incidentId}/actions`);
-
-        const feed = document.getElementById("activityFeed");
-        if (!feed) {
-            console.error("activityFeed container not found");
-            return;
-        }
-
         feed.innerHTML = "";
 
         if (!actions || actions.length === 0) {
@@ -273,172 +218,98 @@ async function loadActivityFeed(incidentId) {
         actions.forEach(action => {
             const item = document.createElement("div");
             item.className = "feed-item";
-
             item.innerHTML = `
-                <strong>${action.actionType}</strong><br>
-                ${action.description}<br>
-                <small>${new Date(action.actionTime).toLocaleString()}</small>
+                <strong>${action.actionType || "-"}</strong>
+                ${action.description || "-"}
+                <small>${formatDateTime(action.actionTime)}</small>
             `;
-
             feed.appendChild(item);
         });
     } catch (error) {
-        console.error("Error loading activity feed:", error);
+        console.error("Error loading incident activity feed:", error);
+        feed.innerHTML = "<p>Failed to load incident activity.</p>";
     }
 }
 
-function updateStatusStepper(status) {
-    const order = ["ONGOING", "IN_PROGRESS", "ON_SITE", "RESOLVED"];
-    const normalizedStatus = (status || "").toUpperCase();
-    const currentIndex = order.indexOf(normalizedStatus);
+async function loadCalamityActivityFeed(calamityId) {
+    const feed = document.getElementById("activityFeed");
+    if (!feed) return;
 
-    document.querySelectorAll(".step").forEach(step => {
-        step.classList.remove("completed", "current");
+    try {
+        const actions = await apiRequest(`${API_BASE}/calamities/${calamityId}/actions`);
+        feed.innerHTML = "";
 
-        const stepStatus = (step.dataset.step || "").toUpperCase();
-        const stepIndex = order.indexOf(stepStatus);
-
-        if (currentIndex === -1) {
+        if (!actions || actions.length === 0) {
+            feed.innerHTML = "<p>No calamity activity yet.</p>";
             return;
         }
 
-        if (stepIndex < currentIndex) {
-            step.classList.add("completed");
-        } else if (stepIndex === currentIndex) {
-            step.classList.add("current");
-        }
-    });
+        actions.forEach(action => {
+            const item = document.createElement("div");
+            item.className = "feed-item";
+            item.innerHTML = `
+                <strong>${action.actionType || "-"}</strong>
+                ${action.description || "-"}
+                <small>${formatDateTime(action.actionTime)}</small>
+            `;
+            feed.appendChild(item);
+        });
+    } catch (error) {
+        console.error("Error loading calamity activity feed:", error);
+        feed.innerHTML = "<p>No calamity activity yet.</p>";
+    }
 }
 
-function initFormListeners() {
-    const dispatchForm = document.getElementById("dispatchForm");
-    if (dispatchForm) {
-        dispatchForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+function renderModulePlaceholders(type, data) {
+    const evacuationContent = document.getElementById("evacuationContent");
+    const reliefContent = document.getElementById("reliefContent");
+    const inventoryContent = document.getElementById("inventoryContent");
+    const budgetContent = document.getElementById("budgetContent");
 
-            const incidentId = document.getElementById("selectedIncidentId")?.value;
-            const responderId = document.getElementById("responderId")?.value;
-            const responderSearch = document.getElementById("responderSearch")?.value;
+    const label = `${type} #${data?.id ?? "-"}`;
 
-            if (!incidentId) {
-                alert("Select an incident first.");
-                return;
-            }
+    if (evacuationContent) {
+        evacuationContent.innerHTML = `<p>No evacuation details loaded yet for ${label}.</p>`;
+    }
+    if (reliefContent) {
+        reliefContent.innerHTML = `<p>No relief distribution details loaded yet for ${label}.</p>`;
+    }
+    if (inventoryContent) {
+        inventoryContent.innerHTML = `<p>No inventory usage details loaded yet for ${label}.</p>`;
+    }
+    if (budgetContent) {
+        budgetContent.innerHTML = `<p>No budget usage details loaded yet for ${label}.</p>`;
+    }
+}
 
-            if (!responderSearch || !responderId) {
-                alert("Select a responder from the suggestion list.");
-                return;
-            }
+function clearCurrentSelection() {
+    currentSelection = { type: null, data: null };
+    clearCardSelections();
+    renderSelectedEventSummary(null, null);
 
-            const confirmed = confirmAction(
-                `Dispatch ${responderSearch} to this incident?`
-            );
-
-            if (!confirmed) {
-                return;
-            }
-
-            try {
-                await apiRequest(`${API_BASE}/incidents/${incidentId}/dispatch`, {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        responderId: Number(responderId)
-                    })
-                });
-
-                const responderSearchInput = document.getElementById("responderSearch");
-                const responderIdInput = document.getElementById("responderId");
-                const suggestions = document.getElementById("responderSuggestions");
-
-                if (responderSearchInput) responderSearchInput.value = "";
-                if (responderIdInput) responderIdInput.value = "";
-                if (suggestions) suggestions.innerHTML = "";
-
-                await refreshSelectedIncident(incidentId);
-            } catch (error) {
-                console.error("Error dispatching responder:", error);
-                alert(error.message || "Failed to dispatch responder.");
-            }
-        });
+    const activityFeed = document.getElementById("activityFeed");
+    if (activityFeed) {
+        activityFeed.innerHTML = "<p>Select an incident or calamity to view details.</p>";
     }
 
-    const arriveBtn = document.getElementById("arriveBtn");
-    if (arriveBtn) {
-        arriveBtn.addEventListener("click", async () => {
-            if (!currentIncident) {
-                alert("Select an incident first.");
-                return;
-            }
+    renderModulePlaceholders("OPERATION", { id: "-" });
+}
 
-            if (!hasAssignedResponder(currentIncident)) {
-                alert("This incident has no assigned responder yet. Dispatch a responder first.");
-                return;
-            }
+function initOperationsTabs() {
+    const tabButtons = document.querySelectorAll(".operations-tab-btn");
+    const tabContents = document.querySelectorAll(".operations-tab-content");
 
-            const responderLabel =
-                currentIncident.assignedResponderName ||
-                currentIncident.responderName ||
-                "the assigned responder";
+    tabButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const targetTabId = button.dataset.tab;
 
-            const confirmed = confirmAction(
-                `Mark this incident as arrived for ${responderLabel}?`
-            );
+            tabButtons.forEach(btn => btn.classList.remove("active"));
+            tabContents.forEach(content => content.classList.add("hidden"));
 
-            if (!confirmed) {
-                return;
-            }
-
-            try {
-                await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/arrive`, {
-                    method: "PUT"
-                });
-
-                await refreshSelectedIncident(currentIncident.id);
-            } catch (error) {
-                console.error("Error marking arrival:", error);
-                alert(error.message || "Failed to mark arrival.");
-            }
+            button.classList.add("active");
+            document.getElementById(targetTabId)?.classList.remove("hidden");
         });
-    }
-
-   const resolveBtn = document.getElementById("resolveBtn");
-    if (resolveBtn) {
-        resolveBtn.addEventListener("click", async () => {
-            if (!currentIncident) {
-                alert("Select an incident first.");
-                return;
-            }
-
-            if (!hasAssignedResponder(currentIncident)) {
-                alert("This incident has no assigned responder yet. Dispatch a responder first.");
-                return;
-            }
-
-            const responderLabel =
-                currentIncident.assignedResponderName ||
-                currentIncident.responderName ||
-                "the assigned responder";
-
-            const confirmed = confirmAction(
-                `Are you sure you want to resolve this incident handled by ${responderLabel}? This action will finalize the incident.`
-            );
-
-            if (!confirmed) {
-                return;
-            }
-
-            try {
-                await apiRequest(`${API_BASE}/incidents/${currentIncident.id}/resolve`, {
-                    method: "PUT"
-                });
-
-                await refreshSelectedIncident(currentIncident.id);
-            } catch (error) {
-                console.error("Error resolving incident:", error);
-                alert(error.message || "Failed to resolve incident.");
-            }
-        });
-    }
+    });
 }
 
 async function initOperationsPage() {
@@ -448,77 +319,20 @@ async function initOperationsPage() {
     }
 
     try {
-        initFormListeners();
+        initBoardModeToggle();
+        initOperationsTabs();
+        initDispatchModal();
+        initDropzones();
+        clearCurrentSelection();
 
-        if (typeof initResponderSearch === "function") {
-            initResponderSearch();
-        }
+        await loadIncidentBoard();
+        await loadCalamityBoard();
 
-        initIncidentFilter();
-        toggleIncidentStatus(false);
-        updateActionButtons(null);
-        updateStatusStepper(null);
-
-        const activityFeed = document.getElementById("activityFeed");
-        if (activityFeed) {
-            activityFeed.innerHTML = "<p>Select an incident to view details.</p>";
-        }
-
-        await loadIncidents();
+        setBoardMode(BOARD_MODES.INCIDENTS);
     } catch (error) {
         console.error("Error initializing operations page:", error);
-        alert("Failed to load operations data.");
+        alert("Failed to load operations board.");
     }
-}
-
-function formatDateTime(dateTime) {
-    if (!dateTime) return "-";
-
-    const parsed = new Date(dateTime);
-    if (isNaN(parsed.getTime())) return dateTime;
-
-    return parsed.toLocaleString();
-}
-
-function renderDispatchIncidentSummary(incident) {
-    const summaryBox = document.getElementById("dispatchIncidentSummary");
-    const summaryContent = document.getElementById("dispatchIncidentSummaryContent");
-
-    if (!summaryBox || !summaryContent) return;
-
-    if (!incident) {
-        summaryBox.classList.add("hidden");
-        summaryContent.innerHTML = "";
-        return;
-    }
-
-    summaryContent.innerHTML = `
-        <div class="dispatch-summary-grid">
-            <div class="dispatch-summary-item">
-                <strong>Type</strong>
-                <span>${incident.type || "-"}</span>
-            </div>
-            <div class="dispatch-summary-item">
-                <strong>Barangay</strong>
-                <span>${incident.barangay || "-"}</span>
-            </div>
-            <div class="dispatch-summary-item">
-                <strong>Status</strong>
-                <span>${incident.status || "-"}</span>
-            </div>
-            <div class="dispatch-summary-item">
-                <strong>Reported At</strong>
-                <span>${formatDateTime(incident.reportedAt)}</span>
-            </div>
-        </div>
-    `;
-
-    summaryBox.classList.remove("hidden");
 }
 
 document.addEventListener("DOMContentLoaded", initOperationsPage);
-
-
-
-
-

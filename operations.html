@@ -9,297 +9,403 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <div class="navbar-user">
-                <div class="user-dropdown">
-                    <button class="user-btn" id="userDropdownBtn">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="user-name" id="userNameDisplay">User</span>
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-user">
+            <div class="user-dropdown">
+                <button class="user-btn" id="userDropdownBtn">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="user-name" id="userNameDisplay">User</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="#profile" class="dropdown-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#profile" class="dropdown-item">
+                        <i class="fas fa-bell"></i>
+                        <span>Notification</span>
+                    </a>
+                    <a href="#profile" class="dropdown-item">
+                        <i class="fas fa-message"></i>
+                        <span>Messages</span>
+                    </a>
+                    <a href="change-password.html" class="dropdown-item">
+                        <i class="fas fa-key"></i>
+                        <span>Change Password</span>
+                    </a>
+                    <hr class="dropdown-divider">
+                    <button class="dropdown-item logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
                     </button>
-                    <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="#profile" class="dropdown-item">
-                            <i class="fas fa-user"></i>
-                            <span>Profile</span>
-                        </a>
-                        <a href="#profile" class="dropdown-item">
-                            <i class="fas fa-bell"></i>
-                            <span>Notification</span>
-                        </a>
-                        <a href="#profile" class="dropdown-item">
-                            <i class="fas fa-message"></i>
-                            <span>Messages</span>
-                        </a>
-                        <a href="change-password.html" class="dropdown-item">
-                            <i class="fas fa-key"></i>
-                            <span>Change Password</span>
-                        </a>
-                        <hr class="dropdown-divider">
-                        <button class="dropdown-item logout-btn" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </button>
-                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="navbar-title">
-                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
-            </div>
+        <div class="navbar-title">
+            <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+        </div>
 
-            <div class="navbar-notifications">
-                <button class="notification-btn" id="notificationBtn" title="Notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                </button>
-                <button class="message-btn" id="messageBtn" title="Messages">
-                    <i class="fas fa-envelope"></i>
-                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
-                </button>
-            </div>
-
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
+        <div class="navbar-notifications">
+            <button class="notification-btn" id="notificationBtn" title="Notifications">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+            <button class="message-btn" id="messageBtn" title="Messages">
+                <i class="fas fa-envelope"></i>
+                <span class="message-badge" id="messageBadge" style="display: none;">0</span>
             </button>
         </div>
-    </nav>
 
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-header-actions">
-                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="sidebar-close" id="sidebarClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="menu-item">
-                <a href="index.html">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#weather">
-                    <i class="fas fa-cloud"></i>
-                    <span>Weather Forecast</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#alerts">
-                    <i class="fas fa-bell"></i>
-                    <span>Alerts & Warnings</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="disaster-management.html">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span>Disaster Management</span>
-                </a>
-            </li>
-            <li class="menu-item active">
-                <a href="operations.html">
-                    <i class="fas fa-tasks"></i>
-                    <span>Operations</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#resources">
-                    <i class="fas fa-cube"></i>
-                    <span>Resources</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#admin">
-                    <i class="fas fa-users-cog"></i>
-                    <span>Administration</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#reports">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Reports</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
-        </ul>
-    </aside>
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</nav>
 
-    <main class="main-content">
-        <div class="container">
-            <section class="dashboard-header">
-                <h2>Operations Management</h2>
-                <p class="subtitle">Real-time Incident Dispatch & Response Coordination</p>
-            </section>
-            
-            <div class="operations-page">
-                <div class="operations-top-row">
-                    <section class="incident-list-panel">
-                        <div class="incident-list-header">
-                            <h3>Active Incidents</h3>
-
-                            <input
-                                type="text"
-                                id="incidentFilter"
-                                class="incident-filter-input"
-                                placeholder="Filter by type, barangay, severity, or status..."
-                                autocomplete="off"
-                            >
-                        </div>
-
-                        <div id="incidentList"></div>
-                    </section>
-
-                    <section class="dispatch-panel">
-                        <h3>Dispatch Console</h3>
-
-                        <div class="dispatch-panel-content">
-                            <div id="dispatchIncidentSummary" class="dispatch-incident-summary hidden">
-                                <h4>Selected Incident</h4>
-                                <div id="dispatchIncidentSummaryContent"></div>
-                            </div>
-
-                            <form id="dispatchForm">
-                                <input type="hidden" id="selectedIncidentId">
-
-                                <label for="responderSearch">Responder Name</label>
-
-                                <div class="responder-autocomplete">
-                                    <input type="text" id="responderSearch" placeholder="Type responder name..." autocomplete="off" required>
-                                    <input type="hidden" id="responderId">
-                                    <div id="responderSuggestions" class="responder-suggestions"></div>
-                                </div>
-
-                                <button type="submit">Dispatch Responder</button>
-                            </form>
-
-                            <div class="incident-actions">
-                                <button id="arriveBtn" disabled>Mark Arrived</button>
-                                <button id="resolveBtn" disabled>Resolve Incident</button>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <section class="incident-details-panel full-width">
-                    <h3>Incident Details</h3>
-
-                    <div id="incidentStatusInline" class="incident-status-inline hidden">
-                        <h4>Incident Status</h4>
-                        <div id="statusStepper" class="status-stepper">
-                            <div class="step" data-step="ONGOING">Reported</div>
-                            <div class="step" data-step="IN_PROGRESS">Dispatched</div>
-                            <div class="step" data-step="ON_SITE">On-Site</div>
-                            <div class="step" data-step="RESOLVED">Resolved</div>
-                        </div>
-                    </div>
-
-                    <h4>Activity Feed</h4>
-                    <div id="activityFeed" class="activity-feed"></div>
-                </section>
-            </div>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <div class="footer-section footer-info">
-                    <h3>MDRRM System</h3>
-                    <p>Disaster Risk Reduction and Management Operations</p>
-                    <div class="footer-socials">
-                        <a href="#" class="social-link" title="Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="social-link" title="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="social-link" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="footer-section footer-links">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="#dashboard">Dashboard</a></li>
-                        <li><a href="#alerts">Alerts</a></li>
-                        <li><a href="#reports">Reports</a></li>
-                        <li><a href="#resources">Resources</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section footer-support">
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#help">Help Center</a></li>
-                        <li><a href="#contact">Contact Us</a></li>
-                        <li><a href="#privacy">Privacy Policy</a></li>
-                        <li><a href="#terms">Terms of Service</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section footer-contact">
-                    <h4>Contact</h4>
-                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
-                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div class="footer-copyright">
-                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
-                </div>
-                <div class="footer-bottom-links">
-                    <a href="#sitemap">Sitemap</a>
-                    <span class="divider">|</span>
-                    <a href="#accessibility">Accessibility</a>
-                    <span class="divider">|</span>
-                    <a href="#copyright">Copyright</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <div class="overlay" id="overlay"></div>
-
-    <div class="modal" id="logoutModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Confirm Logout</h3>
-                <button class="modal-close" id="logoutModalClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to logout?</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-cancel" id="logoutCancel">
-                    <i class="fas fa-times"></i>
-                    Cancel
-                </button>
-                <button class="btn btn-logout" id="logoutConfirm">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </button>
-            </div>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-actions">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 
-    <script src="/js/loginUserInfo.js"></script>
-    <script src="/js/navbar.js"></script>
-    <script src="js/operations.js"></script>
-    <script src="js/all-responders.js"></script>
+    <ul class="sidebar-menu">
+        <li class="menu-item">
+            <a href="index.html">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#weather">
+                <i class="fas fa-cloud"></i>
+                <span>Weather Forecast</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#alerts">
+                <i class="fas fa-bell"></i>
+                <span>Alerts & Warnings</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="disaster-management.html">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Disaster Management</span>
+            </a>
+        </li>
+        <li class="menu-item active">
+            <a href="operations.html">
+                <i class="fas fa-tasks"></i>
+                <span>Operations</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#resources">
+                <i class="fas fa-cube"></i>
+                <span>Resources</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#admin">
+                <i class="fas fa-users-cog"></i>
+                <span>Administration</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#reports">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="#settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<main class="main-content">
+    <div class="container">
+        <section class="dashboard-header">
+            <h2>Operations Management</h2>
+            <p class="subtitle">Drag-and-drop operations board for incidents and calamities</p>
+        </section>
+
+        <div class="operations-page">
+            <section class="operations-mode-panel">
+                <div class="board-mode-toggle" id="boardModeToggle">
+                    <button class="board-mode-btn active" id="incidentModeBtn" data-mode="INCIDENTS">Incidents</button>
+                    <button class="board-mode-btn" id="calamityModeBtn" data-mode="CALAMITIES">Calamities</button>
+                </div>
+            </section>
+
+            <!-- Incident Board -->
+            <section id="incidentBoardSection" class="operations-board-section">
+                <div class="board-columns">
+                    <div class="board-column" data-board-type="INCIDENT" data-status="ONGOING">
+                        <div class="board-column-header">
+                            <h3>Reported</h3>
+                            <span id="incidentCountOngoing" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="incidentOngoingColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="INCIDENT" data-status="IN_PROGRESS">
+                        <div class="board-column-header">
+                            <h3>Dispatched</h3>
+                            <span id="incidentCountInProgress" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="incidentInProgressColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="INCIDENT" data-status="ON_SITE">
+                        <div class="board-column-header">
+                            <h3>On-Site</h3>
+                            <span id="incidentCountOnSite" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="incidentOnSiteColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="INCIDENT" data-status="RESOLVED">
+                        <div class="board-column-header">
+                            <h3>Resolved</h3>
+                            <span id="incidentCountResolved" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="incidentResolvedColumn"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calamity Board -->
+            <section id="calamityBoardSection" class="operations-board-section hidden">
+                <div class="board-columns">
+                    <div class="board-column" data-board-type="CALAMITY" data-status="ACTIVE">
+                        <div class="board-column-header">
+                            <h3>Active</h3>
+                            <span id="calamityCountActive" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="calamityActiveColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="CALAMITY" data-status="MONITORING">
+                        <div class="board-column-header">
+                            <h3>Monitoring</h3>
+                            <span id="calamityCountMonitoring" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="calamityMonitoringColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="CALAMITY" data-status="RESOLVED">
+                        <div class="board-column-header">
+                            <h3>Resolved</h3>
+                            <span id="calamityCountResolved" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="calamityResolvedColumn"></div>
+                    </div>
+
+                    <div class="board-column" data-board-type="CALAMITY" data-status="ENDED">
+                        <div class="board-column-header">
+                            <h3>Ended</h3>
+                            <span id="calamityCountEnded" class="board-count">0</span>
+                        </div>
+                        <div class="board-dropzone" id="calamityEndedColumn"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Shared lower details panel -->
+            <section class="incident-details-panel full-width">
+                <h3>Operation Details</h3>
+
+                <div id="selectedEventSummary" class="dispatch-incident-summary hidden">
+                    <h4>Selected Operation</h4>
+                    <div id="selectedEventSummaryContent"></div>
+                </div>
+
+                <div class="operations-details-tabs">
+                    <button class="operations-tab-btn active" data-tab="timelineTab">Timeline</button>
+                    <button class="operations-tab-btn" data-tab="evacuationTab">Evacuation</button>
+                    <button class="operations-tab-btn" data-tab="reliefTab">Relief</button>
+                    <button class="operations-tab-btn" data-tab="inventoryTab">Inventory</button>
+                    <button class="operations-tab-btn" data-tab="budgetTab">Budget</button>
+                </div>
+
+                <div id="timelineTab" class="operations-tab-content">
+                    <h4>Activity Feed</h4>
+                    <div id="activityFeed" class="activity-feed">
+                        <p>Select an incident or calamity to view details.</p>
+                    </div>
+                </div>
+
+                <div id="evacuationTab" class="operations-tab-content hidden">
+                    <h4>Evacuation</h4>
+                    <div id="evacuationContent">
+                        <p>Select an operation to view evacuation details.</p>
+                    </div>
+                </div>
+
+                <div id="reliefTab" class="operations-tab-content hidden">
+                    <h4>Relief Distribution</h4>
+                    <div id="reliefContent">
+                        <p>Select an operation to view relief details.</p>
+                    </div>
+                </div>
+
+                <div id="inventoryTab" class="operations-tab-content hidden">
+                    <h4>Inventory Usage</h4>
+                    <div id="inventoryContent">
+                        <p>Select an operation to view inventory details.</p>
+                    </div>
+                </div>
+
+                <div id="budgetTab" class="operations-tab-content hidden">
+                    <h4>Budget Usage</h4>
+                    <div id="budgetContent">
+                        <p>Select an operation to view budget details.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-section footer-info">
+                <h3>MDRRM System</h3>
+                <p>Disaster Risk Reduction and Management Operations</p>
+                <div class="footer-socials">
+                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-section footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#alerts">Alerts</a></li>
+                    <li><a href="#reports">Reports</a></li>
+                    <li><a href="#resources">Resources</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section footer-support">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#help">Help Center</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                    <li><a href="#privacy">Privacy Policy</a></li>
+                    <li><a href="#terms">Terms of Service</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section footer-contact">
+                <h4>Contact</h4>
+                <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+            </div>
+            <div class="footer-bottom-links">
+                <a href="#sitemap">Sitemap</a>
+                <span class="divider">|</span>
+                <a href="#accessibility">Accessibility</a>
+                <span class="divider">|</span>
+                <a href="#copyright">Copyright</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="modal" id="logoutModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Confirm Logout</h3>
+            <button class="modal-close" id="logoutModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to logout?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" id="logoutCancel">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-logout" id="logoutConfirm">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Dispatch modal -->
+<div class="modal" id="dispatchModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Dispatch Responder</h3>
+            <button class="modal-close" id="dispatchModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div id="dispatchModalIncidentSummary" class="dispatch-incident-summary hidden">
+                <h4>Incident</h4>
+                <div id="dispatchModalIncidentSummaryContent"></div>
+            </div>
+
+            <form id="dispatchModalForm">
+                <input type="hidden" id="dispatchModalIncidentId">
+
+                <label for="dispatchResponderSearch">Responder Name</label>
+                <div class="responder-autocomplete">
+                    <input
+                        type="text"
+                        id="dispatchResponderSearch"
+                        placeholder="Type responder name..."
+                        autocomplete="off"
+                        required
+                    >
+                    <input type="hidden" id="dispatchResponderId">
+                    <div id="dispatchResponderSuggestions" class="responder-suggestions"></div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-cancel" id="dispatchModalCancel">Cancel</button>
+            <button class="btn btn-primary" id="dispatchModalConfirm">Dispatch</button>
+        </div>
+    </div>
+</div>
+
+<div class="overlay" id="modalOverlay"></div>
+
+<script src="/js/loginUserInfo.js"></script>
+<script src="/js/navbar.js"></script>
+<script src="js/operations.js"></script>
+<script src="js/operations-board.js"></script>
+<script src="js/operations-dispatch-modal.js"></script>
 </body>
 </html>
