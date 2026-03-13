@@ -8,16 +8,10 @@ const BOARD_MODES = {
 const INCIDENT_STATUS_ORDER = ["ONGOING", "IN_PROGRESS", "ON_SITE", "RESOLVED"];
 const CALAMITY_STATUS_ORDER = ["ACTIVE", "MONITORING", "RESOLVED", "ENDED"];
 
-/**
- * Adjust this if your responder search endpoint is different.
- * Expected response: [{ id, firstName, lastName, fullName, assignmentStatus }]
- */
-const RESPONDER_SEARCH_URL = `${API_BASE}/users/available-responders?keyword=`;
-
 let currentBoardMode = BOARD_MODES.INCIDENTS;
 
 let currentSelection = {
-    type: null, // INCIDENT | CALAMITY
+    type: null,
     data: null
 };
 
@@ -30,6 +24,9 @@ let dragContext = {
 };
 
 let pendingDispatchIncident = null;
+
+let incidentBoardData = [];
+let calamityBoardData = [];
 
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem("jwtToken");
@@ -107,19 +104,25 @@ function setBoardMode(mode) {
     const calamityModeBtn = document.getElementById("calamityModeBtn");
     const incidentBoardSection = document.getElementById("incidentBoardSection");
     const calamityBoardSection = document.getElementById("calamityBoardSection");
+    const incidentFilters = document.getElementById("incidentFilters");
+    const calamityFilters = document.getElementById("calamityFilters");
 
     incidentModeBtn?.classList.remove("active");
     calamityModeBtn?.classList.remove("active");
 
     incidentBoardSection?.classList.add("hidden");
     calamityBoardSection?.classList.add("hidden");
+    incidentFilters?.classList.add("hidden");
+    calamityFilters?.classList.add("hidden");
 
     if (mode === BOARD_MODES.INCIDENTS) {
         incidentModeBtn?.classList.add("active");
         incidentBoardSection?.classList.remove("hidden");
+        incidentFilters?.classList.remove("hidden");
     } else if (mode === BOARD_MODES.CALAMITIES) {
         calamityModeBtn?.classList.add("active");
         calamityBoardSection?.classList.remove("hidden");
+        calamityFilters?.classList.remove("hidden");
     }
 }
 
@@ -171,6 +174,10 @@ function renderSelectedEventSummary(type, data) {
                     <span>${data.severity || "-"}</span>
                 </div>
             </div>
+            <div class="dispatch-description-block">
+                <strong>Description</strong>
+                <p>${data.description || "-"}</p>
+            </div>
         `;
     } else if (type === "CALAMITY") {
         summaryContent.innerHTML = `
@@ -195,6 +202,10 @@ function renderSelectedEventSummary(type, data) {
                     <strong>Severity</strong>
                     <span>${data.severity || "-"}</span>
                 </div>
+            </div>
+            <div class="dispatch-description-block">
+                <strong>Description</strong>
+                <p>${data.description || "-"}</p>
             </div>
         `;
     }
@@ -312,6 +323,26 @@ function initOperationsTabs() {
     });
 }
 
+function initBoardFilters() {
+    const incidentSearchInput = document.getElementById("incidentSearchInput");
+    const incidentSeverityFilter = document.getElementById("incidentSeverityFilter");
+    const incidentBarangayFilter = document.getElementById("incidentBarangayFilter");
+    const incidentResponderFilter = document.getElementById("incidentResponderFilter");
+
+    const calamitySearchInput = document.getElementById("calamitySearchInput");
+    const calamitySeverityFilter = document.getElementById("calamitySeverityFilter");
+    const calamityAreaTypeFilter = document.getElementById("calamityAreaTypeFilter");
+
+    [incidentSearchInput, incidentSeverityFilter, incidentBarangayFilter, incidentResponderFilter]
+        .forEach(el => el?.addEventListener("input", applyIncidentFilters));
+    incidentSeverityFilter?.addEventListener("change", applyIncidentFilters);
+
+    [calamitySearchInput, calamitySeverityFilter, calamityAreaTypeFilter]
+        .forEach(el => el?.addEventListener("input", applyCalamityFilters));
+    calamitySeverityFilter?.addEventListener("change", applyCalamityFilters);
+    calamityAreaTypeFilter?.addEventListener("change", applyCalamityFilters);
+}
+
 async function initOperationsPage() {
     if (!localStorage.getItem("jwtToken")) {
         window.location.href = "login.html";
@@ -321,7 +352,10 @@ async function initOperationsPage() {
     try {
         initBoardModeToggle();
         initOperationsTabs();
+        initBoardFilters();
+        initArchiveControls();
         initDispatchModal();
+        initStatusUpdateModal();
         initDropzones();
         clearCurrentSelection();
 
@@ -332,6 +366,97 @@ async function initOperationsPage() {
     } catch (error) {
         console.error("Error initializing operations page:", error);
         alert("Failed to load operations board.");
+    }
+}
+
+
+// additional helpers
+function getCurrentUserRoles() {
+    try {
+        const raw = localStorage.getItem("userAuthorities") || sessionStorage.getItem("userAuthorities");
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+            return parsed.map(role => String(role).toUpperCase());
+        }
+
+        return [];
+    } catch {
+        return [];
+    }
+}
+
+function canManageHiddenStorage() {
+    const roles = getCurrentUserRoles();
+    return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+}
+
+function initHiddenCardsControls() {
+    const restoreBtn = document.getElementById("restoreHiddenCardsBtn");
+    const clearBtn = document.getElementById("clearHiddenCardsBtn");
+
+    if (canManageHiddenStorage()) {
+        clearBtn?.classList.remove("hidden");
+    }
+
+    restoreBtn?.addEventListener("click", async () => {
+        localStorage.removeItem("operationsHiddenBoardCards");
+        await loadIncidentBoard();
+        await loadCalamityBoard();
+    });
+
+    clearBtn?.addEventListener("click", async () => {
+        localStorage.removeItem("operationsHiddenBoardCards");
+        localStorage.removeItem("operationsBoardOrder");
+        await loadIncidentBoard();
+        await loadCalamityBoard();
+    });
+}
+
+function showToast(message, type = "info") {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 2800);
+}
+
+function showToast(message, type = "info") {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 2800);
+}
+
+function canManageArchiveClear() {
+    const roles = getCurrentUserRoles();
+    return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+}
+
+function initArchiveControls() {
+    if (canManageArchiveClear()) {
+        document.getElementById("incidentArchiveClearBtn")?.classList.remove("hidden");
+        document.getElementById("calamityArchiveClearBtn")?.classList.remove("hidden");
+    }
+
+    if (typeof initArchiveMenus === "function") {
+        initArchiveMenus();
     }
 }
 

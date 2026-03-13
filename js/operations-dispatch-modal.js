@@ -1,3 +1,5 @@
+const RESPONDER_API = "http://localhost:8080/api/responders";
+
 function renderDispatchModalIncidentSummary(incident) {
     const summaryBox = document.getElementById("dispatchModalIncidentSummary");
     const summaryContent = document.getElementById("dispatchModalIncidentSummaryContent");
@@ -39,26 +41,57 @@ function clearDispatchModalState() {
     const responderSearch = document.getElementById("dispatchResponderSearch");
     const responderId = document.getElementById("dispatchResponderId");
     const suggestions = document.getElementById("dispatchResponderSuggestions");
+    const description = document.getElementById("dispatchDescription");
+    const title = document.querySelector("#dispatchModal .modal-header h3");
+    const confirmBtn = document.getElementById("dispatchModalConfirm");
 
     if (incidentId) incidentId.value = "";
     if (responderSearch) responderSearch.value = "";
     if (responderId) responderId.value = "";
     if (suggestions) suggestions.innerHTML = "";
+    if (description) description.value = "";
+    if (title) title.textContent = "Dispatch Responder";
+    if (confirmBtn) confirmBtn.textContent = "Dispatch";
 
     renderDispatchModalIncidentSummary(null);
 }
 
 function openDispatchModal(incident) {
-    pendingDispatchIncident = incident;
+    pendingDispatchIncident = {
+        ...incident,
+        modalMode: incident.modalMode || "DISPATCH"
+    };
 
     const modal = document.getElementById("dispatchModal");
     const modalOverlay = document.getElementById("modalOverlay");
     const incidentId = document.getElementById("dispatchModalIncidentId");
+    const description = document.getElementById("dispatchDescription");
+    const responderSearch = document.getElementById("dispatchResponderSearch");
+    const responderId = document.getElementById("dispatchResponderId");
+    const title = document.querySelector("#dispatchModal .modal-header h3");
+    const confirmBtn = document.getElementById("dispatchModalConfirm");
 
     clearDispatchModalState();
 
     if (incidentId) incidentId.value = incident.id;
     renderDispatchModalIncidentSummary(incident);
+
+    if (description) {
+        description.value = (incident?.description || "").trim();
+    }
+
+    if (responderSearch) {
+        responderSearch.value = incident.assignedResponderName || "";
+    }
+
+    if (responderId) {
+        responderId.value = incident.assignedResponderId || "";
+    }
+
+    if (pendingDispatchIncident.modalMode === "EDIT_ONLY") {
+        if (title) title.textContent = "Incident Details";
+        if (confirmBtn) confirmBtn.textContent = "Save Changes";
+    }
 
     modal?.classList.add("active");
     modalOverlay?.classList.add("active");
@@ -75,57 +108,49 @@ function closeDispatchModal() {
     clearDispatchModalState();
 }
 
-function normalizeResponderLabel(responder) {
-    if (responder.fullName) return responder.fullName;
-
-    const firstName = responder.firstName || "";
-    const lastName = responder.lastName || "";
-    const full = `${firstName} ${lastName}`.trim();
-
-    return full || responder.name || `Responder #${responder.id}`;
-}
-
-async function searchAvailableResponders(keyword) {
-    if (!keyword || !keyword.trim()) return [];
-
+async function searchAvailableResponders(keyword = "") {
     try {
-        const response = await apiRequest(`${RESPONDER_SEARCH_URL}${encodeURIComponent(keyword.trim())}`);
-        if (Array.isArray(response)) return response;
-        if (Array.isArray(response?.data)) return response.data;
-        return [];
-    } catch (error) {
-        console.error("Error searching responders:", error);
-        return [];
-    }
-}
+        const responders = await apiRequest(
+            `${RESPONDER_API}/available?keyword=${encodeURIComponent(keyword)}`
+        );
 
-function renderResponderSuggestions(items) {
-    const suggestions = document.getElementById("dispatchResponderSuggestions");
-    const responderSearch = document.getElementById("dispatchResponderSearch");
-    const responderId = document.getElementById("dispatchResponderId");
+        const suggestions = document.getElementById("dispatchResponderSuggestions");
+        if (!suggestions) return;
 
-    if (!suggestions) return;
+        suggestions.innerHTML = "";
 
-    suggestions.innerHTML = "";
+        if (!responders || responders.length === 0) {
+            suggestions.innerHTML = `
+                <div class="suggestion-item empty">No available responders found.</div>
+            `;
+            return;
+        }
 
-    if (!items || items.length === 0) {
-        suggestions.innerHTML = `<div class="suggestion-item empty">No responders found.</div>`;
-        return;
-    }
+        responders.forEach(responder => {
+            const item = document.createElement("div");
+            item.className = "suggestion-item";
+            item.textContent = responder.fullName || `${responder.firstName} ${responder.lastName}`;
 
-    items.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        div.textContent = normalizeResponderLabel(item);
+            item.addEventListener("click", () => {
+                const responderSearch = document.getElementById("dispatchResponderSearch");
+                const responderId = document.getElementById("dispatchResponderId");
 
-        div.addEventListener("click", () => {
-            if (responderSearch) responderSearch.value = normalizeResponderLabel(item);
-            if (responderId) responderId.value = item.id;
-            suggestions.innerHTML = "";
+                if (responderSearch) {
+                    responderSearch.value = responder.fullName || `${responder.firstName} ${responder.lastName}`;
+                }
+
+                if (responderId) {
+                    responderId.value = responder.id;
+                }
+
+                suggestions.innerHTML = "";
+            });
+
+            suggestions.appendChild(item);
         });
-
-        suggestions.appendChild(div);
-    });
+    } catch (error) {
+        console.error("Error loading responders:", error);
+    }
 }
 
 function initDispatchModalResponderSearch() {
@@ -135,36 +160,54 @@ function initDispatchModalResponderSearch() {
 
     if (!responderSearch || !responderId || !suggestions) return;
 
-    let debounceTimer = null;
+    responderSearch.addEventListener("focus", async () => {
+        await searchAvailableResponders(responderSearch.value.trim());
+    });
 
-    responderSearch.addEventListener("input", () => {
+    responderSearch.addEventListener("input", async () => {
         responderId.value = "";
-
-        const keyword = responderSearch.value.trim();
-        clearTimeout(debounceTimer);
-
-        if (!keyword) {
-            suggestions.innerHTML = "";
-            return;
-        }
-
-        debounceTimer = setTimeout(async () => {
-            const responders = await searchAvailableResponders(keyword);
-            renderResponderSuggestions(responders);
-        }, 250);
+        await searchAvailableResponders(responderSearch.value.trim());
     });
 
     document.addEventListener("click", (event) => {
-        const wrapper = responderSearch.closest(".responder-autocomplete");
-        if (!wrapper?.contains(event.target)) {
+        const clickedInside =
+            responderSearch.contains(event.target) ||
+            suggestions.contains(event.target);
+
+        if (!clickedInside) {
             suggestions.innerHTML = "";
         }
     });
 }
 
+async function updateIncidentOnly(incident, description, newResponderId, newResponderName) {
+    await apiRequest(`${API_BASE}/incidents/${incident.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+            type: incident.type,
+            barangayId: incident.barangayId,
+            assignedResponderId: newResponderId || null,
+            severity: incident.severity,
+            description: description
+        })
+    });
+
+    if (currentSelection.type === "INCIDENT" && currentSelection.data?.id === incident.id) {
+        currentSelection.data = {
+            ...currentSelection.data,
+            description: description,
+            assignedResponderId: newResponderId || null,
+            assignedResponderName: newResponderName || currentSelection.data.assignedResponderName || "-"
+        };
+        renderSelectedEventSummary("INCIDENT", currentSelection.data);
+        await loadIncidentActivityFeed(incident.id);
+    }
+}
+
 async function confirmDispatchFromModal() {
     const responderId = document.getElementById("dispatchResponderId")?.value;
     const responderSearch = document.getElementById("dispatchResponderSearch")?.value;
+    const description = (document.getElementById("dispatchDescription")?.value || "").trim();
     const incident = pendingDispatchIncident;
 
     if (!incident) {
@@ -178,6 +221,30 @@ async function confirmDispatchFromModal() {
     }
 
     try {
+        if (incident.modalMode === "EDIT_ONLY") {
+            await updateIncidentOnly(
+                incident,
+                description,
+                Number(responderId),
+                responderSearch
+            );
+
+            closeDispatchModal();
+            await loadIncidentBoard();
+            return;
+        }
+
+        await apiRequest(`${API_BASE}/incidents/${incident.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+                type: incident.type,
+                barangayId: incident.barangayId,
+                assignedResponderId: incident.assignedResponderId || null,
+                severity: incident.severity,
+                description: description
+            })
+        });
+
         await apiRequest(`${API_BASE}/incidents/${incident.id}/dispatch`, {
             method: "PUT",
             body: JSON.stringify({
@@ -189,14 +256,21 @@ async function confirmDispatchFromModal() {
         await loadIncidentBoard();
 
         if (currentSelection.type === "INCIDENT" && currentSelection.data?.id === incident.id) {
-            const updated = { ...currentSelection.data, status: "IN_PROGRESS" };
+            const updated = {
+                ...currentSelection.data,
+                status: "IN_PROGRESS",
+                description: description || currentSelection.data.description || "",
+                assignedResponderId: Number(responderId),
+                assignedResponderName: responderSearch
+            };
+
             currentSelection.data = updated;
             renderSelectedEventSummary("INCIDENT", updated);
             await loadIncidentActivityFeed(updated.id);
         }
     } catch (error) {
         console.error("Error dispatching responder:", error);
-        alert(error.message || "Failed to dispatch responder.");
+        alert(error.message || "Failed to save incident changes.");
     }
 }
 
@@ -219,7 +293,12 @@ function initDispatchModal() {
         await confirmDispatchFromModal();
     });
 
-    modalOverlay?.addEventListener("click", closeDispatchModal);
+    modalOverlay?.addEventListener("click", () => {
+        const modal = document.getElementById("dispatchModal");
+        if (modal?.classList.contains("active")) {
+            closeDispatchModal();
+        }
+    });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {

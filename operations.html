@@ -142,14 +142,44 @@
         </section>
 
         <div class="operations-page">
-            <section class="operations-mode-panel">
-                <div class="board-mode-toggle" id="boardModeToggle">
-                    <button class="board-mode-btn active" id="incidentModeBtn" data-mode="INCIDENTS">Incidents</button>
-                    <button class="board-mode-btn" id="calamityModeBtn" data-mode="CALAMITIES">Calamities</button>
+            <section class="operations-toolbar-panel">
+                <div class="operations-toolbar">
+                    <div class="board-mode-toggle" id="boardModeToggle">
+                        <button class="board-mode-btn active" id="incidentModeBtn" data-mode="INCIDENTS">Incidents</button>
+                        <button class="board-mode-btn" id="calamityModeBtn" data-mode="CALAMITIES">Calamities</button>
+                    </div>
+
+                    <div id="incidentFilters" class="board-filters-inline">
+                        <input type="text" id="incidentSearchInput" placeholder="Search incidents...">
+                        <select id="incidentSeverityFilter">
+                            <option value="">All Severities</option>
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                        </select>
+                        <input type="text" id="incidentBarangayFilter" placeholder="Barangay...">
+                        <input type="text" id="incidentResponderFilter" placeholder="Responder...">
+                    </div>
+
+                    <div id="calamityFilters" class="board-filters-inline hidden">
+                        <input type="text" id="calamitySearchInput" placeholder="Search calamities...">
+                        <select id="calamitySeverityFilter">
+                            <option value="">All Severities</option>
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                        </select>
+                        <select id="calamityAreaTypeFilter">
+                            <option value="">All Areas</option>
+                            <option value="BARANGAY">Barangay</option>
+                            <option value="MULTI_BARANGAY">Multi-Barangay</option>
+                            <option value="MUNICIPALITY">Municipality</option>
+                        </select>
+                    </div>
+
                 </div>
             </section>
 
-            <!-- Incident Board -->
             <section id="incidentBoardSection" class="operations-board-section">
                 <div class="board-columns">
                     <div class="board-column" data-board-type="INCIDENT" data-status="ONGOING">
@@ -176,17 +206,30 @@
                         <div class="board-dropzone" id="incidentOnSiteColumn"></div>
                     </div>
 
+                    <!-- Incident Resolved column -->
                     <div class="board-column" data-board-type="INCIDENT" data-status="RESOLVED">
-                        <div class="board-column-header">
-                            <h3>Resolved</h3>
-                            <span id="incidentCountResolved" class="board-count">0</span>
+                        <div class="board-column-header board-column-header-with-actions">
+                            <div class="board-column-title-group">
+                                <h3>Resolved</h3>
+                                <span id="incidentCountResolved" class="board-count">0</span>
+                            </div>
+
+                            <div class="archive-menu-wrapper">
+                                <button type="button" class="archive-menu-btn" id="incidentArchiveMenuBtn" aria-label="Incident archive options">
+                                    <i class="fas fa-box-archive"></i>
+                                </button>
+                                <div class="archive-menu hidden" id="incidentArchiveMenu">
+                                    <button type="button" class="archive-menu-item" data-archive-action="show" data-archive-type="INCIDENT">Show archived</button>
+                                    <button type="button" class="archive-menu-item" data-archive-action="restore" data-archive-type="INCIDENT">Restore archived</button>
+                                    <button type="button" class="archive-menu-item hidden" id="incidentArchiveClearBtn" data-archive-action="clear" data-archive-type="INCIDENT">Clear archive</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="board-dropzone" id="incidentResolvedColumn"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Calamity Board -->
             <section id="calamityBoardSection" class="operations-board-section hidden">
                 <div class="board-columns">
                     <div class="board-column" data-board-type="CALAMITY" data-status="ACTIVE">
@@ -213,17 +256,30 @@
                         <div class="board-dropzone" id="calamityResolvedColumn"></div>
                     </div>
 
+                    <!-- Calamity Ended column -->
                     <div class="board-column" data-board-type="CALAMITY" data-status="ENDED">
-                        <div class="board-column-header">
-                            <h3>Ended</h3>
-                            <span id="calamityCountEnded" class="board-count">0</span>
+                        <div class="board-column-header board-column-header-with-actions">
+                            <div class="board-column-title-group">
+                                <h3>Ended</h3>
+                                <span id="calamityCountEnded" class="board-count">0</span>
+                            </div>
+
+                            <div class="archive-menu-wrapper">
+                                <button type="button" class="archive-menu-btn" id="calamityArchiveMenuBtn" aria-label="Calamity archive options">
+                                    <i class="fas fa-box-archive"></i>
+                                </button>
+                                <div class="archive-menu hidden" id="calamityArchiveMenu">
+                                    <button type="button" class="archive-menu-item" data-archive-action="show" data-archive-type="CALAMITY">Show archived</button>
+                                    <button type="button" class="archive-menu-item" data-archive-action="restore" data-archive-type="CALAMITY">Restore archived</button>
+                                    <button type="button" class="archive-menu-item hidden" id="calamityArchiveClearBtn" data-archive-action="clear" data-archive-type="CALAMITY">Clear archive</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="board-dropzone" id="calamityEndedColumn"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Shared lower details panel -->
             <section class="incident-details-panel full-width">
                 <h3>Operation Details</h3>
 
@@ -336,6 +392,7 @@
 </footer>
 
 <div class="overlay" id="overlay"></div>
+<div class="overlay" id="modalOverlay"></div>
 
 <div class="modal" id="logoutModal">
     <div class="modal-content">
@@ -359,7 +416,6 @@
     </div>
 </div>
 
-<!-- Dispatch modal -->
 <div class="modal" id="dispatchModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -390,6 +446,13 @@
                     <input type="hidden" id="dispatchResponderId">
                     <div id="dispatchResponderSuggestions" class="responder-suggestions"></div>
                 </div>
+
+                <label for="dispatchDescription">Operational Update / Description</label>
+                <textarea
+                    id="dispatchDescription"
+                    rows="4"
+                    placeholder="Describe the current situation or dispatch note..."
+                ></textarea>
             </form>
         </div>
 
@@ -400,12 +463,61 @@
     </div>
 </div>
 
-<div class="overlay" id="modalOverlay"></div>
+<div class="modal" id="statusUpdateModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="statusUpdateModalTitle">Update Operation Status</h3>
+            <button class="modal-close" id="statusUpdateModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div id="statusUpdateSummary" class="dispatch-incident-summary hidden">
+                <h4>Selected Operation</h4>
+                <div id="statusUpdateSummaryContent"></div>
+            </div>
+
+            <form id="statusUpdateForm">
+                <label for="statusUpdateDescription">Operational Update / Description</label>
+                <textarea
+                    id="statusUpdateDescription"
+                    rows="5"
+                    placeholder="Describe the current situation or operational update..."
+                ></textarea>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-cancel" id="statusUpdateCancel">Cancel</button>
+            <button class="btn btn-primary" id="statusUpdateConfirm">Save and Continue</button>
+        </div>
+    </div>
+</div>
+
+<div class="archive-drawer-overlay" id="archiveDrawerOverlay"></div>
+
+<div class="archive-drawer" id="archiveDrawer">
+    <div class="archive-drawer-header">
+        <h3 id="archiveDrawerTitle">Archived Cards</h3>
+        <button type="button" class="archive-drawer-close" id="archiveDrawerClose">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="archive-drawer-body" id="archiveDrawerBody">
+        <p>No archived cards.</p>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="/js/loginUserInfo.js"></script>
 <script src="/js/navbar.js"></script>
 <script src="js/operations.js"></script>
 <script src="js/operations-board.js"></script>
 <script src="js/operations-dispatch-modal.js"></script>
+<script src="js/operations-status-modal.js"></script>
+<script src="js/operations-card-menu.js"></script>
 </body>
 </html>
