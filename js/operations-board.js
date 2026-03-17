@@ -1,398 +1,239 @@
-function getIncidentColumnId(status) {
-    const map = {
-        ONGOING: "incidentOngoingColumn",
-        IN_PROGRESS: "incidentInProgressColumn",
-        ON_SITE: "incidentOnSiteColumn",
-        RESOLVED: "incidentResolvedColumn"
-    };
-    return map[status];
+const INCIDENT_STATUSES = ["ONGOING", "IN_PROGRESS", "ON_SITE", "RESOLVED"];
+const CALAMITY_STATUSES = ["ACTIVE", "MONITORING", "RESOLVED", "ENDED"];
+
+const BOARD_MODES = {
+    INCIDENTS: "INCIDENTS",
+    CALAMITIES: "CALAMITIES"
+};
+
+let currentBoardMode = BOARD_MODES.INCIDENTS;
+
+let incidentBoardData = [];
+let calamityBoardData = [];
+
+let currentSelection = {
+    type: null,
+    data: null
+};
+
+let draggedCardContext = null;
+
+/* ===================================
+   Board Mode / Sections
+   =================================== */
+
+function initBoardModeToggle() {
+    const incidentBtn = document.getElementById("incidentModeBtn");
+    const calamityBtn = document.getElementById("calamityModeBtn");
+
+    incidentBtn?.addEventListener("click", () => setBoardMode(BOARD_MODES.INCIDENTS));
+    calamityBtn?.addEventListener("click", () => setBoardMode(BOARD_MODES.CALAMITIES));
+
+    mountBoardModeToggle();
 }
 
-function getCalamityColumnId(status) {
-    const map = {
-        ACTIVE: "calamityActiveColumn",
-        MONITORING: "calamityMonitoringColumn",
-        RESOLVED: "calamityResolvedColumn",
-        ENDED: "calamityEndedColumn"
-    };
-    return map[status];
-}
+function mountBoardModeToggle() {
+    const toggle = document.getElementById("boardModeToggle");
+    if (!toggle) return;
 
-function getHiddenBoardCards() {
-    try {
-        return JSON.parse(localStorage.getItem("operationsHiddenBoardCards") || "{}");
-    } catch {
-        return {};
-    }
-}
+    ["incidentBoardSection", "calamityBoardSection"].forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
 
-function saveHiddenBoardCards(data) {
-    localStorage.setItem("operationsHiddenBoardCards", JSON.stringify(data));
-}
-
-function getBoardCardKey(type, id) {
-    return `${type}:${id}`;
-}
-
-function isBoardCardHidden(type, id) {
-    const hidden = getHiddenBoardCards();
-    return !!hidden[getBoardCardKey(type, id)];
-}
-
-function hideBoardCard(type, id) {
-    const hidden = getHiddenBoardCards();
-    hidden[getBoardCardKey(type, id)] = true;
-    saveHiddenBoardCards(hidden);
-}
-
-function getHiddenCardsByType(type) {
-    const hidden = getHiddenBoardCards();
-    const items = type === "INCIDENT" ? incidentBoardData : calamityBoardData;
-
-    return items.filter(item => hidden[getBoardCardKey(type, item.id)]);
-}
-
-function restoreHiddenCardsByType(type) {
-    const hidden = getHiddenBoardCards();
-    let changed = false;
-
-    Object.keys(hidden).forEach(key => {
-        if (key.startsWith(`${type}:`)) {
-            delete hidden[key];
-            changed = true;
+        let topbar = section.querySelector(".board-section-topbar");
+        if (!topbar) {
+            topbar = document.createElement("div");
+            topbar.className = "board-section-topbar";
+            section.prepend(topbar);
         }
     });
 
-    if (changed) {
-        saveHiddenBoardCards(hidden);
-    }
-
-    return changed;
+    const activeSectionId = currentBoardMode === BOARD_MODES.CALAMITIES ? "calamityBoardSection" : "incidentBoardSection";
+    document.getElementById(activeSectionId)?.querySelector(".board-section-topbar")?.appendChild(toggle);
 }
 
-function clearArchiveByType(type) {
-    const hidden = getHiddenBoardCards();
-    const orderState = getBoardOrderState();
+function setBoardMode(mode) {
+    currentBoardMode = mode;
 
-    let changed = false;
+    document.getElementById("incidentModeBtn")?.classList.toggle("active", mode === BOARD_MODES.INCIDENTS);
+    document.getElementById("calamityModeBtn")?.classList.toggle("active", mode === BOARD_MODES.CALAMITIES);
 
-    Object.keys(hidden).forEach(key => {
-        if (key.startsWith(`${type}:`)) {
-            delete hidden[key];
-            changed = true;
-        }
-    });
+    document.getElementById("incidentBoardSection")?.classList.toggle("hidden", mode !== BOARD_MODES.INCIDENTS);
+    document.getElementById("calamityBoardSection")?.classList.toggle("hidden", mode !== BOARD_MODES.CALAMITIES);
 
-    Object.keys(orderState).forEach(key => {
-        if (key.startsWith(`${type}:`)) {
-            delete orderState[key];
-            changed = true;
-        }
-    });
+    document.getElementById("incidentFilters")?.classList.toggle("hidden", mode !== BOARD_MODES.INCIDENTS);
+    document.getElementById("calamityFilters")?.classList.toggle("hidden", mode !== BOARD_MODES.CALAMITIES);
 
-    if (changed) {
-        saveHiddenBoardCards(hidden);
-        saveBoardOrderState(orderState);
-    }
-
-    return changed;
+    mountBoardModeToggle();
 }
 
-function getBoardOrderState() {
-    try {
-        return JSON.parse(localStorage.getItem("operationsBoardOrder") || "{}");
-    } catch {
-        return {};
-    }
-}
-
-function saveBoardOrderState(data) {
-    localStorage.setItem("operationsBoardOrder", JSON.stringify(data));
-}
-
-function getOrderKey(type, status) {
-    return `${type}:${status}`;
-}
-
-function applyColumnOrder(type, status, items) {
-    const orderState = getBoardOrderState();
-    const orderKey = getOrderKey(type, status);
-    const storedOrder = orderState[orderKey] || [];
-
-    const itemMap = new Map(items.map(item => [String(item.id), item]));
-
-    const ordered = [];
-
-    storedOrder.forEach(id => {
-        const found = itemMap.get(String(id));
-        if (found) {
-            ordered.push(found);
-            itemMap.delete(String(id));
-        }
-    });
-
-    const remaining = Array.from(itemMap.values());
-    return [...ordered, ...remaining];
-}
-
-function moveBoardItem(type, status, id, mode) {
-    const items = type === "INCIDENT" ? incidentBoardData : calamityBoardData;
-    const sameColumnIds = items
-        .filter(item => !isBoardCardHidden(type, item.id))
-        .filter(item => String((item.status || "").toUpperCase()) === String(status))
-        .map(item => String(item.id));
-
-    const orderState = getBoardOrderState();
-    const orderKey = getOrderKey(type, status);
-
-    let current = orderState[orderKey] || sameColumnIds.slice();
-
-    sameColumnIds.forEach(itemId => {
-        if (!current.includes(itemId)) {
-            current.push(itemId);
-        }
-    });
-
-    current = current.filter(itemId => sameColumnIds.includes(itemId));
-
-    const targetId = String(id);
-    const currentIndex = current.indexOf(targetId);
-    if (currentIndex === -1) return;
-
-    if (mode === "UP" && currentIndex > 0) {
-        [current[currentIndex - 1], current[currentIndex]] = [current[currentIndex], current[currentIndex - 1]];
-    }
-
-    if (mode === "TOP" && currentIndex > 0) {
-        current.splice(currentIndex, 1);
-        current.unshift(targetId);
-    }
-
-    orderState[orderKey] = current;
-    saveBoardOrderState(orderState);
-
-    if (type === "INCIDENT") {
-        applyIncidentFilters();
-    } else {
-        applyCalamityFilters();
-    }
-}
-
-function updateIncidentCounts(grouped) {
-    const ongoing = grouped.ONGOING?.length || 0;
-    const inProgress = grouped.IN_PROGRESS?.length || 0;
-    const onSite = grouped.ON_SITE?.length || 0;
-    const resolved = grouped.RESOLVED?.length || 0;
-
-    const setText = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-    };
-
-    setText("incidentCountOngoing", ongoing);
-    setText("incidentCountInProgress", inProgress);
-    setText("incidentCountOnSite", onSite);
-    setText("incidentCountResolved", resolved);
-}
-
-function updateCalamityCounts(grouped) {
-    const active = grouped.ACTIVE?.length || 0;
-    const monitoring = grouped.MONITORING?.length || 0;
-    const resolved = grouped.RESOLVED?.length || 0;
-    const ended = grouped.ENDED?.length || 0;
-
-    const setText = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-    };
-
-    setText("calamityCountActive", active);
-    setText("calamityCountMonitoring", monitoring);
-    setText("calamityCountResolved", resolved);
-    setText("calamityCountEnded", ended);
-}
-
-function clearBoardColumns(columnIds) {
-    columnIds.forEach(id => {
-        const column = document.getElementById(id);
-        if (column) column.innerHTML = "";
-    });
-}
-
-function groupIncidentsByStatus(items) {
-    const grouped = {
-        ONGOING: [],
-        IN_PROGRESS: [],
-        ON_SITE: [],
-        RESOLVED: []
-    };
-
-    items.forEach(incident => {
-        if (isBoardCardHidden("INCIDENT", incident.id)) return;
-
-        const status = (incident.status || "ONGOING").toUpperCase();
-        if (!grouped[status]) grouped[status] = [];
-        grouped[status].push(incident);
-    });
-
-    Object.keys(grouped).forEach(status => {
-        grouped[status] = applyColumnOrder("INCIDENT", status, grouped[status]);
-    });
-
-    return grouped;
-}
-
-function groupCalamitiesByStatus(items) {
-    const grouped = {
-        ACTIVE: [],
-        MONITORING: [],
-        RESOLVED: [],
-        ENDED: []
-    };
-
-    items.forEach(calamity => {
-        if (isBoardCardHidden("CALAMITY", calamity.id)) return;
-
-        const status = (calamity.status || "ACTIVE").toUpperCase();
-        if (!grouped[status]) grouped[status] = [];
-        grouped[status].push(calamity);
-    });
-
-    Object.keys(grouped).forEach(status => {
-        grouped[status] = applyColumnOrder("CALAMITY", status, grouped[status]);
-    });
-
-    return grouped;
-}
-
-function renderIncidentBoard(items) {
-    const grouped = groupIncidentsByStatus(items);
-
-    clearBoardColumns([
-        "incidentOngoingColumn",
-        "incidentInProgressColumn",
-        "incidentOnSiteColumn",
-        "incidentResolvedColumn"
-    ]);
-
-    Object.entries(grouped).forEach(([status, incidents]) => {
-        const columnId = getIncidentColumnId(status);
-        const container = document.getElementById(columnId);
-        if (!container) return;
-
-        incidents.forEach(incident => {
-            const card = createIncidentCard(incident);
-            container.appendChild(card);
-        });
-    });
-
-    updateIncidentCounts(grouped);
-
-    if (currentSelection.type === "INCIDENT" && currentSelection.data?.id) {
-        highlightSelectedCard("INCIDENT", currentSelection.data.id);
-    }
-}
-
-function renderCalamityBoard(items) {
-    const grouped = groupCalamitiesByStatus(items);
-
-    clearBoardColumns([
-        "calamityActiveColumn",
-        "calamityMonitoringColumn",
-        "calamityResolvedColumn",
-        "calamityEndedColumn"
-    ]);
-
-    Object.entries(grouped).forEach(([status, calamities]) => {
-        const columnId = getCalamityColumnId(status);
-        const container = document.getElementById(columnId);
-        if (!container) return;
-
-        calamities.forEach(calamity => {
-            const card = createCalamityCard(calamity);
-            container.appendChild(card);
-        });
-    });
-
-    updateCalamityCounts(grouped);
-
-    if (currentSelection.type === "CALAMITY" && currentSelection.data?.id) {
-        highlightSelectedCard("CALAMITY", currentSelection.data.id);
-    }
-}
+/* ===================================
+   Data Load
+   =================================== */
 
 async function loadIncidentBoard() {
     try {
-        incidentBoardData = await apiRequest(`${API_BASE}/incidents`);
+        const incidents = await apiRequest(`${API_BASE}/incidents`);
+        incidentBoardData = Array.isArray(incidents) ? incidents : [];
         applyIncidentFilters();
     } catch (error) {
         console.error("Error loading incident board:", error);
+        showToastSafe("Failed to load incidents.", "error");
     }
 }
 
 async function loadCalamityBoard() {
     try {
-        calamityBoardData = await apiRequest(`${API_BASE}/calamities`);
+        const calamities = await apiRequest(`${API_BASE}/calamities`);
+        calamityBoardData = Array.isArray(calamities) ? calamities : [];
         applyCalamityFilters();
     } catch (error) {
         console.error("Error loading calamity board:", error);
+        showToastSafe("Failed to load calamities.", "error");
     }
 }
 
+/* ===================================
+   Filters
+   =================================== */
+
+function initBoardFilters() {
+    const incidentIds = [
+        "incidentSearchInput",
+        "incidentSeverityFilter",
+        "incidentBarangayFilter",
+        "incidentResponderFilter"
+    ];
+
+    incidentIds.forEach(id => {
+        document.getElementById(id)?.addEventListener("input", applyIncidentFilters);
+        document.getElementById(id)?.addEventListener("change", applyIncidentFilters);
+    });
+
+    const calamityIds = [
+        "calamitySearchInput",
+        "calamitySeverityFilter",
+        "calamityAreaTypeFilter"
+    ];
+
+    calamityIds.forEach(id => {
+        document.getElementById(id)?.addEventListener("input", applyCalamityFilters);
+        document.getElementById(id)?.addEventListener("change", applyCalamityFilters);
+    });
+}
+
 function applyIncidentFilters() {
-    const search = (document.getElementById("incidentSearchInput")?.value || "").trim().toLowerCase();
+    const keyword = (document.getElementById("incidentSearchInput")?.value || "").trim().toLowerCase();
     const severity = (document.getElementById("incidentSeverityFilter")?.value || "").trim().toUpperCase();
     const barangay = (document.getElementById("incidentBarangayFilter")?.value || "").trim().toLowerCase();
     const responder = (document.getElementById("incidentResponderFilter")?.value || "").trim().toLowerCase();
 
     const filtered = incidentBoardData.filter(incident => {
-        const text = [
+        const incidentSeverity = String(incident.severity || "").toUpperCase();
+        const searchable = [
             incident.type,
             incident.barangay,
-            incident.description,
+            incident.severity,
             incident.status,
+            incident.description,
             incident.assignedResponderName
         ].filter(Boolean).join(" ").toLowerCase();
 
-        const matchesSearch = !search || text.includes(search);
-        const matchesSeverity = !severity || (incident.severity || "").toUpperCase() === severity;
-        const matchesBarangay = !barangay || (incident.barangay || "").toLowerCase().includes(barangay);
-        const matchesResponder = !responder || (incident.assignedResponderName || "").toLowerCase().includes(responder);
+        const matchKeyword = !keyword || searchable.includes(keyword);
+        const matchSeverity = !severity || incidentSeverity === severity;
+        const matchBarangay = !barangay || String(incident.barangay || "").toLowerCase().includes(barangay);
+        const matchResponder = !responder || String(incident.assignedResponderName || "").toLowerCase().includes(responder);
 
-        return matchesSearch && matchesSeverity && matchesBarangay && matchesResponder;
+        return matchKeyword && matchSeverity && matchBarangay && matchResponder;
     });
 
     renderIncidentBoard(filtered);
 }
 
 function applyCalamityFilters() {
-    const search = (document.getElementById("calamitySearchInput")?.value || "").trim().toLowerCase();
+    const keyword = (document.getElementById("calamitySearchInput")?.value || "").trim().toLowerCase();
     const severity = (document.getElementById("calamitySeverityFilter")?.value || "").trim().toUpperCase();
     const areaType = (document.getElementById("calamityAreaTypeFilter")?.value || "").trim().toUpperCase();
 
     const filtered = calamityBoardData.filter(calamity => {
-        const text = [
+        const calamitySeverity = String(calamity.severity || "").toUpperCase();
+        const calamityAreaType = String(calamity.affectedAreaType || "").toUpperCase();
+
+        const searchable = [
             calamity.type,
-            calamity.calamityName,
-            calamity.description,
+            calamity.eventName,
             calamity.status,
-            formatCalamityArea(calamity)
+            calamity.description,
+            calamity.primaryBarangayName,
+            ...(calamity.affectedBarangayNames || [])
         ].filter(Boolean).join(" ").toLowerCase();
 
-        const matchesSearch = !search || text.includes(search);
-        const matchesSeverity = !severity || (calamity.severity || "").toUpperCase() === severity;
-        const matchesAreaType = !areaType || (calamity.affectedAreaType || "").toUpperCase() === areaType;
+        const matchKeyword = !keyword || searchable.includes(keyword);
+        const matchSeverity = !severity || calamitySeverity === severity;
+        const matchAreaType = !areaType || calamityAreaType === areaType;
 
-        return matchesSearch && matchesSeverity && matchesAreaType;
+        return matchKeyword && matchSeverity && matchAreaType;
     });
 
     renderCalamityBoard(filtered);
 }
 
-function highlightSelectedCard(type, id) {
-    clearCardSelections();
-    const selector = `.board-card[data-type="${type}"][data-id="${id}"]`;
-    document.querySelector(selector)?.classList.add("active");
+/* ===================================
+   Render Incident Board
+   =================================== */
+
+function renderIncidentBoard(items) {
+    clearIncidentColumns();
+
+    const ordered = applyBoardOrdering("INCIDENT", items);
+
+    INCIDENT_STATUSES.forEach(status => {
+        const byStatus = ordered.filter(item => String(item.status || "").toUpperCase() === status);
+        const visible = filterVisibleBoardCards("INCIDENT", byStatus);
+
+        visible.forEach(incident => {
+            const card = createIncidentCard(incident);
+            getIncidentColumn(status)?.appendChild(card);
+        });
+
+        updateIncidentCount(status, byStatus.length);
+    });
+
+    restoreActiveSelectionVisual();
+}
+
+function clearIncidentColumns() {
+    INCIDENT_STATUSES.forEach(status => {
+        const column = getIncidentColumn(status);
+        if (column) column.innerHTML = "";
+    });
+}
+
+function getIncidentColumn(status) {
+    switch (status) {
+        case "ONGOING": return document.getElementById("incidentOngoingColumn");
+        case "IN_PROGRESS": return document.getElementById("incidentInProgressColumn");
+        case "ON_SITE": return document.getElementById("incidentOnSiteColumn");
+        case "RESOLVED": return document.getElementById("incidentResolvedColumn");
+        default: return null;
+    }
+}
+
+function updateIncidentCount(status, count) {
+    switch (status) {
+        case "ONGOING":
+            setElementText("incidentCountOngoing", count);
+            break;
+        case "IN_PROGRESS":
+            setElementText("incidentCountInProgress", count);
+            break;
+        case "ON_SITE":
+            setElementText("incidentCountOnSite", count);
+            break;
+        case "RESOLVED":
+            setElementText("incidentCountResolved", count);
+            break;
+    }
 }
 
 function createIncidentCard(incident) {
@@ -401,37 +242,102 @@ function createIncidentCard(incident) {
     card.draggable = true;
     card.dataset.id = incident.id;
     card.dataset.type = "INCIDENT";
-    card.dataset.status = incident.status || "ONGOING";
+    card.dataset.status = String(incident.status || "").toUpperCase();
 
-    const menuHtml = typeof buildIncidentCardMenu === "function"
-        ? buildIncidentCardMenu(incident)
-        : "";
+    const severityClass = getSeverityClassSafe(incident.severity);
 
     card.innerHTML = `
         <div class="board-card-header">
-            <div class="board-card-title">${incident.type || "-"}</div>
-            ${menuHtml}
+            <div class="board-card-title">${escapeHtml(incident.type || "-")}</div>
+            ${typeof buildIncidentCardMenu === "function" ? buildIncidentCardMenu(incident) : ""}
         </div>
+
         <div class="board-card-meta">
-            <div class="board-card-meta-row">Barangay: ${incident.barangay || "-"}</div>
             <div class="board-card-meta-row">
-                Severity:
-                <span class="severity-badge ${getSeverityClass(incident.severity)}">${incident.severity || "-"}</span>
+                <span class="severity-badge ${severityClass}">${escapeHtml(incident.severity || "-")}</span>
             </div>
-            <div class="board-card-meta-row">Responder: ${incident.assignedResponderName || "-"}</div>
-            <div class="board-card-meta-row">Reported: ${formatDateTime(incident.reportedAt)}</div>
+            <div class="board-card-meta-row"><strong>Barangay:</strong> ${escapeHtml(incident.barangay || "-")}</div>
+            <div class="board-card-meta-row"><strong>Status:</strong> ${escapeHtml(incident.status || "-")}</div>
+            <div class="board-card-meta-row"><strong>Responder:</strong> ${escapeHtml(incident.assignedResponderName || "-")}</div>
         </div>
     `;
 
-    card.addEventListener("click", () => selectIncidentCard(incident, card));
-    card.addEventListener("dragstart", (event) => handleCardDragStart(event, "INCIDENT", incident));
+    card.addEventListener("click", event => {
+        const clickedMenu = event.target.closest(".board-card-menu-wrapper");
+        if (clickedMenu) return;
+        selectIncidentCard(incident, card);
+    });
+
+    card.addEventListener("dragstart", event => handleCardDragStart(event, "INCIDENT", incident));
     card.addEventListener("dragend", handleCardDragEnd);
 
     if (typeof initCardMenuEvents === "function") {
         initCardMenuEvents(card, "INCIDENT", incident);
     }
 
+    if (isCurrentSelection("INCIDENT", incident.id)) {
+        card.classList.add("active");
+    }
+
     return card;
+}
+
+/* ===================================
+   Render Calamity Board
+   =================================== */
+
+function renderCalamityBoard(items) {
+    clearCalamityColumns();
+
+    const ordered = applyBoardOrdering("CALAMITY", items);
+
+    CALAMITY_STATUSES.forEach(status => {
+        const byStatus = ordered.filter(item => String(item.status || "").toUpperCase() === status);
+        const visible = filterVisibleBoardCards("CALAMITY", byStatus);
+
+        visible.forEach(calamity => {
+            const card = createCalamityCard(calamity);
+            getCalamityColumn(status)?.appendChild(card);
+        });
+
+        updateCalamityCount(status, byStatus.length);
+    });
+
+    restoreActiveSelectionVisual();
+}
+
+function clearCalamityColumns() {
+    CALAMITY_STATUSES.forEach(status => {
+        const column = getCalamityColumn(status);
+        if (column) column.innerHTML = "";
+    });
+}
+
+function getCalamityColumn(status) {
+    switch (status) {
+        case "ACTIVE": return document.getElementById("calamityActiveColumn");
+        case "MONITORING": return document.getElementById("calamityMonitoringColumn");
+        case "RESOLVED": return document.getElementById("calamityResolvedColumn");
+        case "ENDED": return document.getElementById("calamityEndedColumn");
+        default: return null;
+    }
+}
+
+function updateCalamityCount(status, count) {
+    switch (status) {
+        case "ACTIVE":
+            setElementText("calamityCountActive", count);
+            break;
+        case "MONITORING":
+            setElementText("calamityCountMonitoring", count);
+            break;
+        case "RESOLVED":
+            setElementText("calamityCountResolved", count);
+            break;
+        case "ENDED":
+            setElementText("calamityCountEnded", count);
+            break;
+    }
 }
 
 function createCalamityCard(calamity) {
@@ -440,230 +346,473 @@ function createCalamityCard(calamity) {
     card.draggable = true;
     card.dataset.id = calamity.id;
     card.dataset.type = "CALAMITY";
-    card.dataset.status = calamity.status || "ACTIVE";
+    card.dataset.status = String(calamity.status || "").toUpperCase();
 
-    const menuHtml = typeof buildCalamityCardMenu === "function"
-        ? buildCalamityCardMenu(calamity)
-        : "";
+    const severityClass = getSeverityClassSafe(calamity.severity);
+    const area = getSafeCalamityArea(calamity);
 
     card.innerHTML = `
         <div class="board-card-header">
-            <div class="board-card-title">${calamity.type || calamity.calamityName || "-"}</div>
-            ${menuHtml}
+            <div class="board-card-title">${escapeHtml(calamity.type || calamity.calamityName || "-")}</div>
+            ${typeof buildCalamityCardMenu === "function" ? buildCalamityCardMenu(calamity) : ""}
         </div>
+
         <div class="board-card-meta">
-            <div class="board-card-meta-row">Area: ${formatCalamityArea(calamity)}</div>
             <div class="board-card-meta-row">
-                Severity:
-                <span class="severity-badge ${getSeverityClass(calamity.severity)}">${calamity.severity || "-"}</span>
+                <span class="severity-badge ${severityClass}">${escapeHtml(calamity.severity || "-")}</span>
             </div>
-            <div class="board-card-meta-row">Status: ${calamity.status || "-"}</div>
-            <div class="board-card-meta-row">Start: ${formatDateTime(calamity.startDate || calamity.createdAt)}</div>
+            <div class="board-card-meta-row"><strong>Area:</strong> ${escapeHtml(area)}</div>
+            <div class="board-card-meta-row"><strong>Status:</strong> ${escapeHtml(calamity.status || "-")}</div>
+            <div class="board-card-meta-row"><strong>Coordinator:</strong> ${escapeHtml(calamity.coordinatorName || "-")}</div>
         </div>
     `;
 
-    card.addEventListener("click", () => selectCalamityCard(calamity, card));
-    card.addEventListener("dragstart", (event) => handleCardDragStart(event, "CALAMITY", calamity));
+    card.addEventListener("click", event => {
+        const clickedMenu = event.target.closest(".board-card-menu-wrapper");
+        if (clickedMenu) return;
+        selectCalamityCard(calamity, card);
+    });
+
+    card.addEventListener("dragstart", event => handleCardDragStart(event, "CALAMITY", calamity));
     card.addEventListener("dragend", handleCardDragEnd);
 
     if (typeof initCardMenuEvents === "function") {
         initCardMenuEvents(card, "CALAMITY", calamity);
     }
 
+    if (isCurrentSelection("CALAMITY", calamity.id)) {
+        card.classList.add("active");
+    }
+
     return card;
 }
+
+/* ===================================
+   Selection / Drawer
+   =================================== */
 
 function selectIncidentCard(incident, cardElement) {
     currentSelection = { type: "INCIDENT", data: incident };
     clearCardSelections();
     cardElement?.classList.add("active");
-    renderSelectedEventSummary("INCIDENT", incident);
-    loadIncidentActivityFeed(incident.id);
-    renderModulePlaceholders("INCIDENT", incident);
+
+    if (typeof loadOperationsDrawer === "function") {
+        loadOperationsDrawer("INCIDENT", incident);
+    }
+    if (typeof renderSelectedOperationMap === "function") {
+        renderSelectedOperationMap("INCIDENT", incident);
+    }
 }
 
 function selectCalamityCard(calamity, cardElement) {
     currentSelection = { type: "CALAMITY", data: calamity };
     clearCardSelections();
     cardElement?.classList.add("active");
-    renderSelectedEventSummary("CALAMITY", calamity);
-    loadCalamityActivityFeed(calamity.id);
-    renderModulePlaceholders("CALAMITY", calamity);
+
+    if (typeof loadOperationsDrawer === "function") {
+        loadOperationsDrawer("CALAMITY", calamity);
+    }
+    if (typeof renderSelectedOperationMap === "function") {
+        renderSelectedOperationMap("CALAMITY", calamity);
+    }
+}
+
+function clearCurrentSelection() {
+    currentSelection = { type: null, data: null };
+    clearCardSelections();
+
+    if (typeof resetOperationsDrawer === "function") {
+        resetOperationsDrawer();
+    }
+
+    if (typeof closeOperationsDrawer === "function") {
+        closeOperationsDrawer();
+    }
+
+    if (typeof resetOperationsMap === "function") {
+        resetOperationsMap();
+    }
+}
+
+function clearCardSelections() {
+    document.querySelectorAll(".board-card.active").forEach(card => {
+        card.classList.remove("active");
+    });
+}
+
+function restoreActiveSelectionVisual() {
+    if (!currentSelection.type || !currentSelection.data?.id) return;
+
+    const selector = `.board-card[data-type="${currentSelection.type}"][data-id="${currentSelection.data.id}"]`;
+    const card = document.querySelector(selector);
+    if (card) {
+        card.classList.add("active");
+    }
+}
+
+function isCurrentSelection(type, id) {
+    return currentSelection.type === type && Number(currentSelection.data?.id) === Number(id);
+}
+
+/* ===================================
+   Drag / Drop
+   =================================== */
+
+function initDropzones() {
+    document.querySelectorAll(".board-dropzone").forEach(dropzone => {
+        dropzone.addEventListener("dragover", handleDropzoneDragOver);
+        dropzone.addEventListener("dragleave", handleDropzoneDragLeave);
+        dropzone.addEventListener("drop", handleDropzoneDrop);
+    });
 }
 
 function handleCardDragStart(event, type, data) {
-    dragContext = {
+    draggedCardContext = {
         type,
-        id: data.id,
-        sourceStatus: (data.status || "").toUpperCase(),
-        targetStatus: null,
         data
     };
 
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(data.id));
+    event.dataTransfer.setData("text/plain", JSON.stringify({
+        type,
+        id: data.id,
+        status: data.status
+    }));
 
-    const card = event.currentTarget;
-    card.classList.add("dragging");
+    event.currentTarget.classList.add("dragging");
 }
 
 function handleCardDragEnd(event) {
     event.currentTarget.classList.remove("dragging");
     clearDropzoneStates();
-    dragContext.targetStatus = null;
-}
-
-function isValidMove(type, sourceStatus, targetStatus) {
-    if (!type || !sourceStatus || !targetStatus) return false;
-    if (sourceStatus === targetStatus) return false;
-
-    if (type === "INCIDENT") {
-        const sourceIndex = INCIDENT_STATUS_ORDER.indexOf(sourceStatus);
-        const targetIndex = INCIDENT_STATUS_ORDER.indexOf(targetStatus);
-        return sourceIndex !== -1 && targetIndex === sourceIndex + 1;
-    }
-
-    if (type === "CALAMITY") {
-        const sourceIndex = CALAMITY_STATUS_ORDER.indexOf(sourceStatus);
-        const targetIndex = CALAMITY_STATUS_ORDER.indexOf(targetStatus);
-        return sourceIndex !== -1 && targetIndex === sourceIndex + 1;
-    }
-
-    return false;
-}
-
-function initDropzones() {
-    document.querySelectorAll(".board-dropzone").forEach(zone => {
-        zone.addEventListener("dragover", handleDropzoneDragOver);
-        zone.addEventListener("dragleave", handleDropzoneDragLeave);
-        zone.addEventListener("drop", handleDropzoneDrop);
-    });
-}
-
-function getDropzoneContext(zone) {
-    const column = zone.closest(".board-column");
-    if (!column) return null;
-
-    return {
-        boardType: column.dataset.boardType,
-        targetStatus: column.dataset.status
-    };
+    draggedCardContext = null;
 }
 
 function handleDropzoneDragOver(event) {
     event.preventDefault();
 
-    const zone = event.currentTarget;
-    const context = getDropzoneContext(zone);
-    if (!context) return;
+    const dropzone = event.currentTarget;
+    const boardType = String(dropzone.closest(".board-column")?.dataset.boardType || "").toUpperCase();
+    const targetStatus = String(dropzone.closest(".board-column")?.dataset.status || "").toUpperCase();
 
-    clearDropzoneStates();
+    if (!draggedCardContext) return;
 
-    const valid =
-        dragContext.type === context.boardType &&
-        isValidMove(dragContext.type, dragContext.sourceStatus, context.targetStatus);
+    const valid = isValidTransition(draggedCardContext.type, draggedCardContext.data.status, boardType, targetStatus);
 
-    if (valid) {
-        zone.classList.add("drag-over");
-        dragContext.targetStatus = context.targetStatus;
-        event.dataTransfer.dropEffect = "move";
-    } else {
-        zone.classList.add("drop-invalid");
-        event.dataTransfer.dropEffect = "none";
-    }
+    dropzone.classList.remove("drag-over", "drop-invalid");
+    dropzone.classList.add(valid ? "drag-over" : "drop-invalid");
+    event.dataTransfer.dropEffect = valid ? "move" : "none";
 }
 
 function handleDropzoneDragLeave(event) {
     event.currentTarget.classList.remove("drag-over", "drop-invalid");
 }
 
-async function handleDropzoneDrop(event) {
+function handleDropzoneDrop(event) {
     event.preventDefault();
 
-    const zone = event.currentTarget;
-    const context = getDropzoneContext(zone);
+    const dropzone = event.currentTarget;
+    const boardType = String(dropzone.closest(".board-column")?.dataset.boardType || "").toUpperCase();
+    const targetStatus = String(dropzone.closest(".board-column")?.dataset.status || "").toUpperCase();
+
     clearDropzoneStates();
 
-    if (!context) return;
+    if (!draggedCardContext) return;
 
-    const valid =
-        dragContext.type === context.boardType &&
-        isValidMove(dragContext.type, dragContext.sourceStatus, context.targetStatus);
+    const sourceType = draggedCardContext.type;
+    const sourceData = draggedCardContext.data;
+    const sourceStatus = String(sourceData.status || "").toUpperCase();
 
-    if (!valid) return;
+    const valid = isValidTransition(sourceType, sourceStatus, boardType, targetStatus);
+    if (!valid) {
+        showToastSafe("That move is not allowed.", "info");
+        return;
+    }
 
-    await handleBoardTransition(
-        dragContext.type,
-        dragContext.data,
-        dragContext.sourceStatus,
-        context.targetStatus
-    );
+    openTransitionForDrop(sourceType, sourceData, targetStatus);
 }
 
-async function handleBoardTransition(type, data, sourceStatus, targetStatus) {
+function clearDropzoneStates() {
+    document.querySelectorAll(".board-dropzone").forEach(zone => {
+        zone.classList.remove("drag-over", "drop-invalid");
+    });
+}
+
+function isValidTransition(sourceType, sourceStatus, targetBoardType, targetStatus) {
+    if (String(sourceType || "").toUpperCase() !== String(targetBoardType || "").toUpperCase()) {
+        return false;
+    }
+
+    if (sourceType === "INCIDENT") {
+        return (
+            (sourceStatus === "ONGOING" && targetStatus === "IN_PROGRESS") ||
+            (sourceStatus === "IN_PROGRESS" && targetStatus === "ON_SITE") ||
+            (sourceStatus === "ON_SITE" && targetStatus === "RESOLVED")
+        );
+    }
+
+    if (sourceType === "CALAMITY") {
+        return (
+            (sourceStatus === "ACTIVE" && targetStatus === "MONITORING") ||
+            (sourceStatus === "MONITORING" && targetStatus === "RESOLVED") ||
+            (sourceStatus === "RESOLVED" && targetStatus === "ENDED")
+        );
+    }
+
+    return false;
+}
+
+function openTransitionForDrop(type, data, targetStatus) {
+    if (typeof openTransitionReviewModal !== "function") {
+        showToastSafe("Transition review modal is not available.", "error");
+        return;
+    }
+
     if (type === "INCIDENT") {
-        if (sourceStatus === "ONGOING" && targetStatus === "IN_PROGRESS") {
-            openDispatchModal(data);
+        if (targetStatus === "IN_PROGRESS") {
+            openTransitionReviewModal({
+                type: "INCIDENT",
+                mode: "DISPATCH_REVIEW",
+                data,
+                title: "Dispatch Incident"
+            });
             return;
         }
 
-        if (sourceStatus === "IN_PROGRESS" && targetStatus === "ON_SITE") {
-            openStatusUpdateModal({
+        if (targetStatus === "ON_SITE") {
+            openTransitionReviewModal({
                 type: "INCIDENT",
+                mode: "ARRIVE_REVIEW",
                 data,
-                action: "ARRIVE",
-                targetStatus: "ON_SITE",
                 title: "Mark Incident as On-Site"
             });
             return;
         }
 
-        if (sourceStatus === "ON_SITE" && targetStatus === "RESOLVED") {
-            openStatusUpdateModal({
+        if (targetStatus === "RESOLVED") {
+            openTransitionReviewModal({
                 type: "INCIDENT",
+                mode: "RESOLVE_REVIEW",
                 data,
-                action: "RESOLVE",
-                targetStatus: "RESOLVED",
                 title: "Resolve Incident"
             });
             return;
         }
-
-        return;
     }
 
     if (type === "CALAMITY") {
-        if (sourceStatus === "ACTIVE" && targetStatus === "MONITORING") {
-            openStatusUpdateModal({
+        if (targetStatus === "MONITORING") {
+            openTransitionReviewModal({
                 type: "CALAMITY",
+                mode: "MONITOR_REVIEW",
                 data,
-                action: "MONITOR",
-                targetStatus: "MONITORING",
                 title: "Set Calamity to Monitoring"
             });
             return;
         }
 
-        if (sourceStatus === "MONITORING" && targetStatus === "RESOLVED") {
-            openStatusUpdateModal({
+        if (targetStatus === "RESOLVED") {
+            openTransitionReviewModal({
                 type: "CALAMITY",
+                mode: "RESOLVE_REVIEW",
                 data,
-                action: "RESOLVE",
-                targetStatus: "RESOLVED",
                 title: "Resolve Calamity"
             });
             return;
         }
 
-        if (sourceStatus === "RESOLVED" && targetStatus === "ENDED") {
-            openStatusUpdateModal({
+        if (targetStatus === "ENDED") {
+            openTransitionReviewModal({
                 type: "CALAMITY",
+                mode: "END_REVIEW",
                 data,
-                action: "END",
-                targetStatus: "ENDED",
                 title: "End Calamity"
             });
-            return;
         }
     }
+}
+
+/* ===================================
+   Local Order / Archive
+   =================================== */
+
+function getBoardOrderState() {
+    try {
+        return JSON.parse(localStorage.getItem("operationsBoardOrderState") || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function saveBoardOrderState(state) {
+    localStorage.setItem("operationsBoardOrderState", JSON.stringify(state));
+}
+
+function moveBoardItem(type, status, id, mode) {
+    const key = `${type}:${status}`;
+    const state = getBoardOrderState();
+    const current = Array.isArray(state[key]) ? [...state[key]] : [];
+
+    const normalizedId = Number(id);
+    const existing = current.filter(itemId => Number(itemId) !== normalizedId);
+
+    if (mode === "TOP") {
+        state[key] = [normalizedId, ...existing];
+    } else if (mode === "UP") {
+        const sourceItems = getCurrentBoardItemsByTypeAndStatus(type, status);
+        const orderedIds = sourceItems.map(item => Number(item.id));
+
+        if (!existing.length) {
+            state[key] = orderedIds;
+        }
+
+        const base = Array.isArray(state[key]) ? [...state[key]] : [...orderedIds];
+        const currentIndex = base.findIndex(itemId => Number(itemId) === normalizedId);
+
+        if (currentIndex > 0) {
+            [base[currentIndex - 1], base[currentIndex]] = [base[currentIndex], base[currentIndex - 1]];
+        }
+
+        state[key] = base;
+    }
+
+    saveBoardOrderState(state);
+
+    if (type === "INCIDENT") {
+        applyIncidentFilters();
+    } else {
+        applyCalamityFilters();
+    }
+}
+
+function applyBoardOrdering(type, items) {
+    const grouped = new Map();
+    items.forEach(item => {
+        const status = String(item.status || "").toUpperCase();
+        if (!grouped.has(status)) grouped.set(status, []);
+        grouped.get(status).push(item);
+    });
+
+    const state = getBoardOrderState();
+    const result = [];
+
+    grouped.forEach((groupItems, status) => {
+        const key = `${type}:${status}`;
+        const savedOrder = Array.isArray(state[key]) ? state[key].map(Number) : [];
+
+        const itemMap = new Map(groupItems.map(item => [Number(item.id), item]));
+        const orderedGroup = [];
+
+        savedOrder.forEach(id => {
+            if (itemMap.has(id)) {
+                orderedGroup.push(itemMap.get(id));
+                itemMap.delete(id);
+            }
+        });
+
+        groupItems.forEach(item => {
+            if (itemMap.has(Number(item.id))) {
+                orderedGroup.push(item);
+                itemMap.delete(Number(item.id));
+            }
+        });
+
+        result.push(...orderedGroup);
+    });
+
+    return result;
+}
+
+function getCurrentBoardItemsByTypeAndStatus(type, status) {
+    const source = type === "INCIDENT" ? incidentBoardData : calamityBoardData;
+    return source.filter(item => String(item.status || "").toUpperCase() === String(status || "").toUpperCase());
+}
+
+function hideBoardCard(type, id) {
+    const hidden = getHiddenBoardCardsSafe();
+    hidden[`${type}:${id}`] = true;
+    saveHiddenBoardCardsSafe(hidden);
+}
+
+function filterVisibleBoardCards(type, items) {
+    const hidden = getHiddenBoardCardsSafe();
+    return items.filter(item => !hidden[`${type}:${item.id}`]);
+}
+
+function getHiddenBoardCardsSafe() {
+    if (typeof getHiddenBoardCards === "function") {
+        return getHiddenBoardCards();
+    }
+
+    try {
+        return JSON.parse(localStorage.getItem("operationsHiddenBoardCards") || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function saveHiddenBoardCardsSafe(hidden) {
+    if (typeof saveHiddenBoardCards === "function") {
+        saveHiddenBoardCards(hidden);
+        return;
+    }
+    localStorage.setItem("operationsHiddenBoardCards", JSON.stringify(hidden));
+}
+
+/* ===================================
+   Helpers
+   =================================== */
+
+function setElementText(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = value;
+    }
+}
+
+function getSeverityClassSafe(severity) {
+    if (typeof getSeverityClass === "function") {
+        return getSeverityClass(severity);
+    }
+
+    const normalized = String(severity || "").trim().toUpperCase();
+    if (normalized === "HIGH") return "severity-high";
+    if (normalized === "MEDIUM") return "severity-medium";
+    if (normalized === "LOW") return "severity-low";
+    return "severity-default";
+}
+
+function getSafeCalamityArea(calamity) {
+    if (typeof formatCalamityArea === "function") {
+        return formatCalamityArea(calamity);
+    }
+
+    const areaType = String(calamity?.affectedAreaType || "").toUpperCase();
+    const affectedNames = calamity?.affectedBarangayNames || [];
+
+    if (areaType === "MUNICIPALITY") return "Whole Municipality";
+    if (areaType === "MULTI_BARANGAY") {
+        if (!affectedNames.length) return "-";
+        if (affectedNames.length === 1) return affectedNames[0];
+        return `${affectedNames.length} Barangays`;
+    }
+
+    return calamity?.primaryBarangayName || "-";
+}
+
+function showToastSafe(message, type = "info") {
+    if (typeof showToast === "function") {
+        showToast(message, type);
+    } else {
+        console.log(`[${type}] ${message}`);
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
 }

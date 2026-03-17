@@ -44,7 +44,7 @@
         </div>
 
         <div class="navbar-title">
-            <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            <h1>MDRRM Weather Forecasting &amp; Emergency Response</h1>
         </div>
 
         <div class="navbar-notifications">
@@ -92,7 +92,7 @@
         <li class="menu-item">
             <a href="#alerts">
                 <i class="fas fa-bell"></i>
-                <span>Alerts & Warnings</span>
+                <span>Alerts &amp; Warnings</span>
             </a>
         </li>
         <li class="menu-item">
@@ -176,7 +176,6 @@
                             <option value="MUNICIPALITY">Municipality</option>
                         </select>
                     </div>
-
                 </div>
             </section>
 
@@ -206,7 +205,6 @@
                         <div class="board-dropzone" id="incidentOnSiteColumn"></div>
                     </div>
 
-                    <!-- Incident Resolved column -->
                     <div class="board-column" data-board-type="INCIDENT" data-status="RESOLVED">
                         <div class="board-column-header board-column-header-with-actions">
                             <div class="board-column-title-group">
@@ -256,7 +254,6 @@
                         <div class="board-dropzone" id="calamityResolvedColumn"></div>
                     </div>
 
-                    <!-- Calamity Ended column -->
                     <div class="board-column" data-board-type="CALAMITY" data-status="ENDED">
                         <div class="board-column-header board-column-header-with-actions">
                             <div class="board-column-title-group">
@@ -280,55 +277,33 @@
                 </div>
             </section>
 
-            <section class="incident-details-panel full-width">
-                <h3>Operation Details</h3>
+            <!-- Map for incident/calamity -->
+            <section class="operations-map-panel" id="operationsMapPanel">
+                <div class="operations-map-header">
+                    <div>
+                        <h3 id="operationsMapTitle">Live Map</h3>
+                        <span id="operationsMapSubtitle" class="operations-map-subtitle">No active selection</span>
+                    </div>
 
-                <div id="selectedEventSummary" class="dispatch-incident-summary hidden">
-                    <h4>Selected Operation</h4>
-                    <div id="selectedEventSummaryContent"></div>
-                </div>
-
-                <div class="operations-details-tabs">
-                    <button class="operations-tab-btn active" data-tab="timelineTab">Timeline</button>
-                    <button class="operations-tab-btn" data-tab="evacuationTab">Evacuation</button>
-                    <button class="operations-tab-btn" data-tab="reliefTab">Relief</button>
-                    <button class="operations-tab-btn" data-tab="inventoryTab">Inventory</button>
-                    <button class="operations-tab-btn" data-tab="budgetTab">Budget</button>
-                </div>
-
-                <div id="timelineTab" class="operations-tab-content">
-                    <h4>Activity Feed</h4>
-                    <div id="activityFeed" class="activity-feed">
-                        <p>Select an incident or calamity to view details.</p>
+                    <div id="operationsMapDetails" class="operations-map-details">
+                        <div class="operations-map-detail-item"><strong>Type</strong><span>-</span></div>
+                        <div class="operations-map-detail-item"><strong>Location</strong><span>-</span></div>
+                        <div class="operations-map-detail-item"><strong>Status</strong><span>-</span></div>
                     </div>
                 </div>
 
-                <div id="evacuationTab" class="operations-tab-content hidden">
-                    <h4>Evacuation</h4>
-                    <div id="evacuationContent">
-                        <p>Select an operation to view evacuation details.</p>
+                <div class="operations-map-frame-wrap">
+                    <div id="operationsMapEmpty" class="operations-map-empty">
+                        Select an incident or calamity to view its location on the map.
                     </div>
-                </div>
-
-                <div id="reliefTab" class="operations-tab-content hidden">
-                    <h4>Relief Distribution</h4>
-                    <div id="reliefContent">
-                        <p>Select an operation to view relief details.</p>
-                    </div>
-                </div>
-
-                <div id="inventoryTab" class="operations-tab-content hidden">
-                    <h4>Inventory Usage</h4>
-                    <div id="inventoryContent">
-                        <p>Select an operation to view inventory details.</p>
-                    </div>
-                </div>
-
-                <div id="budgetTab" class="operations-tab-content hidden">
-                    <h4>Budget Usage</h4>
-                    <div id="budgetContent">
-                        <p>Select an operation to view budget details.</p>
-                    </div>
+                    <iframe
+                        id="operationsMapFrame"
+                        class="operations-map-frame hidden"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        allowfullscreen
+                        title="Selected operation map"
+                    ></iframe>
                 </div>
             </section>
         </div>
@@ -378,7 +353,7 @@
 
         <div class="footer-bottom">
             <div class="footer-copyright">
-                <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                <p>&copy; 2026 MDRRM - Disaster Risk Reduction &amp; Management. All rights reserved.</p>
             </div>
             <div class="footer-bottom-links">
                 <a href="#sitemap">Sitemap</a>
@@ -436,13 +411,7 @@
 
                 <label for="dispatchResponderSearch">Responder Name</label>
                 <div class="responder-autocomplete">
-                    <input
-                        type="text"
-                        id="dispatchResponderSearch"
-                        placeholder="Type responder name..."
-                        autocomplete="off"
-                        required
-                    >
+                    <input type="text" id="dispatchResponderSearch" placeholder="Type responder name..." autocomplete="off" required>
                     <input type="hidden" id="dispatchResponderId">
                     <div id="dispatchResponderSuggestions" class="responder-suggestions"></div>
                 </div>
@@ -512,9 +481,194 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<aside class="operations-drawer" id="operationsDrawer">
+    <div class="operations-drawer-header">
+        <div class="operations-drawer-title-wrap">
+            <h3 id="operationsDrawerTitle">Operation Details</h3>
+            <span id="operationsDrawerSubtitle" class="operations-drawer-subtitle">No selection</span>
+        </div>
+        <button type="button" class="operations-drawer-close" id="operationsDrawerClose" aria-label="Close drawer">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="operations-drawer-body">
+        <div id="operationsDrawerEmpty" class="operations-drawer-empty">
+            <p>Select an incident or calamity to view details.</p>
+        </div>
+
+        <div id="operationsDrawerContent" class="hidden">
+            <section class="drawer-section">
+                <div class="drawer-summary-card">
+                    <div class="drawer-summary-top">
+                        <h4 id="drawerEventName">-</h4>
+                        <span id="drawerSeverityBadge" class="severity-badge severity-default">-</span>
+                    </div>
+
+                    <div class="drawer-summary-grid">
+                        <div class="drawer-summary-item">
+                            <strong>Status</strong>
+                            <span id="drawerStatus">-</span>
+                        </div>
+                        <div class="drawer-summary-item">
+                            <strong>Location</strong>
+                            <span id="drawerLocation">-</span>
+                        </div>
+                        <div class="drawer-summary-item">
+                            <strong>Assigned</strong>
+                            <span id="drawerAssignedTo">-</span>
+                        </div>
+                        <div class="drawer-summary-item">
+                            <strong>Date/Time</strong>
+                            <span id="drawerDateTime">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="drawer-section-header">
+                    <h4>Description</h4>
+                </div>
+                <div id="drawerDescription" class="drawer-description-box">-</div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="drawer-section-header">
+                    <h4>Warnings</h4>
+                </div>
+                <div id="drawerWarnings" class="readiness-warning-list"></div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="drawer-section-header">
+                    <h4>Operational Readiness</h4>
+                </div>
+
+                <div class="drawer-readiness-summary-grid">
+                    <div class="drawer-metric-card">
+                        <span>Forecasted</span>
+                        <strong id="drawerForecastedBudget">₱0.00</strong>
+                    </div>
+                    <div class="drawer-metric-card">
+                        <span>Actual</span>
+                        <strong id="drawerActualCost">₱0.00</strong>
+                    </div>
+                    <div class="drawer-metric-card">
+                        <span>Variance</span>
+                        <strong id="drawerVariance">₱0.00</strong>
+                    </div>
+                </div>
+
+                <div id="drawerReadinessQuick" class="drawer-readiness-quick"></div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="drawer-section-header">
+                    <h4>Timeline</h4>
+                </div>
+                <div id="drawerTimeline" class="activity-feed"></div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="drawer-section-header">
+                    <h4>Quick Actions</h4>
+                </div>
+                <div id="drawerQuickActions" class="drawer-quick-actions"></div>
+            </section>
+        </div>
+    </div>
+</aside>
+
+<div class="operations-drawer-overlay" id="operationsDrawerOverlay"></div>
+
+<div class="modal" id="transitionReviewModal">
+    <div class="modal-content transition-review-modal-content">
+        <div class="modal-header">
+            <h3 id="transitionReviewTitle">Transition Review</h3>
+            <button class="modal-close" id="transitionReviewClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body transition-review-body">
+            <div id="transitionReviewSummary" class="dispatch-incident-summary hidden">
+                <h4>Selected Operation</h4>
+                <div id="transitionReviewSummaryContent"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Description / Operational Update</h4>
+                <textarea
+                    id="transitionReviewDescription"
+                    rows="4"
+                    placeholder="Describe the current situation or operational update..."
+                ></textarea>
+            </div>
+
+            <div class="transition-review-block" id="transitionResponderBlock">
+                <h4>Responder</h4>
+                <div class="responder-autocomplete">
+                    <input type="text" id="transitionResponderSearch" placeholder="Type responder name..." autocomplete="off">
+                    <input type="hidden" id="transitionResponderId">
+                    <div id="transitionResponderSuggestions" class="responder-suggestions"></div>
+                </div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Suggested Resources</h4>
+                <div id="transitionSuggestedResources" class="transition-list"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Inventory Check</h4>
+                <div id="transitionStockChecks" class="transition-list"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Relief Readiness</h4>
+                <div id="transitionReliefReadiness" class="readiness-relief-box"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Evacuation Readiness</h4>
+                <div id="transitionEvacuationChecks" class="transition-list"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Cost Drivers</h4>
+                <div id="transitionCostDrivers" class="transition-list"></div>
+            </div>
+
+            <div class="transition-review-block">
+                <h4>Warnings</h4>
+                <div id="transitionWarnings" class="readiness-warning-list"></div>
+                <div id="transitionWarningAcknowledgements" class="transition-ack-list"></div>
+            </div>
+
+            <div class="transition-review-block hidden" id="transitionOverrideReasonBlock">
+                <h4>Override Reason</h4>
+                <textarea
+                    id="transitionOverrideReason"
+                    rows="3"
+                    placeholder="Required for critical override..."
+                ></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-cancel" id="transitionReviewCancel">Cancel</button>
+            <button class="btn btn-primary" id="transitionReviewConfirm">Confirm Transition</button>
+        </div>
+    </div>
+</div>
+
 <script src="/js/loginUserInfo.js"></script>
 <script src="/js/navbar.js"></script>
 <script src="js/operations.js"></script>
+<script src="js/operations-readiness.js"></script>
+<script src="js/operations-map.js"></script>
+<script src="js/operations-drawer.js"></script>
 <script src="js/operations-board.js"></script>
 <script src="js/operations-dispatch-modal.js"></script>
 <script src="js/operations-status-modal.js"></script>
