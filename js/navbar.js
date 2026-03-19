@@ -20,12 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('overlay');
     const sidebarClose = document.getElementById('sidebarClose');
     const logoutBtn = document.getElementById('logoutBtn');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
     // Initialize user name from localStorage
     initializeUserInfo();
 
     // User Dropdown Toggle
-    if (userDropdownBtn) {
+    if (userDropdownBtn && userDropdown) {
         userDropdownBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -41,10 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Close dropdown when clicking on menu items (except logout which has its own handler)
+    // Close dropdown when clicking on menu items
     const dropdownLinks = dropdownMenu ? dropdownMenu.querySelectorAll('a') : [];
     dropdownLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function() {
             if (userDropdown) {
                 userDropdown.classList.remove('active');
             }
@@ -52,20 +53,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Sidebar Menu Toggle (Mobile)
-    menuToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-        menuToggle.classList.toggle('active');
-    });
+    if (menuToggle && sidebar && overlay) {
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+        });
+    }
 
     // Sidebar Toggle Button (Desktop)
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle) {
+    if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.classList.toggle('sidebar-collapsed');
+
+            const pageContent = document.querySelector('.page-content, .main-content');
+            if (pageContent) {
+                pageContent.classList.toggle('sidebar-collapsed');
+            }
+
+            const footer = document.querySelector('.footer');
+            if (footer) {
+                footer.classList.toggle('sidebar-collapsed');
             }
         });
     }
@@ -73,18 +81,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sidebar Close Button
     if (sidebarClose) {
         sidebarClose.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            menuToggle.classList.remove('active');
+            if (sidebar) sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+            if (menuToggle) menuToggle.classList.remove('active');
         });
     }
 
     // Overlay Click to Close Sidebar
     if (overlay) {
         overlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            menuToggle.classList.remove('active');
+            if (sidebar) sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+            if (menuToggle) menuToggle.classList.remove('active');
         });
     }
 
@@ -93,9 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
             if (window.innerWidth < 768) {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-                menuToggle.classList.remove('active');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                if (menuToggle) menuToggle.classList.remove('active');
             }
         });
     });
@@ -121,17 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (logoutCancel || logoutModalClose) {
-        if (logoutCancel) {
-            logoutCancel.addEventListener('click', function() {
-                closeLogoutModal();
-            });
-        }
-        if (logoutModalClose) {
-            logoutModalClose.addEventListener('click', function() {
-                closeLogoutModal();
-            });
-        }
+    if (logoutCancel) {
+        logoutCancel.addEventListener('click', function() {
+            closeLogoutModal();
+        });
+    }
+
+    if (logoutModalClose) {
+        logoutModalClose.addEventListener('click', function() {
+            closeLogoutModal();
+        });
     }
 
     // Close modal when clicking outside
@@ -156,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const notificationBadge = document.getElementById('notificationBadge');
     const messageBadge = document.getElementById('messageBadge');
 
-    // Function to update notification badge
     window.updateNotificationBadge = function(count) {
         if (notificationBadge) {
             if (count > 0) {
@@ -168,7 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Function to update message badge
     window.updateMessageBadge = function(count) {
         if (messageBadge) {
             if (count > 0) {
@@ -180,28 +185,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Notification button click handler
     if (notificationBtn) {
         notificationBtn.addEventListener('click', function() {
             console.log('Notifications clicked');
-            // Add notification panel or dropdown functionality here
         });
     }
 
-    // Message button click handler
     if (messageBtn) {
         messageBtn.addEventListener('click', function() {
             console.log('Messages clicked');
-            // Add message panel or dropdown functionality here
         });
     }
 
     // Handle window resize for responsive behavior
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 768) {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            menuToggle.classList.remove('active');
+            if (sidebar) sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+            if (menuToggle) menuToggle.classList.remove('active');
         }
     });
 });
@@ -211,20 +212,22 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeUserInfo() {
     const userNameDisplay = document.getElementById('userNameDisplay');
-    
-    // Try to get user info from various sources
-    let userName = localStorage.getItem('userName') || 
+
+    let userName = localStorage.getItem('userName') ||
                    sessionStorage.getItem('userName');
-    
+
     if (userName) {
         updateUserName(userName);
     } else {
-        // Fallback to email if name not available
         const userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
         if (userEmail) {
             const emailName = userEmail.split('@')[0];
             updateUserName(emailName);
         }
+    }
+
+    if (!userNameDisplay) {
+        console.warn('userNameDisplay element not found');
     }
 }
 
@@ -234,7 +237,6 @@ function initializeUserInfo() {
 function handleLogout() {
     const logoutModal = document.getElementById('logoutModal');
     if (logoutModal) {
-        // Show the modal
         logoutModal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -244,14 +246,12 @@ function handleLogout() {
  * Perform actual logout
  */
 function performLogout() {
-    // Clear local storage and session storage
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
     sessionStorage.removeItem('userName');
     sessionStorage.removeItem('userEmail');
-    
-    // Redirect to login page
+
     window.location.href = 'login.html';
 }
 
@@ -273,10 +273,10 @@ function closeAllMenus() {
     const userDropdown = document.querySelector('.user-dropdown');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    
-    userDropdown.classList.remove('active');
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
+
+    if (userDropdown) userDropdown.classList.remove('active');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
 }
 
 /**
@@ -286,9 +286,7 @@ function closeAllMenus() {
 function updateUserName(name) {
     const userNameDisplay = document.getElementById('userNameDisplay');
     if (name && userNameDisplay) {
-        // Get first name from full name
         let firstName = name.split(' ')[0];
-        // Capitalize properly
         firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
         userNameDisplay.textContent = firstName;
         console.log('User name updated to:', firstName);
