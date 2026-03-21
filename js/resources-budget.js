@@ -230,11 +230,10 @@ function renderBudgetHistory(rows) {
                 ${rows.map(row => `
                     <tr>
                         <td>${escapeHtml(String(row.year ?? "-"))}</td>
-                        <td>${formatPeso(row.allocated)}</td>
-                        <td>${formatPeso(row.used)}</td>
-                        <td>${formatPeso(row.remaining)}</td>
-                        <td>${formatNumber(row.allocated > 0 ? (row.used / row.allocated) * 100 : 0)}%</td>
-                    </tr>
+                        <td>${formatPeso(row.allotment)}</td>
+                        <td>${formatPeso(row.obligations)}</td>
+                        <td>${formatPeso(row.remainingBalance)}</td>
+                        <td>${formatNumber(row.utilizationRate)}%</td>
                 `).join("")}
             </tbody>
         </table>

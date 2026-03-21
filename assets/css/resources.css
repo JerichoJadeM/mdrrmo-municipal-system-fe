@@ -471,6 +471,18 @@
     padding: 18px;
 }
 
+textarea {
+    resize: vertical;
+}
+
+.resources-modal-body .metric-card {
+    margin-top: 4px;
+}
+
+.resources-modal-body .metric-value {
+    font-size: 18px;
+}
+
 .icon-btn {
     border: none;
     background: transparent;
@@ -673,4 +685,125 @@
 .forecast-section-total {
     font-weight: 700;
     color: #111827;
+}
+
+.relief-pack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 16px;
+}
+
+.relief-pack-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.relief-pack-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.relief-pack-card-head h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #111827;
+}
+
+.relief-pack-card-head p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.relief-pack-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.relief-pack-limiting {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #374151;
+    font-size: 14px;
+}
+
+.relief-pack-components .data-table {
+    min-width: 100%;
+}
+
+.relief-pack-limiting-row td {
+    background: #fff7ed;
+    color: #9a3412;
+    font-weight: 600;
+}
+
+.template-items-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.pack-item-row {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    margin-bottom: 12px;
+}
+
+.pack-item-row-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr 0.6fr;
+    gap: 12px;
+    align-items: end;
+}
+
+.pack-item-remove-group .btn {
+    width: 100%;
+}
+
+@media (max-width: 700px) {
+    .relief-pack-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pack-item-row-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .relief-pack-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+.relief-pack-card .card-actions {
+    margin-top: 4px;
+}
+
+.relief-subtabs {
+    margin-top: 4px;
+}
+
+.relief-subsection {
+    display: none;
+}
+
+.relief-subsection.active {
+    display: block;
+}
+
+.relief-pack-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }

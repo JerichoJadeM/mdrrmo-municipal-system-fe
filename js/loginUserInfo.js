@@ -1,17 +1,27 @@
 // Reuse your apiRequest function
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem('jwtToken');
-        options.headers = {
-            ...options.headers,
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : undefined
-        };
+
+    options.headers = {
+        ...options.headers,
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
 
     const response = await fetch(url, options);
+
     if (!response.ok) {
-        throw new Error('API error: ' + response.status);
+        const text = await response.text();
+        throw new Error(text || `API error: ${response.status}`);
     }
-    return response.json();
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        return await response.json();
+    }
+
+    return null;
 }
 
 // Show error modal with message

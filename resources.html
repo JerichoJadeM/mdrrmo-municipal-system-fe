@@ -288,10 +288,45 @@
                     <option value="OUT">Out of Stock</option>
                 </select>
             </div>
+            <div class="toolbar-right">
+                <button class="btn btn-secondary" id="refreshReliefPacksBtn">
+                    <i class="fas fa-rotate-right"></i>
+                    Refresh Packs
+                </button>
+                <button class="btn btn-primary" id="addReliefPackTemplateBtn">
+                    <i class="fas fa-plus"></i>
+                    Add Pack Template
+                </button>
+            </div>
         </div>
 
-        <div class="panel-card">
-            <div id="reliefTableContainer"></div>
+        <div class="resources-tabs relief-subtabs">
+            <button class="resources-tab active" data-relief-subtab="inventory">Relief Inventory</button>
+            <button class="resources-tab" data-relief-subtab="packs">Pack Readiness</button>
+        </div>
+
+        <div class="relief-subsection active" id="relief-subtab-inventory">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2>Relief Goods Inventory</h2>
+                        <p>Available items for direct distribution or pack assembly.</p>
+                    </div>
+                </div>
+                <div id="reliefTableContainer"></div>
+            </div>
+        </div>
+
+        <div class="relief-subsection" id="relief-subtab-packs">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2>Relief Pack Readiness</h2>
+                        <p>See how many complete food packs can be assembled from current stock.</p>
+                    </div>
+                </div>
+                <div id="reliefPackReadinessContainer"></div>
+            </div>
         </div>
     </section>
 

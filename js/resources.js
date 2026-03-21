@@ -1,6 +1,7 @@
 const API_BASE = "http://localhost:8080/api";
 const USERS_LOOKUP_PATH = "/users";
 const INCIDENTS_LOOKUP_PATH = "/incidents";
+const CALAMITIES_LOOKUP_PATH = "/calamities";
 
 const resourcesState = {
     activeTab: "inventory",
@@ -9,6 +10,7 @@ const resourcesState = {
     barangayOptions: null,
     userOptions: null,
     incidentOptions: null,
+    calamityOptions: null,
     budgets: [],
     selectedBudgetId: null
 };
@@ -30,6 +32,11 @@ async function loadResourcesPage() {
     ]);
 
     await loadActiveResourcesTab();
+}
+
+function canManageReliefTemplates() {
+    const roles = getUserRoles();
+    return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
 }
 
 function bindResourcesTabs() {
@@ -249,32 +256,23 @@ async function loadBarangayOptions() {
     }
 }
 
-async function loadUserOptions() {
-    if (resourcesState.userOptions) return resourcesState.userOptions;
-
+async function loadUserOptions(keyword = "") {
     try {
-        const rows = await apiGet(USERS_LOOKUP_PATH);
-        resourcesState.userOptions = (rows || []).map(item => {
-            const id = item.id ?? item.userId ?? item.value;
-            const firstName = item.firstName || "";
-            const lastName = item.lastName || "";
-            const fullName =
-                item.fullName ||
-                [firstName, lastName].filter(Boolean).join(" ").trim() ||
-                item.name ||
-                item.username ||
-                `User ${id}`;
+        const responderApiBase =
+            typeof RESPONDER_API !== "undefined"
+                ? RESPONDER_API
+                : `${API_BASE}/responders`;
 
-            const email = item.email ? ` • ${item.email}` : "";
-            return {
-                label: `${fullName}${email} • ID ${id}`,
-                value: id
-            };
-        });
-        return resourcesState.userOptions;
+        const rows = await apiGet(
+            `${responderApiBase}/available?keyword=${encodeURIComponent(keyword)}`
+        );
+
+        return (rows || []).map(item => ({
+            label: item.fullName || `${item.firstName || ""} ${item.lastName || ""}`.trim(),
+            value: item.id
+        }));
     } catch (error) {
         console.error("Failed to load users", error);
-        resourcesState.userOptions = [];
         return [];
     }
 }
@@ -284,20 +282,37 @@ async function loadIncidentOptions() {
 
     try {
         const rows = await apiGet(INCIDENTS_LOOKUP_PATH);
-        resourcesState.incidentOptions = (rows || []).map(item => {
-            const id = item.id;
-            const type = item.type || "Incident";
-            const barangay = item.barangay || item.barangayName || "-";
-            const status = item.status || "-";
-            return {
-                label: `${type} • ${barangay} • ${status} • ID ${id}`,
-                value: id
-            };
-        });
+        resourcesState.incidentOptions = (rows || []).map(item => ({
+            label: item.type || `Incident ${item.id}`,
+            value: item.id,
+            status: item.status || "",
+            severity: item.severity || "",
+            type: item.type || ""
+        }));
         return resourcesState.incidentOptions;
     } catch (error) {
         console.error("Failed to load incidents", error);
         resourcesState.incidentOptions = [];
+        return [];
+    }
+}
+
+async function loadCalamityOptions() {
+    if (resourcesState.calamityOptions) return resourcesState.calamityOptions;
+
+    try {
+        const rows = await apiGet(CALAMITIES_LOOKUP_PATH);
+        resourcesState.calamityOptions = (rows || []).map(item => ({
+            label: item.type || `Calamity ${item.id}`,
+            value: item.id,
+            status: item.status || "",
+            severity: item.severity || "",
+            type: item.type || ""
+        }));
+        return resourcesState.calamityOptions;
+    } catch (error) {
+        console.error("Failed to load calamities", error);
+        resourcesState.calamityOptions = [];
         return [];
     }
 }
