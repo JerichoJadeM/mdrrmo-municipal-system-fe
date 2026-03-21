@@ -1,216 +1,208 @@
-const BUDGET_SECTION_OPTIONS = [
-    "DISASTER PREPAREDNESS",
-    "DISASTER PREVENTION AND MITIGATION",
-    "DISASTER RESPONSE",
-    "DISASTER REHABILITATION AND RECOVERY"
-];
-
-const BUDGET_CATEGORY_OPTIONS = [
-    "Training Expenses",
-    "Traveling Expenses",
-    "Other Supplies and Materials",
-    "Drugs and Medicines Expenses",
-    "Medical Supplies",
-    "Rescue Equipment",
-    "Evacuation Support",
-    "Food and Water",
-    "Subsidy to Other Funds",
-    "Capital Outlay",
-    "Maintenance and Other Operating Expenses"
-];
-
 window.loadBudgetSection = async function () {
     try {
-        ensureBudgetActionBindings();
-
-        const [history, forecast, allBudgets] = await Promise.all([
-            canManageBudgets() ? apiGet("/budgets/history?years=5") : Promise.resolve([]),
-            apiGet("/budgets/forecast/next-year"),
-            canManageBudgets() ? apiGet("/budgets") : Promise.resolve([])
+        const [budgets, currentSummary, historyRows, forecast] = await Promise.all([
+            apiGet("/budgets"),
+            apiGet("/budgets/current-summary"),
+            apiGet("/budgets/history"),
+            apiGet("/budgets/forecast/next-year")
         ]);
 
-        resourcesState.budgets = allBudgets || [];
+        renderBudgetToolbar(budgets || [], currentSummary);
+        renderCurrentBudgetSummary(currentSummary);
+        renderBudgetHistory(historyRows || []);
+        renderNextYearForecast(forecast);
 
-        if (resourcesState.budgets.length) {
-            const stillExists = resourcesState.budgets.some(
-                item => Number(item.id) === Number(resourcesState.selectedBudgetId)
-            );
+        const selectedYear = Number(
+            document.getElementById("budgetYearAnalyticsSelect")?.value || currentSummary?.year
+        );
 
-            if (!stillExists) {
-                resourcesState.selectedBudgetId = resourcesState.budgets[0].id;
-            }
+        if (selectedYear) {
+            const analytics = await apiGet(`/budgets/${selectedYear}/analytics`);
+            window.__budgetAnalyticsData = analytics;
+            renderBudgetAnalytics(analytics);
         } else {
-            resourcesState.selectedBudgetId = null;
+            window.__budgetAnalyticsData = null;
+            renderBudgetAnalytics(null);
         }
 
-        renderBudgetSelector(resourcesState.budgets);
-        await renderSelectedBudgetSummary();
-        renderBudgetHistory(history);
-        renderNextYearForecast(forecast);
+        bindBudgetToolbarEvents(currentSummary);
     } catch (error) {
         console.error("Failed to load budget section", error);
-        document.getElementById("currentBudgetSummary").innerHTML =
-            `<div class="error-state">Failed to load budget summary.</div>`;
-        document.getElementById("budgetAllocationContainer").innerHTML =
-            `<div class="error-state">Failed to load budget allocations.</div>`;
-        document.getElementById("budgetHistoryContainer").innerHTML =
-            `<div class="error-state">Failed to load budget history.</div>`;
-        document.getElementById("nextYearForecastContainer").innerHTML =
-            `<div class="error-state">Failed to load budget forecast.</div>`;
+
+        const currentBudgetSummary = document.getElementById("currentBudgetSummary");
+        const budgetHistoryContainer = document.getElementById("budgetHistoryContainer");
+        const nextYearForecastContainer = document.getElementById("nextYearForecastContainer");
+        const budgetAnalyticsContainer = document.getElementById("budgetAnalyticsContainer");
+
+        if (currentBudgetSummary) {
+            currentBudgetSummary.innerHTML = `<div class="error-state">Failed to load current budget summary.</div>`;
+        }
+        if (budgetHistoryContainer) {
+            budgetHistoryContainer.innerHTML = `<div class="error-state">Failed to load budget history.</div>`;
+        }
+        if (nextYearForecastContainer) {
+            nextYearForecastContainer.innerHTML = `<div class="error-state">Failed to load budget forecast.</div>`;
+        }
+        if (budgetAnalyticsContainer) {
+            budgetAnalyticsContainer.innerHTML = `<div class="error-state">Failed to load budget analytics.</div>`;
+        }
     }
 };
 
-function ensureBudgetActionBindings() {
+function renderBudgetToolbar(budgets, currentSummary) {
+    const toolbar = document.getElementById("budgetToolbarContainer");
+    if (!toolbar) return;
+
+    const uniqueYears = [...new Set((budgets || []).map(item => item.year))].sort((a, b) => a - b);
+
+    toolbar.innerHTML = `
+        <div class="section-toolbar">
+            <div class="toolbar-left">
+                <select id="budgetYearAnalyticsSelect">
+                    ${uniqueYears.map(year => `
+                        <option value="${year}" ${Number(year) === Number(currentSummary?.year) ? "selected" : ""}>
+                            ${year}
+                        </option>
+                    `).join("")}
+                </select>
+
+                <select id="budgetAnalyticsSectionFilter">
+                    <option value="">All Sections</option>
+                    <option value="DISASTER PREPAREDNESS">DISASTER PREPAREDNESS</option>
+                    <option value="DISASTER PREVENTION AND MITIGATION">DISASTER PREVENTION AND MITIGATION</option>
+                    <option value="DISASTER RESPONSE">DISASTER RESPONSE</option>
+                    <option value="DISASTER REHABILITATION AND RECOVERY">DISASTER REHABILITATION AND RECOVERY</option>
+                </select>
+
+                <input type="text" id="budgetAnalyticsCategorySearch" placeholder="Search category...">
+            </div>
+
+            <div class="toolbar-right">
+                ${canManageBudget() ? `
+                    <button class="btn btn-primary" id="addBudgetBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Budget
+                    </button>
+
+                    <button class="btn btn-secondary" id="allocateBudgetCategoryBtn">
+                        <i class="fas fa-layer-group"></i>
+                        Allocate Category
+                    </button>
+                ` : ""}
+            </div>
+        </div>
+    `;
+}
+
+function bindBudgetToolbarEvents(currentSummary) {
+    const analyticsSelect = document.getElementById("budgetYearAnalyticsSelect");
+    const sectionFilter = document.getElementById("budgetAnalyticsSectionFilter");
+    const categorySearch = document.getElementById("budgetAnalyticsCategorySearch");
     const addBudgetBtn = document.getElementById("addBudgetBtn");
-    const allocateBudgetBtn = document.getElementById("allocateBudgetBtn");
-    const budgetSelect = document.getElementById("budgetSelect");
+    const allocateBtn = document.getElementById("allocateBudgetCategoryBtn");
+
+    if (analyticsSelect && !analyticsSelect.dataset.bound) {
+        analyticsSelect.dataset.bound = "true";
+        analyticsSelect.addEventListener("change", async () => {
+            try {
+                const selectedYear = Number(analyticsSelect.value);
+                const analytics = await apiGet(`/budgets/${selectedYear}/analytics`);
+                window.__budgetAnalyticsData = analytics;
+                renderBudgetAnalytics(analytics);
+            } catch (error) {
+                console.error("Failed to load analytics", error);
+                showToast("Failed to load budget analytics.", "error");
+            }
+        });
+    }
+
+    if (sectionFilter && !sectionFilter.dataset.bound) {
+        sectionFilter.dataset.bound = "true";
+        sectionFilter.addEventListener("change", () => {
+            renderBudgetAnalytics(window.__budgetAnalyticsData);
+        });
+    }
+
+    if (categorySearch && !categorySearch.dataset.bound) {
+        categorySearch.dataset.bound = "true";
+        categorySearch.addEventListener("input", () => {
+            renderBudgetAnalytics(window.__budgetAnalyticsData);
+        });
+    }
 
     if (addBudgetBtn && !addBudgetBtn.dataset.bound) {
         addBudgetBtn.dataset.bound = "true";
         addBudgetBtn.addEventListener("click", () => {
-            if (!canManageBudgets()) {
-                showToast("You do not have permission to add budgets.", "error");
-                return;
-            }
-            window.openBudgetCreateModal();
+            openAddBudgetModal(currentSummary?.year);
         });
     }
 
-    if (allocateBudgetBtn && !allocateBudgetBtn.dataset.bound) {
-        allocateBudgetBtn.dataset.bound = "true";
-        allocateBudgetBtn.addEventListener("click", () => {
-            if (!canManageBudgets()) {
-                showToast("You do not have permission to allocate budgets.", "error");
-                return;
-            }
-            window.openBudgetAllocateModal();
-        });
-    }
-
-    if (budgetSelect && !budgetSelect.dataset.bound) {
-        budgetSelect.dataset.bound = "true";
-        budgetSelect.addEventListener("change", async () => {
-            resourcesState.selectedBudgetId = budgetSelect.value ? Number(budgetSelect.value) : null;
-            await renderSelectedBudgetSummary();
+    if (allocateBtn && !allocateBtn.dataset.bound) {
+        allocateBtn.dataset.bound = "true";
+        allocateBtn.addEventListener("click", () => {
+            openAllocateBudgetCategoryModal(currentSummary);
         });
     }
 }
 
-function renderBudgetSelector(budgets) {
-    const select = document.getElementById("budgetSelect");
-    if (!select) return;
+function renderCurrentBudgetSummary(summary) {
+    const container = document.getElementById("currentBudgetSummary");
+    if (!container) return;
 
-    if (!canManageBudgets()) {
-        select.innerHTML = "";
+    if (!summary) {
+        container.innerHTML = `<div class="empty-state">No current budget found.</div>`;
         return;
     }
 
-    if (!budgets || !budgets.length) {
-        select.innerHTML = `<option value="">No budgets</option>`;
-        return;
-    }
-
-    select.innerHTML = budgets.map(budget => `
-        <option value="${budget.id}" ${Number(resourcesState.selectedBudgetId) === Number(budget.id) ? "selected" : ""}>
-            ${escapeHtml(String(budget.year))} - ${escapeHtml(budget.description || "Budget")}
-        </option>
-    `).join("");
-}
-
-async function renderSelectedBudgetSummary() {
-    const currentContainer = document.getElementById("currentBudgetSummary");
-    const allocationContainer = document.getElementById("budgetAllocationContainer");
-
-    if (!resourcesState.selectedBudgetId || Number.isNaN(Number(resourcesState.selectedBudgetId))) {
-        currentContainer.innerHTML = `<div class="empty-state">Select a budget record.</div>`;
-        allocationContainer.innerHTML = `<div class="empty-state">Select a budget record.</div>`;
-        return;
-    }
-
-    try {
-        const detail = await apiGet(`/budgets/${resourcesState.selectedBudgetId}`);
-
-        currentContainer.innerHTML = `
-            <div class="metric-row">
-                <div class="metric-card">
-                    <div class="metric-label">Fiscal Year</div>
-                    <div class="metric-value">${escapeHtml(String(detail.year ?? "-"))}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Total Allotment</div>
-                    <div class="metric-value">${formatPeso(detail.totalAllotment)}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Total Obligations</div>
-                    <div class="metric-value">${formatPeso(detail.totalObligations)}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Remaining Balance</div>
-                    <div class="metric-value">${formatPeso(detail.remainingBalance)}</div>
-                </div>
+    container.innerHTML = `
+        <div class="metric-row">
+            <div class="metric-card">
+                <div class="metric-label">Year</div>
+                <div class="metric-value">${summary.year}</div>
             </div>
 
-            <div class="metric-row" style="margin-top: 14px;">
-                <div class="metric-card">
-                    <div class="metric-label">Allocated to Categories</div>
-                    <div class="metric-value">${formatPeso(detail.allocatedToCategories)}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Unallocated Budget</div>
-                    <div class="metric-value">${formatPeso(detail.unallocatedBudget)}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Utilization Rate</div>
-                    <div class="metric-value">${formatNumber(detail.utilizationRate)}%</div>
-                </div>
+            <div class="metric-card">
+                <div class="metric-label">Allotment</div>
+                <div class="metric-value">${formatPeso(summary.totalAllotment)}</div>
             </div>
-        `;
 
-        allocationContainer.innerHTML = `
-            ${detail.categories && detail.categories.length ? `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Section</th>
-                            <th>Category</th>
-                            <th>Allocated Amount</th>
-                            <th>% of Allotment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${detail.categories.map(category => `
-                            <tr>
-                                <td>${escapeHtml(category.section || "-")}</td>
-                                <td>${escapeHtml(category.name)}</td>
-                                <td>${formatPeso(category.allocatedAmount)}</td>
-                                <td>${detail.totalAllotment > 0 ? `${formatNumber((Number(category.allocatedAmount || 0) / Number(detail.totalAllotment || 0)) * 100)}%` : "--"}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            ` : `
-                <div class="empty-state">No categories allocated yet for the selected budget.</div>
-            `}
-        `;
-    } catch (error) {
-        console.error("Failed to load selected budget detail", error);
-        currentContainer.innerHTML = `<div class="error-state">Failed to load selected budget summary.</div>`;
-        allocationContainer.innerHTML = `<div class="error-state">Failed to load selected budget allocations.</div>`;
-    }
+            <div class="metric-card">
+                <div class="metric-label">Allocated</div>
+                <div class="metric-value">${formatPeso(summary.totalAllocated)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Obligations</div>
+                <div class="metric-value">${formatPeso(summary.totalObligations)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Remaining</div>
+                <div class="metric-value">${formatPeso(summary.totalRemaining)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Allocation Rate</div>
+                <div class="metric-value">${formatPercent(summary.allocationRate)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Utilization</div>
+                <div class="metric-value">${formatPercent(summary.utilizationRate)}</div>
+            </div>
+        </div>
+
+        <div class="budget-description">
+            <strong>Description:</strong> ${escapeHtml(summary.description || "-")}
+        </div>
+    `;
 }
 
-function renderBudgetHistory(rows) {
+function renderBudgetHistory(historyRows) {
     const container = document.getElementById("budgetHistoryContainer");
-    const historyPanel = document.getElementById("budgetHistoryPanel");
+    if (!container) return;
 
-    if (!canManageBudgets()) {
-        if (historyPanel) historyPanel.classList.add("hidden");
-        return;
-    }
-
-    if (historyPanel) historyPanel.classList.remove("hidden");
-
-    if (!rows || !rows.length) {
+    if (!historyRows || !historyRows.length) {
         container.innerHTML = `<div class="empty-state">No budget history found.</div>`;
         return;
     }
@@ -222,228 +214,440 @@ function renderBudgetHistory(rows) {
                     <th>Year</th>
                     <th>Allotment</th>
                     <th>Obligations</th>
-                    <th>Remaining Balance</th>
+                    <th>Remaining</th>
                     <th>Utilization</th>
                 </tr>
             </thead>
             <tbody>
-                ${rows.map(row => `
+                ${historyRows.map(row => `
                     <tr>
-                        <td>${escapeHtml(String(row.year ?? "-"))}</td>
+                        <td>${row.year}</td>
                         <td>${formatPeso(row.allotment)}</td>
                         <td>${formatPeso(row.obligations)}</td>
                         <td>${formatPeso(row.remainingBalance)}</td>
-                        <td>${formatNumber(row.utilizationRate)}%</td>
+                        <td>${formatPercent(row.utilizationRate)}</td>
+                    </tr>
                 `).join("")}
             </tbody>
         </table>
     `;
 }
 
-function renderNextYearForecast(data) {
-    const grouped = {};
+function renderNextYearForecast(forecast) {
+    const container = document.getElementById("nextYearForecastContainer");
+    if (!container) return;
 
-    (data.categories || []).forEach(item => {
-        const section = item.section || "UNASSIGNED";
-        if (!grouped[section]) {
-            grouped[section] = [];
-        }
-        grouped[section].push(item);
-    });
+    if (!forecast) {
+        container.innerHTML = `<div class="empty-state">No forecast available.</div>`;
+        return;
+    }
 
-    const groupedHtml = Object.entries(grouped).map(([section, items]) => {
-        const sectionTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-
-        return `
-            <div class="forecast-section-block">
-                <div class="forecast-section-head">
-                    <h3>${escapeHtml(section)}</h3>
-                    <span class="forecast-section-total">${formatPeso(sectionTotal)}</span>
+    container.innerHTML = `
+        <div class="forecast-summary-card">
+            <div class="metric-row">
+                <div class="metric-card">
+                    <div class="metric-label">Forecast Year</div>
+                    <div class="metric-value">${forecast.year}</div>
                 </div>
-                <table class="data-table">
-                    <thead>
+
+                <div class="metric-card">
+                    <div class="metric-label">Total Forecast</div>
+                    <div class="metric-value">${formatPeso(forecast.totalForecast)}</div>
+                </div>
+            </div>
+
+            <div class="budget-description">
+                <strong>Assumptions:</strong> ${escapeHtml(forecast.assumptions || "-")}
+            </div>
+        </div>
+
+        <div class="panel-head" style="margin-top: 16px;">
+            <div><h2>Forecast Drivers</h2></div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Driver</th>
+                    <th>Value</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${(forecast.drivers || []).map(driver => `
+                    <tr>
+                        <td>${escapeHtml(driver.driver)}</td>
+                        <td>${escapeHtml(driver.value)}</td>
+                        <td>${escapeHtml(driver.note)}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+
+        <div class="panel-head" style="margin-top: 16px;">
+            <div><h2>Forecast by Section and Category</h2></div>
+        </div>
+
+        <div class="table-scroll-x">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Category</th>
+                        <th>5Y Baseline</th>
+                        <th>Trend Adj.</th>
+                        <th>Rule-Based</th>
+                        <th>Historical Adj.</th>
+                        <th>Price Adj.</th>
+                        <th>Contingency</th>
+                        <th>Final Forecast</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${(forecast.categories || []).map(row => `
                         <tr>
-                            <th>Category</th>
-                            <th>Forecast Amount</th>
-                            <th>Note</th>
+                            <td>${escapeHtml(row.section)}</td>
+                            <td>${escapeHtml(row.category)}</td>
+                            <td>${formatPeso(row.historicalBaseline)}</td>
+                            <td>${formatPeso(row.trendAdjustment)}</td>
+                            <td>${formatPeso(row.ruleBasedAmount)}</td>
+                            <td>${formatPeso(row.historicalAdjustment)}</td>
+                            <td>${formatPeso(row.priceAdjustment)}</td>
+                            <td>${formatPeso(row.contingencyAmount)}</td>
+                            <td><strong>${formatPeso(row.finalAmount)}</strong></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(item => `
-                            <tr>
-                                <td>${escapeHtml(item.category)}</td>
-                                <td>${formatPeso(item.amount)}</td>
-                                <td>${escapeHtml(item.note || "-")}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }).join("");
-
-    document.getElementById("nextYearForecastContainer").innerHTML = `
-        <div class="metric-row">
-            <div class="metric-card">
-                <div class="metric-label">Forecast Year</div>
-                <div class="metric-value">${escapeHtml(String(data.year ?? "-"))}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Forecast Allotment</div>
-                <div class="metric-value">${formatPeso(data.totalForecast)}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Recommended Adjustment</div>
-                <div class="metric-value">${formatPeso(data.recommendedAdjustment)}</div>
-            </div>
-        </div>
-
-        <div style="margin-top: 14px;" class="metric-card">
-            <div class="metric-label">Forecast Assumptions</div>
-            <div>${escapeHtml(data.assumptions || "No assumptions recorded.")}</div>
-        </div>
-
-        <div class="forecast-sections-wrapper" style="margin-top: 16px;">
-            ${groupedHtml || `<div class="empty-state">No forecast data available.</div>`}
+                    `).join("")}
+                </tbody>
+            </table>
         </div>
     `;
 }
 
-window.openBudgetCreateModal = function () {
-    if (!canManageBudgets()) return;
+function renderBudgetAnalytics(analytics) {
+    const container = document.getElementById("budgetAnalyticsContainer");
+    if (!container) return;
 
+    if (!analytics) {
+        container.innerHTML = `<div class="empty-state">No budget analytics found.</div>`;
+        return;
+    }
+
+    const sectionFilterValue = document.getElementById("budgetAnalyticsSectionFilter")?.value?.trim() || "";
+    const categorySearchValue = document.getElementById("budgetAnalyticsCategorySearch")?.value?.trim().toLowerCase() || "";
+
+    const filteredCategoryTotals = (analytics.categoryTotals || []).filter(row => {
+        const matchesSection = !sectionFilterValue || row.section === sectionFilterValue;
+        const matchesCategory = !categorySearchValue || row.categoryName.toLowerCase().includes(categorySearchValue);
+        return matchesSection && matchesCategory;
+    });
+
+    const filteredSectionTotals = (analytics.sectionTotals || []).filter(row => {
+        return !sectionFilterValue || row.section === sectionFilterValue;
+    });
+
+    container.innerHTML = `
+        <div class="panel-head">
+            <div>
+                <h2>Budget Analytics - ${analytics.year}</h2>
+            </div>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric-card">
+                <div class="metric-label">Allotment</div>
+                <div class="metric-value">${formatPeso(analytics.totalAllotment)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Obligations</div>
+                <div class="metric-value">${formatPeso(analytics.totalObligations)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Remaining</div>
+                <div class="metric-value">${formatPeso(analytics.totalRemaining)}</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Utilization</div>
+                <div class="metric-value">${formatPercent(analytics.utilizationRate)}</div>
+            </div>
+        </div>
+
+        <div class="budget-analytics-grid">
+            <div class="panel-card">
+                <div class="panel-head"><h2>Section Totals</h2></div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Allocated</th>
+                            <th>Obligated</th>
+                            <th>Remaining</th>
+                            <th>Utilization</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredSectionTotals.length ? filteredSectionTotals.map(row => `
+                            <tr>
+                                <td>${escapeHtml(row.section)}</td>
+                                <td>${formatPeso(row.allocatedAmount)}</td>
+                                <td>${formatPeso(row.obligatedAmount)}</td>
+                                <td>${formatPeso(row.remainingAmount)}</td>
+                                <td>${formatPercent(row.utilizationRate)}</td>
+                            </tr>
+                        `).join("") : `
+                            <tr><td colspan="5" class="empty-state">No matching section totals found.</td></tr>
+                        `}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-head"><h2>Category Totals</h2></div>
+                <div class="table-scroll-x">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Section</th>
+                                <th>Category</th>
+                                <th>Allocated</th>
+                                <th>Obligated</th>
+                                <th>Remaining</th>
+                                <th>Utilization</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredCategoryTotals.length ? filteredCategoryTotals.map(row => `
+                                <tr>
+                                    <td>${escapeHtml(row.section)}</td>
+                                    <td>${escapeHtml(row.categoryName)}</td>
+                                    <td>${formatPeso(row.allocatedAmount)}</td>
+                                    <td>${formatPeso(row.obligatedAmount)}</td>
+                                    <td>${formatPeso(row.remainingAmount)}</td>
+                                    <td>${formatPercent(row.utilizationRate)}</td>
+                                </tr>
+                            `).join("") : `
+                                <tr><td colspan="6" class="empty-state">No matching category totals found.</td></tr>
+                            `}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="budget-analytics-grid" style="margin-top: 16px;">
+            <div class="panel-card">
+                <div class="panel-head"><h2>Incident-Linked Costs</h2></div>
+                ${renderOperationCostsTable(analytics.incidentCosts, "No incident-linked costs found.")}
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-head"><h2>Calamity-Linked Costs</h2></div>
+                ${renderOperationCostsTable(analytics.calamityCosts, "No calamity-linked costs found.")}
+            </div>
+        </div>
+    `;
+}
+
+function renderOperationCostsTable(rows, emptyMessage) {
+    if (!rows || !rows.length) {
+        return `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
+    }
+
+    return `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Operation</th>
+                    <th>Total Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(row => `
+                    <tr>
+                        <td>${row.operationId}</td>
+                        <td>${escapeHtml(row.operationLabel)}</td>
+                        <td>${formatPeso(row.totalCost)}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+function canManageBudget() {
+    if (typeof getUserRoles === "function") {
+        const roles = getUserRoles();
+        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    }
+
+    try {
+        const roles = JSON.parse(localStorage.getItem("userAuthorities") || "[]");
+        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    } catch (e) {
+        return false;
+    }
+}
+
+function openAddBudgetModal(defaultYear) {
     openResourcesModal({
         title: "Add Budget",
         bodyHtml: `
-            <form id="budgetCreateForm" class="form-grid">
+            <form id="addBudgetForm" class="form-grid">
                 <div class="form-group">
                     <label>Year</label>
-                    <input type="number" name="year" min="2000" max="9999" required>
+                    <input type="number" name="year" min="${new Date().getFullYear()}" value="${defaultYear || new Date().getFullYear()}" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Total Allotment</label>
-                    <input type="number" name="totalAmount" min="0" step="0.01" required>
+                    <label>Amount</label>
+                    <input type="number" name="totalAmount" min="1" step="0.01" required>
                 </div>
 
                 <div class="form-group full">
                     <label>Description</label>
-                    <input type="text" name="description" required>
+                    <textarea name="description" rows="3" placeholder="Annual budget description"></textarea>
                 </div>
             </form>
         `,
         footerHtml: `
-            <button class="btn btn-secondary" id="cancelBudgetCreateBtn">Cancel</button>
-            <button class="btn btn-primary" id="submitBudgetCreateBtn">Create Budget</button>
+            <button class="btn btn-secondary" id="cancelAddBudgetBtn">Cancel</button>
+            <button class="btn btn-primary" id="submitAddBudgetBtn">Save Budget</button>
         `
     });
 
-    document.getElementById("cancelBudgetCreateBtn")?.addEventListener("click", closeResourcesModal);
+    document.getElementById("cancelAddBudgetBtn")?.addEventListener("click", closeResourcesModal);
 
-    document.getElementById("submitBudgetCreateBtn")?.addEventListener("click", async (event) => {
+    document.getElementById("submitAddBudgetBtn")?.addEventListener("click", async (event) => {
         const button = event.currentTarget;
         const originalText = button.textContent;
 
-        const form = document.getElementById("budgetCreateForm");
+        const form = document.getElementById("addBudgetForm");
         const formData = new FormData(form);
 
         const payload = {
             year: Number(formData.get("year")),
-            totalAmount: Number(formData.get("totalAmount") || 0),
+            totalAmount: Number(formData.get("totalAmount")),
             description: formData.get("description")?.toString().trim()
         };
 
         try {
             button.disabled = true;
-            button.textContent = "Creating...";
-            const created = await apiSend("/budgets", "POST", payload);
+            button.textContent = "Saving...";
+
+            await apiSend("/budgets", "POST", payload);
 
             closeResourcesModal();
-            showToast("Budget created successfully.", "success");
-
-            if (created?.id) {
-                resourcesState.selectedBudgetId = created.id;
-            }
-
-            await refreshResourcesHeader();
+            showToast("Budget saved successfully.", "success");
             await window.loadBudgetSection();
+            await refreshResourcesHeader();
         } catch (error) {
-            console.error("Failed to create budget", error);
-            showToast("Failed to create budget.", "error");
+            console.error("Failed to save budget", error);
+            showToast("Failed to save budget.", "error");
         } finally {
             button.disabled = false;
             button.textContent = originalText;
         }
     });
-};
+}
 
-window.openBudgetAllocateModal = function () {
-    if (!canManageBudgets()) return;
-
-    if (!resourcesState.selectedBudgetId) {
-        showToast("Please select a budget first.", "error");
+function openAllocateBudgetCategoryModal(currentSummary) {
+    if (!currentSummary?.budgetId) {
+        showToast("Current year budget not found.", "error");
         return;
     }
+
+    const categoryOptionsBySection = getBudgetCategoryOptionsBySection();
 
     openResourcesModal({
         title: "Allocate Budget Category",
         bodyHtml: `
-            <form id="budgetAllocateForm" class="form-grid">
-                <div class="form-group searchable-group">
+            <form id="allocateBudgetCategoryForm" class="form-grid">
+                <div class="form-group">
                     <label>Section</label>
-                    <input type="text" id="budgetSectionInput" autocomplete="off" placeholder="Search or select section" required>
-                    <div class="searchable-dropdown" id="budgetSectionDropdown"></div>
+                    <select name="section" id="budgetCategorySectionSelect" required>
+                        <option value="DISASTER PREPAREDNESS">DISASTER PREPAREDNESS</option>
+                        <option value="DISASTER PREVENTION AND MITIGATION">DISASTER PREVENTION AND MITIGATION</option>
+                        <option value="DISASTER RESPONSE">DISASTER RESPONSE</option>
+                        <option value="DISASTER REHABILITATION AND RECOVERY">DISASTER REHABILITATION AND RECOVERY</option>
+                    </select>
                 </div>
 
                 <div class="form-group searchable-group">
                     <label>Category Name</label>
-                    <input type="text" id="budgetCategoryNameInput" autocomplete="off" placeholder="Search or select category" required>
+                    <input type="text" id="budgetCategoryNameInput" autocomplete="off" placeholder="Search category name" required>
+                    <input type="hidden" id="budgetCategoryNameHiddenInput">
                     <div class="searchable-dropdown" id="budgetCategoryNameDropdown"></div>
                 </div>
 
                 <div class="form-group">
                     <label>Allocated Amount</label>
-                    <input type="number" name="allocatedAmount" min="0" step="0.01" required>
+                    <input type="number" name="allocatedAmount" min="1" step="0.01" required>
                 </div>
             </form>
         `,
         footerHtml: `
-            <button class="btn btn-secondary" id="cancelBudgetAllocateBtn">Cancel</button>
-            <button class="btn btn-primary" id="submitBudgetAllocateBtn">Allocate</button>
+            <button class="btn btn-secondary" id="cancelAllocateCategoryBtn">Cancel</button>
+            <button class="btn btn-primary" id="submitAllocateCategoryBtn">Allocate Category</button>
         `
     });
 
-    bindSearchableDropdown({
-        inputId: "budgetSectionInput",
-        dropdownId: "budgetSectionDropdown",
-        options: BUDGET_SECTION_OPTIONS
-    });
+    const sectionSelect = document.getElementById("budgetCategorySectionSelect");
 
-    bindSearchableDropdown({
-        inputId: "budgetCategoryNameInput",
-        dropdownId: "budgetCategoryNameDropdown",
-        options: BUDGET_CATEGORY_OPTIONS
-    });
+    const bindCategoryDropdown = () => {
+        const section = sectionSelect?.value || "DISASTER PREPAREDNESS";
+        const options = (categoryOptionsBySection[section] || []).map(name => ({
+            label: name,
+            value: name
+        }));
 
-    document.getElementById("cancelBudgetAllocateBtn")?.addEventListener("click", closeResourcesModal);
+        const input = document.getElementById("budgetCategoryNameInput");
+        const hidden = document.getElementById("budgetCategoryNameHiddenInput");
+        const dropdown = document.getElementById("budgetCategoryNameDropdown");
 
-    document.getElementById("submitBudgetAllocateBtn")?.addEventListener("click", async (event) => {
+        if (input) input.value = "";
+        if (hidden) hidden.value = "";
+        if (dropdown) dropdown.innerHTML = "";
+
+        bindSearchableDropdown({
+            inputId: "budgetCategoryNameInput",
+            dropdownId: "budgetCategoryNameDropdown",
+            hiddenInputId: "budgetCategoryNameHiddenInput",
+            options,
+            getLabel: option => option.label,
+            getValue: option => option.value
+        });
+    };
+
+    bindCategoryDropdown();
+
+    if (sectionSelect) {
+        sectionSelect.addEventListener("change", bindCategoryDropdown);
+    }
+
+    document.getElementById("cancelAllocateCategoryBtn")?.addEventListener("click", closeResourcesModal);
+
+    document.getElementById("submitAllocateCategoryBtn")?.addEventListener("click", async (event) => {
         const button = event.currentTarget;
         const originalText = button.textContent;
 
-        const form = document.getElementById("budgetAllocateForm");
+        const form = document.getElementById("allocateBudgetCategoryForm");
         const formData = new FormData(form);
 
-        const detail = await apiGet(`/budgets/${resourcesState.selectedBudgetId}`);
+        const section = formData.get("section")?.toString().trim();
+        const categoryName = document.getElementById("budgetCategoryNameHiddenInput")?.value?.trim()
+            || document.getElementById("budgetCategoryNameInput")?.value?.trim();
 
         const payload = {
-            section: document.getElementById("budgetSectionInput")?.value?.trim(),
-            name: document.getElementById("budgetCategoryNameInput")?.value?.trim(),
-            allocatedAmount: Number(formData.get("allocatedAmount") || 0)
+            section,
+            name: categoryName,
+            allocatedAmount: Number(formData.get("allocatedAmount"))
         };
 
-        if (payload.allocatedAmount > Number(detail.unallocatedBudget || 0)) {
-            showToast(`Allocated amount exceeds remaining unallocated budget of ${formatPeso(detail.unallocatedBudget)}.`, "error");
+        if (!payload.name) {
+            showToast("Please select or enter a category name.", "error");
             return;
         }
 
@@ -451,19 +655,47 @@ window.openBudgetAllocateModal = function () {
             button.disabled = true;
             button.textContent = "Allocating...";
 
-            await apiSend(`/budgets/${resourcesState.selectedBudgetId}/categories`, "POST", payload);
+            await apiSend(`/budgets/${currentSummary.budgetId}/categories`, "POST", payload);
 
             closeResourcesModal();
             showToast("Budget category allocated successfully.", "success");
-
-            await refreshResourcesHeader();
             await window.loadBudgetSection();
+            await refreshResourcesHeader();
         } catch (error) {
-            console.error("Failed to allocate budget category", error);
-            showToast("Failed to allocate budget category.", "error");
+            console.error("Failed to allocate category", error);
+            showToast("Failed to allocate category.", "error");
         } finally {
             button.disabled = false;
             button.textContent = originalText;
         }
     });
-};
+}
+
+function getBudgetCategoryOptionsBySection() {
+    return {
+        "DISASTER PREPAREDNESS": [
+            "Training Expenses",
+            "Traveling Expenses",
+            "Rescue Equipment"
+        ],
+        "DISASTER PREVENTION AND MITIGATION": [
+            "Other Supplies and Materials",
+            "Capital Outlay"
+        ],
+        "DISASTER RESPONSE": [
+            "Food and Water",
+            "Medical Supplies",
+            "Drugs and Medicines Expenses",
+            "Evacuation Support",
+            "Maintenance and Other Operating Expenses"
+        ],
+        "DISASTER REHABILITATION AND RECOVERY": [
+            "Subsidy to Other Funds",
+            "Other Supplies and Materials"
+        ]
+    };
+}
+
+function formatPercent(value) {
+    return `${Number(value || 0).toFixed(2)}%`;
+}

@@ -807,3 +807,38 @@ textarea {
     flex-wrap: wrap;
     gap: 8px;
 }
+
+.budget-description {
+    margin-top: 14px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.budget-analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.forecast-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.table-scroll-x {
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .budget-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+#budgetAnalyticsSectionFilter,
+#budgetAnalyticsCategorySearch,
+#budgetYearAnalyticsSelect {
+    min-width: 180px;
+}

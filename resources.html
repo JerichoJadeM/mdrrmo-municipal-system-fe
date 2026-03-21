@@ -228,51 +228,33 @@
     </section>
 
     <section class="resources-section" id="tab-budget">
-        <div class="section-toolbar budget-toolbar" id="budgetToolbar">
-            <div class="toolbar-left budget-selector-group">
-                <label for="budgetSelect">Budget Record</label>
-                <select id="budgetSelect"></select>
-            </div>
-            <div class="toolbar-right">
-                <button class="btn btn-primary" id="addBudgetBtn">
-                    <i class="fas fa-plus"></i>
-                    Add Budget
-                </button>
-                <button class="btn btn-secondary" id="allocateBudgetBtn">
-                    <i class="fas fa-sitemap"></i>
-                    Allocate Category
-                </button>
-            </div>
-        </div>
+        <div id="budgetToolbarContainer"></div>
 
-        <div class="budget-overview-grid">
+        <div class="budget-grid">
             <div class="panel-card">
                 <div class="panel-head">
-                    <h2>Current Budget Summary</h2>
+                    <h2>Current Budget</h2>
                 </div>
                 <div id="currentBudgetSummary"></div>
             </div>
 
             <div class="panel-card">
                 <div class="panel-head">
-                    <h2>Budget Category Allocation</h2>
+                    <h2>Next-Year Forecast</h2>
                 </div>
-                <div id="budgetAllocationContainer"></div>
+                <div id="nextYearForecastContainer"></div>
             </div>
         </div>
 
         <div class="panel-card">
             <div class="panel-head">
-                <h2>Next-Year Forecast</h2>
-            </div>
-            <div id="nextYearForecastContainer"></div>
-        </div>
-
-        <div class="panel-card" id="budgetHistoryPanel">
-            <div class="panel-head">
                 <h2>Budget History</h2>
             </div>
             <div id="budgetHistoryContainer"></div>
+        </div>
+
+        <div class="panel-card">
+            <div id="budgetAnalyticsContainer"></div>
         </div>
     </section>
 
