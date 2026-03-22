@@ -1695,3 +1695,33 @@
     max-height: 220px;
     overflow-y: auto;
 }
+
+.transition-relief-readiness-block {
+    display: grid;
+    gap: 12px;
+}
+
+.readiness-section-block {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.readiness-item-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.readiness-item-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px dashed #e5e7eb;
+    padding-bottom: 6px;
+}
+
+.transition-pack-priority-card {
+    border: 1px solid #dbeafe;
+}
