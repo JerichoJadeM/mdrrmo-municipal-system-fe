@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - MDRRM System</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/reports.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userDropdownBtn">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="user-name" id="userNameDisplay">User</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="#notifications" class="dropdown-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notification</span>
+                        </a>
+                        <a href="#messages" class="dropdown-item">
+                            <i class="fas fa-message"></i>
+                            <span>Messages</span>
+                        </a>
+                        <a href="change-password.html" class="dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navbar-title">
+                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            </div>
+
+            <div class="navbar-notifications">
+                <button class="notification-btn" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="message-btn" id="messageBtn" title="Messages">
+                    <i class="fas fa-envelope"></i>
+                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
+                </button>
+            </div>
+
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="index.html">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="weather.html">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="alerts.html">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts & Warnings</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="disaster-management.html">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Disaster Management</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="operations.html">
+                    <i class="fas fa-tasks"></i>
+                    <span>Operations</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="resources.html">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="admin">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
+
+            <li class="menu-item active">
+                <a href="reports.html">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="page-content main-content">
+        <div class="container reports-page">
+            <!-- Page Header -->
+            <section class="reports-header">
+                <div class="reports-header-text">
+                    <h2>Reports</h2>
+                    <p class="subtitle">Operational summaries, financial reporting, and audit trail review</p>
+                </div>
+
+                <div class="reports-header-actions">
+                    <button class="btn-secondary" id="refreshReportsBtn">
+                        <i class="fas fa-rotate-right"></i>
+                        Refresh
+                    </button>
+                    <button class="btn-primary" id="exportPdfBtn" disabled>
+                        <i class="fas fa-file-pdf"></i>
+                        Export PDF
+                    </button>
+                </div>
+            </section>
+
+            <!-- Global Filters -->
+            <section class="reports-filters-section">
+                <div class="reports-filters-card">
+                    <div class="filter-group">
+                        <label for="reportFromDate">From</label>
+                        <input type="date" id="reportFromDate">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="reportToDate">To</label>
+                        <input type="date" id="reportToDate">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="reportFrequency">Frequency</label>
+                        <select id="reportFrequency">
+                            <option value="custom">Custom Range</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annually">Annually</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group filter-group-year searchable-group">
+                        <label for="financialYearInput">Financial Year</label>
+                        <input type="text" id="financialYearInput" placeholder="Current Year" autocomplete="off">
+                        <div class="searchable-dropdown" id="financialYearDropdown"></div>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn-primary" id="applyFiltersBtn">
+                            <i class="fas fa-filter"></i>
+                            Apply Filters
+                        </button>
+                        <button class="btn-light" id="resetFiltersBtn">
+                            <i class="fas fa-eraser"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabs -->
+            <section class="reports-tabs-section">
+                <div class="reports-tabs" role="tablist" aria-label="Reports tabs">
+                    <button class="report-tab active" data-tab="summaryTab" type="button">Summary</button>
+                    <button class="report-tab" data-tab="financialTab" type="button">Financial</button>
+                    <button class="report-tab" data-tab="auditTab" type="button">Audit Trail</button>
+                    <button class="report-tab" data-tab="incidentTab" type="button">Incidents</button>
+                    <button class="report-tab" data-tab="calamityTab" type="button">Calamities</button>
+                    <button class="report-tab" data-tab="resourcesTab" type="button">Resources</button>
+                </div>
+            </section>
+
+            <!-- Summary Tab -->
+            <section class="report-panel active" id="summaryTab">
+                <div class="report-section-header">
+                    <h3>Operational Summary</h3>
+                    <p>Overview of key metrics across incidents, calamities, resources, and budget.</p>
+                </div>
+
+                <div class="summary-cards-grid">
+                    <article class="report-card danger">
+                        <div class="report-card-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Incidents</span>
+                            <h4 id="summaryTotalIncidents">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card warning">
+                        <div class="report-card-icon"><i class="fas fa-bolt"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Active Incidents</span>
+                            <h4 id="summaryActiveIncidents">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-circle-check"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Resolved Incidents</span>
+                            <h4 id="summaryResolvedIncidents">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card info">
+                        <div class="report-card-icon"><i class="fas fa-cloud-showers-heavy"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Calamities</span>
+                            <h4 id="summaryTotalCalamities">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card primary">
+                        <div class="report-card-icon"><i class="fas fa-house-flood-water"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Active Calamities</span>
+                            <h4 id="summaryActiveCalamities">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-flag-checkered"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Resolved Calamities</span>
+                            <h4 id="summaryResolvedCalamities">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card neutral">
+                        <div class="report-card-icon"><i class="fas fa-boxes-stacked"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Inventory Items</span>
+                            <h4 id="summaryInventoryItems">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card danger">
+                        <div class="report-card-icon"><i class="fas fa-box-open"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Low Stock Items</span>
+                            <h4 id="summaryLowStockItems">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card info">
+                        <div class="report-card-icon"><i class="fas fa-building-shield"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Open Evacuation Centers</span>
+                            <h4 id="summaryOpenCenters">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card primary">
+                        <div class="report-card-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Audit Events</span>
+                            <h4 id="summaryAuditEvents">0</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label" id="summaryCurrentBudgetLabel">Current Budget</span>
+                            <h4 id="summaryCurrentBudget">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card warning">
+                        <div class="report-card-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label" id="summaryCurrentSpentLabel">Current Spent</span>
+                            <h4 id="summaryCurrentSpent">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-piggy-bank"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label" id="summaryCurrentRemainingLabel">Current Remaining</span>
+                            <h4 id="summaryCurrentRemaining">₱0.00</h4>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="report-grid-two">
+                    <section class="report-panel-card">
+                        <div class="card-header">
+                            <h4>Summary Snapshot</h4>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="report-table compact-table">
+                                <tbody id="summarySnapshotTableBody">
+                                    <tr><td>Total Incidents</td><td>0</td></tr>
+                                    <tr><td>Active Incidents</td><td>0</td></tr>
+                                    <tr><td>Resolved Incidents</td><td>0</td></tr>
+                                    <tr><td>Total Calamities</td><td>0</td></tr>
+                                    <tr><td>Current Budget</td><td>₱0.00</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="report-panel-card">
+                        <div class="card-header">
+                            <h4>Covered Period</h4>
+                        </div>
+                        <div class="covered-period-box">
+                            <p><strong>From:</strong> <span id="summaryCoveredFrom">Not set</span></p>
+                            <p><strong>To:</strong> <span id="summaryCoveredTo">Not set</span></p>
+                            <p><strong>Frequency:</strong> <span id="summaryFrequencyLabel">Monthly</span></p>
+                            <p><strong>Last Refreshed:</strong> <span id="summaryLastRefreshed">--</span></p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Financial Tab -->
+            <section class="report-panel" id="financialTab">
+                <div class="report-section-header">
+                    <h3>Financial Reports</h3>
+                    <p>Budget summary, history, analytics, and forecast for manager and admin review.</p>
+                </div>
+
+                <div class="summary-cards-grid financial-cards-grid">
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-sack-dollar"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Allotment</span>
+                            <h4 id="financialTotalAllotment">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card primary">
+                        <div class="report-card-icon"><i class="fas fa-diagram-project"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Allocated</span>
+                            <h4 id="financialTotalAllocated">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card warning">
+                        <div class="report-card-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Obligations</span>
+                            <h4 id="financialTotalObligations">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-scale-balanced"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Remaining Budget</span>
+                            <h4 id="financialTotalRemaining">₱0.00</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card info">
+                        <div class="report-card-icon"><i class="fas fa-percent"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Allocation Rate</span>
+                            <h4 id="financialAllocationRate">0%</h4>
+                        </div>
+                    </article>
+
+                    <article class="report-card danger">
+                        <div class="report-card-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Utilization Rate</span>
+                            <h4 id="financialUtilizationRate">0%</h4>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="report-grid-two">
+                    <section class="report-panel-card">
+                        <div class="card-header">
+                            <h4>Current Financial Summary</h4>
+                        </div>
+                        <div class="financial-summary-list">
+                            <div class="summary-line"><span>Budget ID</span><strong id="financialBudgetId">--</strong></div>
+                            <div class="summary-line"><span>Year</span><strong id="financialBudgetYear">--</strong></div>
+                            <div class="summary-line"><span>Description</span><strong id="financialDescription">--</strong></div>
+                        </div>
+                    </section>
+
+                    <section class="report-panel-card">
+                        <div class="card-header">
+                            <h4>Next Year Forecast</h4>
+                        </div>
+                        <div class="financial-summary-list">
+                            <div class="summary-line"><span>Forecast Year</span><strong id="forecastYear">--</strong></div>
+                            <div class="summary-line"><span>Projected Budget</span><strong id="forecastProjectedBudget">₱0.00</strong></div>
+                            <div class="summary-line"><span>Forecast Notes</span><strong id="forecastNotes">--</strong></div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="report-panel-card">
+                    <div class="card-header">
+                        <h4>5-Year Budget History</h4>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Allotment</th>
+                                    <th>Obligations</th>
+                                    <th>Remaining Balance</th>
+                                    <th>Utilization Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financialHistoryTableBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state-cell">No financial history available.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Audit Trail Tab -->
+            <section class="report-panel" id="auditTab">
+                <div class="report-section-header">
+                    <h3>Audit Trail</h3>
+                    <p>Review recorded operational actions, transitions, and user-performed events.</p>
+                </div>
+
+                <section class="report-panel-card">
+                    <div class="audit-filters-grid">
+                        <div class="filter-group">
+                            <label for="auditOperationType">Operation Type</label>
+                            <select id="auditOperationType">
+                                <option value="">All</option>
+                                <option value="INCIDENT">Incident</option>
+                                <option value="CALAMITY">Calamity</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group searchable-group">
+                            <label for="auditActionType">Action Type</label>
+                            <input type="text" id="auditActionType" placeholder="Search action type..." autocomplete="off">
+                            <div class="searchable-dropdown" id="auditActionTypeDropdown"></div>
+                        </div>
+
+                        <div class="filter-group searchable-group">
+                            <label for="auditPerformedBy">Performed By</label>
+                            <input type="text" id="auditPerformedBy" placeholder="Search user..." autocomplete="off">
+                            <div class="searchable-dropdown" id="auditPerformedByDropdown"></div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="auditOperationId">Record ID</label>
+                            <input type="number" id="auditOperationId" placeholder="Optional">
+                        </div>
+
+                        <div class="filter-actions audit-filter-actions">
+                            <button class="btn-primary" id="applyAuditFiltersBtn">
+                                <i class="fas fa-magnifying-glass"></i>
+                                Search
+                            </button>
+                            <button class="btn-light" id="resetAuditFiltersBtn">
+                                <i class="fas fa-arrow-rotate-left"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="report-panel-card">
+                    <div class="card-header">
+                        <h4>Audit Events</h4>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Module</th>
+                                    <th>Record Type</th>
+                                    <th>Record ID</th>
+                                    <th>Action</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Performed By</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTrailTableBody">
+                                <tr>
+                                    <td colspan="9" class="empty-state-cell">No audit events found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Incidents Placeholder -->
+            <section class="report-panel" id="incidentTab">
+                <div class="report-section-header">
+                    <h3>Incident Reports</h3>
+                    <p>Incident totals, breakdowns, and detailed records for the selected period.</p>
+                </div>
+
+                <div class="summary-cards-grid">
+                    <article class="report-card danger">
+                        <div class="report-card-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Incidents</span>
+                            <h4 id="incidentTotalCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card warning">
+                        <div class="report-card-icon"><i class="fas fa-bolt"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Active Incidents</span>
+                            <h4 id="incidentActiveCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-circle-check"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Resolved Incidents</span>
+                            <h4 id="incidentResolvedCount">0</h4>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="report-grid-two">
+                    <section class="report-panel-card">
+                        <div class="card-header"><h4>Incidents by Type</h4></div>
+                        <div class="table-responsive">
+                            <table class="report-table compact-table">
+                                <tbody id="incidentByTypeTableBody">
+                                    <tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="report-panel-card">
+                        <div class="card-header"><h4>Incidents by Barangay</h4></div>
+                        <div class="table-responsive">
+                            <table class="report-table compact-table">
+                                <tbody id="incidentByBarangayTableBody">
+                                    <tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="report-panel-card">
+                    <div class="card-header"><h4>Incident Records</h4></div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Barangay</th>
+                                    <th>Location</th>
+                                    <th>Reported At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incidentRecordsTableBody">
+                                <tr><td colspan="6" class="empty-state-cell">No incident records found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Calamities Placeholder -->
+            <section class="report-panel" id="calamityTab">
+                <div class="report-section-header">
+                    <h3>Calamity Reports</h3>
+                    <p>Calamity totals, status distribution, and detailed records for the selected period.</p>
+                </div>
+
+                <div class="summary-cards-grid">
+                    <article class="report-card info">
+                        <div class="report-card-icon"><i class="fas fa-cloud-showers-heavy"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Total Calamities</span>
+                            <h4 id="calamityTotalCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card primary">
+                        <div class="report-card-icon"><i class="fas fa-house-flood-water"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Active</span>
+                            <h4 id="calamityActiveCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card warning">
+                        <div class="report-card-icon"><i class="fas fa-eye"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Monitoring</span>
+                            <h4 id="calamityMonitoringCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-flag-checkered"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Resolved / Ended</span>
+                            <h4 id="calamityResolvedEndedCount">0</h4>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="report-grid-two">
+                    <section class="report-panel-card">
+                        <div class="card-header"><h4>Calamities by Type</h4></div>
+                        <div class="table-responsive">
+                            <table class="report-table compact-table">
+                                <tbody id="calamityByTypeTableBody">
+                                    <tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="report-panel-card">
+                        <div class="card-header"><h4>Calamities by Barangay</h4></div>
+                        <div class="table-responsive">
+                            <table class="report-table compact-table">
+                                <tbody id="calamityByBarangayTableBody">
+                                    <tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="report-panel-card">
+                    <div class="card-header"><h4>Calamity Records</h4></div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Barangay</th>
+                                    <th>Location</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calamityRecordsTableBody">
+                                <tr><td colspan="6" class="empty-state-cell">No calamity records found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Resources Placeholder -->
+            <section class="report-panel" id="resourcesTab">
+                <div class="report-section-header">
+                    <h3>Resources Reports</h3>
+                    <p>Inventory, relief distribution, and evacuation readiness for the selected period.</p>
+                </div>
+
+                <div class="summary-cards-grid">
+                    <article class="report-card neutral">
+                        <div class="report-card-icon"><i class="fas fa-boxes-stacked"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Inventory Items</span>
+                            <h4 id="resourceInventoryCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card danger">
+                        <div class="report-card-icon"><i class="fas fa-box-open"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Low Stock Items</span>
+                            <h4 id="resourceLowStockCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card info">
+                        <div class="report-card-icon"><i class="fas fa-building-shield"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Evacuation Centers</span>
+                            <h4 id="resourceEvacuationCenterCount">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card primary">
+                        <div class="report-card-icon"><i class="fas fa-door-open"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Open Centers</span>
+                            <h4 id="resourceOpenEvacuationCenters">0</h4>
+                        </div>
+                    </article>
+                    <article class="report-card success">
+                        <div class="report-card-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                        <div class="report-card-content">
+                            <span class="report-card-label">Relief Distributions</span>
+                            <h4 id="resourceReliefDistributionCount">0</h4>
+                        </div>
+                    </article>
+                </div>
+
+                <section class="report-panel-card">
+                    <div class="card-header"><h4>Low Stock Items</h4></div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Available</th>
+                                    <th>Reorder Level</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resourceLowStockTableBody">
+                                <tr><td colspan="6" class="empty-state-cell">No low-stock items found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="report-panel-card">
+                    <div class="card-header"><h4>Inventory Transactions</h4></div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Inventory ID</th>
+                                    <th>Item</th>
+                                    <th>Action</th>
+                                    <th>Quantity</th>
+                                    <th>Performed By</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resourceTransactionsTableBody">
+                                <tr><td colspan="7" class="empty-state-cell">No inventory transactions found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="report-panel-card">
+                    <div class="card-header"><h4>Relief Distributions</h4></div>
+                    <div class="table-responsive">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Reference Type</th>
+                                    <th>Reference ID</th>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Distributed By</th>
+                                    <th>Distributed At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resourceReliefDistributionTableBody">
+                                <tr><td colspan="7" class="empty-state-cell">No relief distributions found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="dashboard.html">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="reports.html">Reports</a></li>
+                        <li><a href="resources.html">Resources</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Overlay for mobile menu -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="modal-close" id="logoutModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="logoutCancel">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-logout" id="logoutConfirm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Details Modal -->
+    <div class="modal" id="auditDetailsModal">
+        <div class="modal-content report-modal-content">
+            <div class="modal-header">
+                <h3>Audit Details</h3>
+                <button class="modal-close" id="auditDetailsModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="audit-details-grid">
+                    <div class="detail-row"><span>Module</span><strong id="auditDetailModule">--</strong></div>
+                    <div class="detail-row"><span>Record Type</span><strong id="auditDetailRecordType">--</strong></div>
+                    <div class="detail-row"><span>Record ID</span><strong id="auditDetailRecordId">--</strong></div>
+                    <div class="detail-row"><span>Action</span><strong id="auditDetailActionType">--</strong></div>
+                    <div class="detail-row"><span>From Status</span><strong id="auditDetailFromStatus">--</strong></div>
+                    <div class="detail-row"><span>To Status</span><strong id="auditDetailToStatus">--</strong></div>
+                    <div class="detail-row"><span>Performed By</span><strong id="auditDetailPerformedBy">--</strong></div>
+                    <div class="detail-row"><span>Performed At</span><strong id="auditDetailPerformedAt">--</strong></div>
+                </div>
+
+                <div class="detail-block">
+                    <label>Description</label>
+                    <pre id="auditDetailDescription">--</pre>
+                </div>
+
+                <div class="detail-block">
+                    <label>Metadata</label>
+                    <pre id="auditDetailMetadata">--</pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="auditDetailsCloseBtn">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="reportsMessageContainer"></div>
+
+    <script src="/js/loginUserInfo.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/reports.js"></script>
+</body>
+</html>

@@ -9,8 +9,10 @@ window.handleLogout = handleLogout;
 window.performLogout = performLogout;
 window.closeLogoutModal = closeLogoutModal;
 window.closeAllMenus = closeAllMenus;
+window.applyFrontendRbac = applyFrontendRbac;
 
 document.addEventListener('DOMContentLoaded', function() {
+    applyFrontendRbac();
     // Elements
     const userDropdownBtn = document.getElementById('userDropdownBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
@@ -292,5 +294,51 @@ function updateUserName(name) {
         console.log('User name updated to:', firstName);
     } else if (!userNameDisplay) {
         console.warn('userNameDisplay element not found');
+    }
+}
+
+
+function getCurrentUserInfo() {
+    try {
+        const raw = localStorage.getItem("loginUserInfo");
+        if (raw) {
+            return JSON.parse(raw);
+        }
+
+        const authoritiesRaw = localStorage.getItem("userAuthorities");
+        const authorities = authoritiesRaw ? JSON.parse(authoritiesRaw) : [];
+
+        return {
+            fullName: localStorage.getItem("userName"),
+            email: localStorage.getItem("userEmail"),
+            number: localStorage.getItem("userNumber"),
+            authorities
+        };
+    } catch (error) {
+        console.error("Failed to parse login user info:", error);
+        return null;
+    }
+}
+
+function hasAuthority(user, role) {
+    return Array.isArray(user?.authorities) && user.authorities.includes(role);
+}
+
+function canAccessManagementPages(user) {
+    return hasAuthority(user, "ROLE_ADMIN") || hasAuthority(user, "ROLE_MANAGER");
+}
+
+function applyFrontendRbac() {
+    const currentUser = getCurrentUserInfo();
+    const canManage = canAccessManagementPages(currentUser);
+
+    const reportsMenuItem = document.querySelector('a[href="reports.html"]')?.closest(".menu-item");
+    const adminMenuItem = document.querySelector('a[href="#admin"]')?.closest(".menu-item");
+    const settingsMenuItem = document.querySelector('a[href="#settings"]')?.closest(".menu-item");
+
+    if (!canManage) {
+        if (reportsMenuItem) reportsMenuItem.style.display = "none";
+        if (adminMenuItem) adminMenuItem.style.display = "none";
+        if (settingsMenuItem) settingsMenuItem.style.display = "none";
     }
 }

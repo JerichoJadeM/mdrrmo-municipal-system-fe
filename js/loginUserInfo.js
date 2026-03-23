@@ -92,12 +92,17 @@ async function loadUserInfo() {
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userNumber', user.number);
         localStorage.setItem('userAuthorities', JSON.stringify(user.authorities || []));
+        localStorage.setItem('loginUserInfo', JSON.stringify(user));
 
         // Update navbar user name if navbar script is loaded
         if (typeof window.updateUserName === 'function') {
             window.updateUserName(user.fullName);
         } else if (typeof updateUserName === 'function') {
             updateUserName(user.fullName);
+        }
+
+        if(typeof window.applyFrontendRbac === 'function'){
+            window.applyFrontendRbac();
         }
 
         // Only append to usersList if it exists (for dashboard page)
