@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts & Warnings - MDRRMO</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/reports.css">
+    <link rel="stylesheet" href="assets/css/alerts-and-warnings.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-user">
+            <div class="user-dropdown">
+                <button class="user-btn" id="userDropdownBtn">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="user-name" id="userNameDisplay">User</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="#profile" class="dropdown-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#notifications" class="dropdown-item">
+                        <i class="fas fa-bell"></i>
+                        <span>Notification</span>
+                    </a>
+                    <a href="#messages" class="dropdown-item">
+                        <i class="fas fa-message"></i>
+                        <span>Messages</span>
+                    </a>
+                    <a href="change-password.html" class="dropdown-item">
+                        <i class="fas fa-key"></i>
+                        <span>Change Password</span>
+                    </a>
+                    <hr class="dropdown-divider">
+                    <button class="dropdown-item logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="navbar-title">
+            <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+        </div>
+
+        <div class="navbar-notifications">
+            <button class="notification-btn" id="notificationBtn" title="Notifications">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+            <button class="message-btn" id="messageBtn" title="Messages">
+                <i class="fas fa-envelope"></i>
+                <span class="message-badge" id="messageBadge" style="display: none;">0</span>
+            </button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</nav>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-actions">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li class="menu-item">
+            <a href="index.html">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="weather-forecast.html">
+                <i class="fas fa-cloud"></i>
+                <span>Weather Forecast</span>
+            </a>
+        </li>
+
+        <li class="menu-item active">
+            <a href="alerts-and-warnings.html">
+                <i class="fas fa-bell"></i>
+                <span>Alerts & Warnings</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="disaster-management.html">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Disaster Management</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="operations.html">
+                <i class="fas fa-tasks"></i>
+                <span>Operations</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="resources.html">
+                <i class="fas fa-cube"></i>
+                <span>Resources</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="admin">
+                <i class="fas fa-users-cog"></i>
+                <span>Administration</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="reports.html">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="#settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<main class="page-content main-content alerts-page">
+    <section class="alerts-hero card-section">
+        <div class="alerts-hero-content">
+            <div class="section-badge">Operational Monitoring</div>
+            <h2>Alerts & Warnings</h2>
+            <p>
+                Readiness status, active warnings, and immediate operational attention areas
+                for MDRRMO Batad before and during incidents and calamities.
+            </p>
+        </div>
+    </section>
+
+    <section class="alerts-filter-panel card-section">
+        <div class="alerts-meta-row">
+            <div class="alerts-meta-left">
+                <span class="report-tag">
+                    <i class="fas fa-location-dot"></i>
+                    Batad, Iloilo
+                </span>
+                <span class="report-tag" id="readinessPill">
+                    <i class="fas fa-shield-halved"></i>
+                    Readiness: --
+                </span>
+                <span class="report-tag" id="sourcePill">
+                    <i class="fas fa-database"></i>
+                    Sources: Weather, Resources, Operations
+                </span>
+            </div>
+            <div class="alerts-meta-right" id="alertsLastUpdatedText">
+                Last updated: --
+            </div>
+        </div>
+    </section>
+
+    <section class="alerts-stats-grid">
+        <div class="summary-card">
+            <div class="summary-icon blue">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="summary-content">
+                <h3>Overall Readiness</h3>
+                <div class="summary-value" id="overallReadinessStat">--</div>
+                <span>Current operational readiness level</span>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon red">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="summary-content">
+                <h3>Active Warnings</h3>
+                <div class="summary-value" id="activeWarningsStat">--</div>
+                <span>Warnings requiring monitoring or action</span>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon orange">
+                <i class="fas fa-circle-exclamation"></i>
+            </div>
+            <div class="summary-content">
+                <h3>Critical Gaps</h3>
+                <div class="summary-value" id="criticalGapsStat">--</div>
+                <span>High-priority readiness weaknesses</span>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon cyan">
+                <i class="fas fa-people-group"></i>
+            </div>
+            <div class="summary-content">
+                <h3>Response Capacity</h3>
+                <div class="summary-value" id="responseCapacityStat">--</div>
+                <span>Available responders and support capacity</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="alerts-main-grid">
+        <div class="card-section">
+            <div class="section-header">
+                <div>
+                    <h3>Readiness Overview</h3>
+                    <p>Cross-module operational readiness by domain</p>
+                </div>
+                <span class="status-badge neutral" id="overallReadinessBadge">--</span>
+            </div>
+
+            <div class="readiness-domain-grid" id="readinessDomainGrid">
+                <div class="empty-state-card">Loading readiness overview...</div>
+            </div>
+        </div>
+
+        <div class="alerts-right-column">
+            <div class="card-section">
+                <div class="section-header">
+                    <div>
+                        <h3>Readiness Breakdown</h3>
+                        <p>Quick score view of core operational support areas</p>
+                    </div>
+                </div>
+
+                <div class="readiness-score-list" id="readinessScoreList">
+                    <div class="empty-state-card">Loading readiness breakdown...</div>
+                </div>
+            </div>
+
+            <div class="card-section">
+                <div class="section-header">
+                    <div>
+                        <h3>Recent Warning History</h3>
+                        <p>Recently generated or resolved alerts</p>
+                    </div>
+                </div>
+
+                <div class="history-list history-scroll" id="warningHistoryList">
+                    <div class="empty-state-card">Loading warning history...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card-section">
+        <div class="section-header alerts-section-header">
+            <div>
+                <h3>Active Alerts & Warnings</h3>
+                <p>Current warning signals from weather, resources, evacuation, and operations</p>
+            </div>
+            <span class="section-count" id="alertsCountText">0 items</span>
+        </div>
+
+        <div class="alerts-toolbar">
+            <div class="alerts-filters-grid inline-filters">
+                <div class="form-group">
+                    <label for="alertSeverityFilter">Severity</label>
+                    <select id="alertSeverityFilter">
+                        <option value="">All Severities</option>
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="alertTypeFilter">Type</label>
+                    <select id="alertTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="WEATHER">Weather</option>
+                        <option value="RESOURCE">Resource</option>
+                        <option value="PERSONNEL">Personnel</option>
+                        <option value="EVACUATION">Evacuation</option>
+                        <option value="BUDGET">Budget</option>
+                        <option value="OPERATIONAL">Operational</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="alertStatusFilter">Status</label>
+                    <select id="alertStatusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="WATCH">Watch</option>
+                        <option value="RESOLVED">Resolved</option>
+                    </select>
+                </div>
+
+                <div class="form-group search-group">
+                    <label for="alertKeywordInput">Search</label>
+                    <input type="text" id="alertKeywordInput" placeholder="Search alerts, area, or message...">
+                </div>
+            </div>
+        </div>
+
+        <div class="alerts-feed" id="alertsFeed">
+            <div class="empty-state-card">Loading alerts...</div>
+        </div>
+    </section>
+
+    <section class="alerts-bottom-grid">
+        <div class="card-section">
+            <div class="section-header">
+                <div>
+                    <h3>Priority Actions</h3>
+                    <p>Immediate actions recommended based on current readiness signals</p>
+                </div>
+            </div>
+
+            <div class="action-list" id="priorityActionsList">
+                <div class="empty-state-card">Loading recommended actions...</div>
+            </div>
+        </div>
+
+        <div class="card-section">
+            <div class="section-header">
+                <div>
+                    <h3>Readiness Notes</h3>
+                    <p>System-generated operational observations</p>
+                </div>
+            </div>
+
+            <div class="notes-grid" id="readinessNotesGrid">
+                <div class="empty-state-card">Loading readiness notes...</div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="dashboard.html">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="reports.html">Reports</a></li>
+                        <li><a href="resources.html">Resources</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction & Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+<script src="js/loginUserInfo.js"></script>
+<script src="js/navbar.js"></script>
+<script src="js/alerts-and-warnings.js"></script>
+</body>
+</html>
