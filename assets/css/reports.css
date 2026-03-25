@@ -1,3 +1,5 @@
+/* Reports - page-specific styles after global refactor */
+
 /* ===================================
    Reports Page Styles
    Uses global shell from style.css
@@ -34,65 +36,8 @@
     flex-wrap: wrap;
 }
 
-.btn-primary,
-.btn-secondary,
-.btn-light {
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-primary {
-    background: var(--primary-blue);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary {
-    background: var(--primary-dark);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-light {
-    background: #eef3f8;
-    color: var(--text-dark);
-    border: 1px solid #d7e0ea;
-}
-
-.btn-primary:hover,
-.btn-secondary:hover,
-.btn-light:hover {
-    transform: translateY(-1px);
-    opacity: 0.95;
-}
-
-.btn-primary:disabled,
-.btn-secondary:disabled,
-.btn-light:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
 .reports-filters-section {
     margin-bottom: 20px;
-}
-
-.reports-filters-card,
-.report-panel-card,
-.placeholder-card {
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid #e5ebf2;
 }
 
 .reports-filters-card {
@@ -101,36 +46,6 @@
     grid-template-columns: repeat(5, minmax(140px, 1fr));
     gap: 14px;
     align-items: end;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.filter-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #536273;
-}
-
-.filter-group input,
-.filter-group select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #cfd8e3;
-    border-radius: 8px;
-    font-size: 14px;
-    background: #fff;
-    color: var(--text-dark);
-}
-
-.filter-group input:focus,
-.filter-group select:focus {
-    outline: none;
-    border-color: var(--primary-light);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.12);
 }
 
 .filter-actions {

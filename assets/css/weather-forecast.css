@@ -1,164 +1,9 @@
-.weather-page {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
-}
-
-.card-section {
-    background: var(--bg-white);
-    border-radius: 14px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(189, 195, 199, 0.35);
-    padding: var(--spacing-lg);
-}
-
-.weather-hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--spacing-lg);
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
-    color: var(--text-light);
-    border: none;
-    box-shadow: var(--shadow-md);
-}
-
-.weather-hero-content {
-    flex: 1;
-}
-
-.weather-hero .section-badge {
-    display: inline-block;
-    margin-bottom: var(--spacing-sm);
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--text-light);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.weather-hero h2 {
-    margin: 0 0 var(--spacing-sm);
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-.weather-hero p {
-    margin: 0;
-    color: rgba(236, 240, 241, 0.92);
-    max-width: 760px;
-}
-
-.weather-hero-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-}
-
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: 12px 18px;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.primary-btn {
-    background: var(--bg-white);
-    color: var(--primary-blue);
-    box-shadow: var(--shadow-sm);
-}
-
-.primary-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
+/* Weather Forecast - page-specific styles after global refactor */
 
 .weather-filter-panel {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
-}
-
-.reports-filters-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
-    gap: var(--spacing-md);
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.form-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-white);
-    color: var(--text-dark);
-    padding: 11px 12px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.12);
-}
-
-.weather-meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-}
-
-.weather-meta-left,
-.weather-meta-right {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-.report-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(44, 90, 160, 0.08);
-    color: var(--primary-blue);
-    border: 1px solid rgba(44, 90, 160, 0.16);
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.weather-meta-right {
-    color: #6c7a89;
-    font-size: 13px;
-    font-weight: 500;
 }
 
 .weather-stats-grid {
@@ -167,98 +12,11 @@
     gap: var(--spacing-md);
 }
 
-.summary-card {
-    background: var(--bg-white);
-    border-radius: 14px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(189, 195, 199, 0.35);
-    padding: var(--spacing-lg);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    min-height: 126px;
-}
-
-.summary-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-light);
-    font-size: 1.25rem;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
-}
-
-.summary-icon.blue {
-    background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
-}
-
-.summary-icon.cyan {
-    background: linear-gradient(135deg, #17a2b8, #0f7c90);
-}
-
-.summary-icon.orange {
-    background: linear-gradient(135deg, var(--accent-orange), #d68910);
-}
-
-.summary-icon.red {
-    background: linear-gradient(135deg, var(--accent-red), #c0392b);
-}
-
-.summary-content {
-    min-width: 0;
-}
-
-.summary-content h3 {
-    margin: 0 0 6px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #6c7a89;
-}
-
-.summary-value {
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: var(--text-dark);
-    line-height: 1.2;
-    margin-bottom: 6px;
-    word-break: break-word;
-}
-
-.summary-content span {
-    font-size: 0.85rem;
-    color: #7f8c8d;
-}
-
 .weather-top-grid,
 .weather-bottom-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: var(--spacing-lg);
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-}
-
-.section-header h3 {
-    margin: 0 0 4px;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.section-header p {
-    margin: 0;
-    color: #7f8c8d;
-    font-size: 0.9rem;
 }
 
 .weather-snapshot-grid {
@@ -348,33 +106,6 @@
     font-size: 1.45rem;
     color: var(--text-dark);
     font-weight: 700;
-}
-
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid rgba(189, 195, 199, 0.35);
-    border-radius: 12px;
-    background: var(--bg-white);
-}
-
-.reports-table.weather-table {
-    width: 100%;
-    min-width: 900px;
-    border-collapse: collapse;
-}
-
-.reports-table.weather-table thead {
-    background: #f4f7fb;
-}
-
-.reports-table.weather-table th,
-.reports-table.weather-table td {
-    padding: 14px 16px;
-    text-align: left;
-    vertical-align: top;
-    border-bottom: 1px solid rgba(189, 195, 199, 0.28);
-    font-size: 0.92rem;
 }
 
 .reports-table.weather-table th {
@@ -1003,4 +734,3 @@
     border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.12);
 }
-

@@ -1,3 +1,5 @@
+/* Dashboard - page-specific styles after global refactor */
+
 .dashboard-page {
     display: flex;
     flex-direction: column;
