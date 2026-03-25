@@ -750,7 +750,7 @@ html, body {
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
     width: 100%;
-    max-width: 400px;
+    max-width: 900px;
     animation: slideUp 0.3s ease;
     overflow: hidden;
 }
