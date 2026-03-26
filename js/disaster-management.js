@@ -70,6 +70,9 @@ const dmTableState = {
 let editingCalamityId = null;
 let editingIncidentId = null;
 
+let activeSitrepMarkerKey = null;
+let sitrepOutsideClickBound = false;
+
 function showMessage(message, type = "success") {
     const box = document.getElementById("dmMessage");
     if (!box) return;
@@ -84,12 +87,62 @@ function showMessage(message, type = "success") {
 }
 
 function extractErrorMessage(error) {
-    try {
-        const parsed = JSON.parse(error.message);
-        return parsed.message || parsed.error || "Something went wrong.";
-    } catch {
-        return error.message || "Something went wrong.";
+    const fallback = "Something went wrong.";
+
+    if (!error) return fallback;
+
+    let rawMessage = "";
+
+    if (typeof error === "string") {
+        rawMessage = error;
+    } else if (error.message) {
+        rawMessage = error.message;
+    } else if (error.responseText) {
+        rawMessage = error.responseText;
+    } else {
+        rawMessage = String(error);
     }
+
+    let normalizedMessage = rawMessage;
+
+    try {
+        const parsed = JSON.parse(rawMessage);
+        normalizedMessage = parsed.message || rawMessage;
+    } catch {
+        try {
+            const parsed = JSON.parse(error?.message || "");
+            normalizedMessage = parsed.message || rawMessage;
+        } catch {
+            normalizedMessage = rawMessage;
+        }
+    }
+
+    const lower = String(normalizedMessage).toLowerCase();
+
+    if (
+        lower.includes("foreign key constraint fails") &&
+        lower.includes("expenses") &&
+        lower.includes("calamity_id")
+    ) {
+        return "This calamity cannot be deleted because it already has linked expense records.";
+    }
+
+    if (
+        lower.includes("foreign key constraint fails") &&
+        lower.includes("expenses") &&
+        lower.includes("incident_id")
+    ) {
+        return "This incident cannot be deleted because it already has linked expense records.";
+    }
+
+    if (
+        lower.includes("foreign key constraint fails") &&
+        lower.includes("expenses")
+    ) {
+        return "This event cannot be deleted because it already has linked expense records.";
+    }
+
+    return normalizedMessage || fallback;
 }
 
 function escapeHtml(value) {
@@ -468,6 +521,7 @@ function isSelectedEvent(eventId, eventType) {
 async function selectEvent(event, type, openDetails = false) {
     selectedEvent = event;
     selectedEventType = type;
+    activeSitrepMarkerKey = null;
 
     renderSelectedEventProfile();
     renderSitRepMap();
@@ -1206,10 +1260,12 @@ function bindSearchableInput({
 
 function bindDetailsViewActions() {
     document.getElementById("backToLibraryBtn")?.addEventListener("click", () => {
-        selectedEvent = null;
+        sselectedEvent = null;
         selectedEventType = null;
+        activeSitrepMarkerKey = null;
         showLibraryView();
         renderCurrentTab();
+        renderSitRepMap();
     });
 
     document.getElementById("detailsEditBtn")?.addEventListener("click", () => {
@@ -2524,6 +2580,60 @@ function renderCalamityTimeline(calamity) {
 }
 
 // sitrep map
+
+function closeSitrepMarkerTooltip() {
+    if (!activeSitrepMarkerKey) return;
+    activeSitrepMarkerKey = null;
+    renderSitRepMap();
+}
+
+function bindSitrepOutsideClick() {
+    if (sitrepOutsideClickBound) return;
+
+    document.addEventListener("click", (event) => {
+        const clickedMarker = event.target.closest(".dm-map-event-marker");
+        if (clickedMarker) return;
+
+        if (activeSitrepMarkerKey) {
+            activeSitrepMarkerKey = null;
+            renderSitRepMap();
+        }
+    });
+
+    sitrepOutsideClickBound = true;
+}
+
+function adjustSitrepTooltipPlacement(markerButton, stage) {
+    if (!markerButton || !stage) return;
+
+    const tooltip = markerButton.querySelector(".dm-map-event-tooltip");
+    if (!tooltip) return;
+
+    markerButton.classList.remove("tooltip-left", "tooltip-right", "tooltip-bottom");
+
+    const stageRect = stage.getBoundingClientRect();
+    const markerRect = markerButton.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    const projectedLeft = markerRect.left + (markerRect.width / 2) - (tooltipRect.width / 2);
+    const projectedRight = markerRect.left + (markerRect.width / 2) + (tooltipRect.width / 2);
+    const projectedTop = markerRect.top - tooltipRect.height - 12;
+
+    const overflowLeft = projectedLeft < stageRect.left + 8;
+    const overflowRight = projectedRight > stageRect.right - 8;
+    const overflowTop = projectedTop < stageRect.top + 8;
+
+    if (overflowLeft) {
+        markerButton.classList.add("tooltip-right");
+    } else if (overflowRight) {
+        markerButton.classList.add("tooltip-left");
+    }
+
+    if (overflowTop) {
+        markerButton.classList.add("tooltip-bottom");
+    }
+}
+
 function normalizeBarangayKey(value) {
     return String(value || "")
         .trim()
@@ -2656,8 +2766,11 @@ function renderSitRepMap(activeCalamities = getActiveCalamities(), activeInciden
     const lowCountEl = document.getElementById("sitrepLowCount");
     const markerCountPill = document.getElementById("sitrepMarkerCountPill");
     const coveragePill = document.getElementById("sitrepCoveragePill");
+    const stage = document.getElementById("sitrepMapStage");
 
-    if (!layer) return;
+    if (!layer || !stage) return;
+
+    bindSitrepOutsideClick();
 
     const records = buildSitRepEventRecords(activeCalamities, activeIncidents);
     const anchorMap = buildBarangayAnchorMap();
@@ -2686,10 +2799,15 @@ function renderSitRepMap(activeCalamities = getActiveCalamities(), activeInciden
             if (severityCounts[severity] != null) severityCounts[severity] += 1;
 
             const anchor = resolveSitRepAnchor(record, anchorMap, index, items.length);
+            const markerKey = `${record.type}-${record.id}`;
+            const isActiveMarker =
+                activeSitrepMarkerKey === markerKey ||
+                (selectedEvent && String(selectedEvent.id) === String(record.id) && selectedEventType === record.type && activeSitrepMarkerKey === markerKey);
 
             const button = document.createElement("button");
             button.type = "button";
-            button.className = `dm-map-event-marker event-${record.type} ${getSeverityClass(record.severity)}${isSelectedEvent(record.id, record.type) ? " active" : ""}`;
+            button.dataset.markerKey = markerKey;
+            button.className = `dm-map-event-marker event-${record.type} severity-${String(record.severity || "default").toLowerCase()}${isActiveMarker ? " active" : ""}`;
             button.style.left = `${anchor.x}%`;
             button.style.top = `${anchor.y}%`;
 
@@ -2702,17 +2820,35 @@ function renderSitRepMap(activeCalamities = getActiveCalamities(), activeInciden
                 </span>
             `;
 
-            button.addEventListener("click", async () => {
+            button.addEventListener("click", async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                activeSitrepMarkerKey = markerKey;
                 selectedEvent = record.raw;
                 selectedEventType = record.type;
+
                 renderSelectedEventProfile();
-                renderCurrentTab();
                 await renderEventDetailsView();
                 showEventDetailsView();
                 renderSitRepMap();
+
+                const freshButton = document.querySelector(`.dm-map-event-marker[data-marker-key="${markerKey}"]`);
+                if (freshButton) {
+                    adjustSitrepTooltipPlacement(freshButton, stage);
+                }
             });
 
             layer.appendChild(button);
+
+            if (isActiveMarker) {
+                requestAnimationFrame(() => {
+                    const freshButton = document.querySelector(`.dm-map-event-marker[data-marker-key="${markerKey}"]`);
+                    if (freshButton) {
+                        adjustSitrepTooltipPlacement(freshButton, stage);
+                    }
+                });
+            }
         });
     });
 
