@@ -18,22 +18,10 @@
                     <span class="user-name" id="userNameDisplay">User</span>
                 </button>
                 <div class="dropdown-menu" id="dropdownMenu">
-                    <a href="#profile" class="dropdown-item">
-                        <i class="fas fa-user"></i>
-                        <span>Profile</span>
-                    </a>
-                    <a href="#profile" class="dropdown-item">
-                        <i class="fas fa-bell"></i>
-                        <span>Notification</span>
-                    </a>
-                    <a href="#profile" class="dropdown-item">
-                        <i class="fas fa-message"></i>
-                        <span>Messages</span>
-                    </a>
-                    <a href="change-password.html" class="dropdown-item">
-                        <i class="fas fa-key"></i>
-                        <span>Change Password</span>
-                    </a>
+                    <a href="#profile" class="dropdown-item"><i class="fas fa-user"></i><span>Profile</span></a>
+                    <a href="#profile" class="dropdown-item"><i class="fas fa-bell"></i><span>Notification</span></a>
+                    <a href="#profile" class="dropdown-item"><i class="fas fa-message"></i><span>Messages</span></a>
+                    <a href="change-password.html" class="dropdown-item"><i class="fas fa-key"></i><span>Change Password</span></a>
                     <hr class="dropdown-divider">
                     <button class="dropdown-item logout-btn" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
@@ -44,7 +32,7 @@
         </div>
 
         <div class="navbar-title">
-            <h1>MDRRM Weather Forecasting &amp; Emergency Response</h1>
+            <h1>MDRRM Weather Forecasting & Emergency Response</h1>
         </div>
 
         <div class="navbar-notifications">
@@ -67,286 +55,313 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="sidebar-header-actions">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="sidebar-close" id="sidebarClose">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar"><i class="fas fa-chevron-left"></i></button>
+            <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
         </div>
     </div>
 
     <ul class="sidebar-menu">
-        <li class="menu-item">
-            <a href="index.html">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="weather-forecast.html">
-                <i class="fas fa-cloud"></i>
-                <span>Weather Forecast</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="alerts-and-warnings.html">
-                <i class="fas fa-bell"></i>
-                <span>Alerts &amp; Warnings</span>
-            </a>
-        </li>
-        <li class="menu-item active">
-            <a href="disaster-management.html">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>Disaster Management</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="operations.html">
-                <i class="fas fa-tasks"></i>
-                <span>Operations</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="resources.html">
-                <i class="fas fa-cube"></i>
-                <span>Resources</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="#admin">
-                <i class="fas fa-users-cog"></i>
-                <span>Administration</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="#reports">
-                <i class="fas fa-file-alt"></i>
-                <span>Reports</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="#settings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-        </li>
+        <li class="menu-item"><a href="index.html"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+        <li class="menu-item"><a href="weather-forecast.html"><i class="fas fa-cloud"></i><span>Weather Forecast</span></a></li>
+        <li class="menu-item"><a href="alerts-and-warnings.html"><i class="fas fa-bell"></i><span>Alerts & Warnings</span></a></li>
+        <li class="menu-item active"><a href="disaster-management.html"><i class="fas fa-exclamation-circle"></i><span>Disaster Management</span></a></li>
+        <li class="menu-item"><a href="operations.html"><i class="fas fa-tasks"></i><span>Operations</span></a></li>
+        <li class="menu-item"><a href="resources.html"><i class="fas fa-cube"></i><span>Resources</span></a></li>
+        <li class="menu-item"><a href="#admin"><i class="fas fa-users-cog"></i><span>Administration</span></a></li>
+        <li class="menu-item"><a href="reports.html"><i class="fas fa-file-alt"></i><span>Reports</span></a></li>
+        <li class="menu-item"><a href="#settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
     </ul>
 </aside>
 
-<div class="overlay" id="overlay"></div>
+<main class="page-content main-content">
+    <div class="container dm-page">
+        <section class="page-hero card-section dm-hero">
+            <div class="page-hero-content">
+                <span class="section-badge"><i class="fas fa-satellite-dish"></i> Disaster Management Center</span>
+                <h1>Incident &amp; Calamity Management</h1>
+                <p>Record, track, and review operational events from the ground while maintaining a live municipal situation picture for responders and decision-makers.</p>
+            </div>
+        </section>
 
-<main class="page-content main-content dm-page">
-    <section class="dm-hero page-hero card-section">
-        <div class="dm-hero-content page-hero-content">
-            <div class="section-badge">Municipal Event Monitoring</div>
-            <h2>Disaster Management</h2>
-            <p>
-                Track, review, and update calamities and field incidents across Batad, Iloilo.
-                Maintain a reliable operational record of reported events, affected areas, and response activity.
-            </p>
+        <section class="dm-summary-grid">
+            <article class="summary-card dm-summary-card">
+                <span class="summary-label">Total Calamities</span>
+                <div class="dm-summary-main">
+                    <div class="summary-icon blue"><i class="fas fa-cloud-showers-heavy"></i></div>
+                    <strong class="summary-value" id="calamityCount">0</strong>
+                </div>
+                <span class="summary-subtext">Full event records tracked</span>
+            </article>
 
-            <div class="dm-hero-meta">
-                <span class="report-tag">
-                    <i class="fas fa-location-dot"></i>
-                    Batad, Iloilo
-                </span>
-                <span class="report-tag">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    Calamities &amp; Incidents
-                </span>
-            </div>
-        </div>
+            <article class="summary-card dm-summary-card">
+                <span class="summary-label">Total Incidents</span>
+                <div class="dm-summary-main">
+                    <div class="summary-icon orange"><i class="fas fa-helmet-safety"></i></div>
+                    <strong class="summary-value" id="incidentCount">0</strong>
+                </div>
+                <span class="summary-subtext">Operational incidents logged</span>
+            </article>
 
-        <div class="dm-hero-actions page-hero-actions">
-            <button class="action-btn primary-btn" id="openLibraryModalBtnHero">
-                <i class="fas fa-plus"></i>
-                Add Event
-            </button>
-        </div>
-    </section>
+            <article class="summary-card dm-summary-card">
+                <span class="summary-label">High Severity Events</span>
+                <div class="dm-summary-main">
+                    <div class="summary-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+                    <strong class="summary-value" id="highSeverityCount">0</strong>
+                </div>
+                <span class="summary-subtext">Needs immediate review</span>
+            </article>
+            <article class="summary-card dm-summary-card">
+                <span class="summary-label">Open Events</span>
+                <div class="dm-summary-main">
+                    <div class="summary-icon cyan"><i class="fas fa-signal"></i></div>
+                    <strong class="summary-value" id="openEventCount">0</strong>
+                </div>
+                <span class="summary-subtext">Active calamities and incidents</span>
+            </article>
+        </section>
 
-    <section class="dm-filter-panel card-section">
-        <div class="dm-meta-row">
-            <div class="dm-meta-left">
-                <span class="report-tag">
-                    <i class="fas fa-layer-group"></i>
-                    Event Registry
-                </span>
-                <span class="report-tag" id="dmLastUpdatedText">
-                    <i class="fas fa-clock"></i>
-                    Last updated: --
-                </span>
-            </div>
+                <!-- SitRep Card-->
+        <section class="card-section dm-sitrep-panel">
+            <!---->
+            <div class="section-header dm-section-header dm-sitrep-header">
+                <div class="dm-sitrep-header-copy">
+                    <span class="section-badge"><i class="fas fa-map"></i> SitRep Map</span>
+                    <h2>Municipal Situation Picture</h2>
+                    <p>Quick-read operational picture for command review and field coordination.</p>
+                </div>
 
-            <div class="dm-meta-right">
-                <button class="action-btn secondary-btn" id="refreshDisasterManagementBtn">
-                    <i class="fas fa-rotate-right"></i>
-                    Refresh
-                </button>
-            </div>
-        </div>
-    </section>
+                <div class="dm-sitrep-header-art" aria-hidden="true">
+                    <div class="dm-sitrep-orbit">
+                        <span class="dm-sitrep-disc disc-blue"></span>
+                        <span class="dm-sitrep-disc disc-cyan"></span>
+                        <span class="dm-sitrep-disc disc-amber"></span>
 
-    <section class="dm-summary-grid">
-        <article class="summary-card">
-            <div class="summary-icon blue">
-                <i class="fas fa-cloud-showers-heavy"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Total Calamities</h3>
-                <div class="summary-value" id="calamityCount">0</div>
-                <span>Recorded disaster-level events</span>
-            </div>
-        </article>
+                        <span class="dm-sitrep-ring ring-one"></span>
+                        <span class="dm-sitrep-ring ring-two"></span>
+                        <span class="dm-sitrep-ring ring-three"></span>
 
-        <article class="summary-card">
-            <div class="summary-icon orange">
-                <i class="fas fa-helmet-safety"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Total Incidents</h3>
-                <div class="summary-value" id="incidentCount">0</div>
-                <span>Recorded operational incidents</span>
-            </div>
-        </article>
+                        <span class="dm-sitrep-satellite-orbit">
+                            <span class="dm-sitrep-satellite">
+                                <i class="fas fa-satellite"></i>
+                            </span>
+                        </span>
 
-        <article class="summary-card">
-            <div class="summary-icon red">
-                <i class="fas fa-triangle-exclamation"></i>
-            </div>
-            <div class="summary-content">
-                <h3>High Severity Events</h3>
-                <div class="summary-value" id="highSeverityCount">0</div>
-                <span>Events requiring close monitoring</span>
-            </div>
-        </article>
-
-        <article class="summary-card">
-            <div class="summary-icon green">
-                <i class="fas fa-wave-square"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Open Events</h3>
-                <div class="summary-value" id="openEventCount">0</div>
-                <span>Active, monitoring, or in-progress</span>
-            </div>
-        </article>
-    </section>
-
-    <section class="dm-content-stack">
-        <section class="dm-library-panel panel-card">
-            <div class="panel-head dm-library-head">
-                <div>
-                    <h2>Event Library</h2>
-                    <p>Browse and manage calamities and incidents from the field.</p>
+                        <span class="dm-sitrep-radar-core"></span>
+                    </div>
                 </div>
             </div>
 
-            <div class="dm-view-tabs">
-                <button class="dm-tab active" id="showCalamitiesBtn">
-                    <i class="fas fa-cloud-showers-heavy"></i>
-                    Calamities
-                </button>
-                <button class="dm-tab" id="showIncidentsBtn">
-                    <i class="fas fa-helmet-safety"></i>
-                    Incidents
-                </button>
+            <div class="dm-sitrep-grid">
+                <!--Shell-->
+                <div class="dm-sitrep-map-shell">
+                    <div class="dm-sitrep-map-toolbar">
+                        <span class="info-pill" id="sitrepMarkerCountPill">
+                            <i class="fas fa-circle-dot"></i> 0 live markers
+                        </span>
+                        <span class="info-pill" id="sitrepCoveragePill">
+                            <i class="fas fa-layer-group"></i> Waiting for coverage data
+                        </span>
+                    </div>
+
+                    <div class="dm-sitrep-map-stage" id="sitrepMapStage">
+                        <div class="dm-map-watermark">Live SitRep</div>
+                        <div class="dm-map-area-label">Municipal Coverage View</div>
+                        <div class="dm-map-layer" id="sitrepMapLayer"></div>
+                        <div class="dm-map-empty hidden" id="sitrepMapEmpty">
+                            <i class="fas fa-map-location-dot"></i>
+                            <strong>No active events</strong>
+                            <p>Active calamities and incidents will appear here as live markers.</p>
+                        </div>
+                    </div>
+
+                    <div class="dm-map-legend">
+                        <div class="dm-legend-card high">
+                            <div class="dm-legend-top">
+                                <span class="dm-legend-dot"></span>
+                                <strong>High Severity</strong>
+                            </div>
+                            <span class="dm-legend-state" id="sitrepHighCount">0 active markers</span>
+                            <p>Immediate monitoring and rapid coordination required.</p>
+                        </div>
+
+                        <div class="dm-legend-card medium">
+                            <div class="dm-legend-top">
+                                <span class="dm-legend-dot"></span>
+                                <strong>Medium Severity</strong>
+                            </div>
+                            <span class="dm-legend-state" id="sitrepMediumCount">0 active markers</span>
+                            <p>Needs sustained tracking and readiness review.</p>
+                        </div>
+
+                        <div class="dm-legend-card low">
+                            <div class="dm-legend-top">
+                                <span class="dm-legend-dot"></span>
+                                <strong>Low Severity</strong>
+                            </div>
+                            <span class="dm-legend-state" id="sitrepLowCount">0 active markers</span>
+                            <p>Contained events with lower immediate operational impact.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="dm-sitrep-aside">
+                    <article class="dm-metric-card dm-metric-card-blue">
+                        <div class="dm-metric-top">
+                            
+                            <span class="dm-metric-badge"><span class="summary-label">Active Calamities</span></span>
+                        </div>
+                        
+                        <strong id="metricActiveCalamities">0</strong>
+                        <p>Currently in ACTIVE or MONITORING status.</p>
+                    </article>
+
+                    <article class="dm-metric-card dm-metric-card-orange">
+                        <div class="dm-metric-top">
+                            
+                            <span class="dm-metric-badge"><span class="summary-label">Active Incidents</span></span>
+                        </div>
+                        
+                        <strong id="metricActiveIncidents">0</strong>
+                        <p>Ongoing field incidents that still need response visibility.</p>
+                    </article>
+
+                    <article class="dm-metric-card dm-metric-card-red">
+                        <div class="dm-metric-top">
+                            
+                            <span class="dm-metric-badge"><span class="summary-label">Events This Week</span></span>
+                        </div>
+                        
+                        <strong id="metricEventsThisWeek">0</strong>
+                        <p>Rolling 7-day activity count across calamities and incidents.</p>
+                    </article>
+
+                    <article class="dm-metric-card dm-metric-card-cyan dm-latest-event-card">
+                        <div class="dm-metric-top">
+                            
+                            <span class="dm-metric-badge"><span class="summary-label">Latest Event</span></span>
+                        </div>
+                        
+                        <strong id="metricLatestEvent">No recent event</strong>
+                        <p id="metricLatestEventSubtext">Waiting for data</p>
+                    </article>
+                </aside>
+            </div>
+        </section>
+
+        <!--Event Library and Event Details-->
+        <section class="card-section dm-library-panel">
+            <div class="section-header dm-section-header">
+                <div>
+                    <span class="section-badge"><i class="fas fa-folder-open"></i> Event Library</span>
+                    <p>Browse, filter, and update the current working list.</p>
+                </div>
+
+                <div class="dm-library-tabs">
+                    <button class="dm-tab-dual active" id="tabCalamities" data-tab="calamities" type="button">Calamities</button>
+                    <button class="dm-tab-dual" id="tabIncidents" data-tab="incidents" type="button">Incidents</button>
+                </div>
             </div>
 
             <div class="section-toolbar dm-library-toolbar">
-                <div class="toolbar-left">
-                    <input
-                        type="text"
-                        id="eventFilter"
-                        class="dm-filter-input"
-                        placeholder="Search type, barangay, status, or description"
-                        autocomplete="off"
-                    >
-
-                    <select id="eventSort" class="dm-sort-select">
-                        <option value="latest">Latest First</option>
-                        <option value="oldest">Oldest First</option>
-                        <option value="severity-high">Severity: High to Low</option>
-                        <option value="severity-low">Severity: Low to High</option>
-                        <option value="type-az">Type: A to Z</option>
-                    </select>
+                <div class="toolbar-left dm-toolbar-left">
+                    <div class="form-group dm-filter-group">
+                        <label for="eventFilter">Search</label>
+                        <input type="text" id="eventFilter" class="dm-filter-input" placeholder="Filter current list..." autocomplete="off">
+                    </div>
+                    <div class="form-group dm-filter-group dm-sort-group">
+                        <label for="eventSort">Sort by</label>
+                        <select id="eventSort" class="dm-sort-select">
+                            <option value="latest">Latest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="severity-high">Severity: High to Low</option>
+                            <option value="severity-low">Severity: Low to High</option>
+                            <option value="type-az">Type: A to Z</option>
+                        </select>
+                    </div>
                 </div>
-
                 <div class="toolbar-right">
-                    <button class="btn btn-primary dm-add-btn" id="openLibraryModalBtn">
+                    <button class="btn btn-secondary dm-add-btn" id="openLibraryModalBtn" type="button">
                         <i id="libraryAddBtnIcon" class="fas fa-cloud-showers-heavy"></i>
                         <span id="libraryAddBtnText">Add Calamity</span>
                     </button>
                 </div>
             </div>
 
-            <div id="calamityList" class="dm-list"></div>
-            <div id="incidentManagementList" class="dm-list hidden"></div>
+            <div id="eventLibraryView" class="dm-library-view">
+                <div class="table-container">
+                    <table class="app-table">
+                        <thead id="eventTableHead"></thead>
+                        <tbody id="eventTableBody">
+                            <tr>
+                                <td colspan="7" class="empty-state">No events available.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="app-pagination-bar">
+                    <div class="app-pagination-left">
+                        <div class="app-pagination-info" id="eventPaginationInfo">
+                            Showing 0 to 0 of 0 events
+                        </div>
+
+                        <div class="app-page-size-wrap">
+                            <label for="eventPageSize">Rows per page</label>
+                            <select id="eventPageSize">
+                                <option value="5" selected>5</option>
+                                <option value="8">8</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="app-pagination-controls" id="eventPaginationControls"></div>
+                </div>
+            </div>
+
+            <div id="eventDetailsView" class="dm-event-details-view hidden">
+                <div class="dm-event-details-shell">
+                    <div class="dm-event-details-header">
+                        <div>
+                            <span class="section-badge"><i class="fas fa-file-waveform"></i> Event Details</span>
+                            <h2 id="eventDetailsTitle">Event Details</h2>
+                            <p id="eventDetailsSubtitle">Review the selected calamity or incident record.</p>
+                        </div>
+
+                        <div class="dm-event-details-actions">
+                            <button type="button" class="btn btn-light" id="backToLibraryBtn">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Event Library
+                            </button>
+                            <button type="button" class="btn btn-secondary hidden" id="detailsEditBtn">
+                                <i class="fas fa-pen"></i>
+                                Edit
+                            </button>
+                            <button type="button" class="btn btn-primary hidden" id="detailsDeleteBtn">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="eventDetailsContent" class="dm-event-details-content"></div>
+                </div>
+            </div>
         </section>
 
-        <section class="dm-sitrep-panel panel-card">
-            <div class="panel-head">
-                <div>
-                    <h2>SitRep Metrics</h2>
-                    <p>Quick operational context and current disaster situation overview.</p>
-                </div>
-            </div>
-
-            <div class="dm-sitrep-grid">
-                <div class="dm-insight-card">
-                    <div class="dm-insight-label">Active Calamities</div>
-                    <div class="dm-insight-value" id="metricActiveCalamities">0</div>
-                    <div class="dm-insight-note">Currently active or under monitoring</div>
-                </div>
-
-                <div class="dm-insight-card">
-                    <div class="dm-insight-label">Active Incidents</div>
-                    <div class="dm-insight-value" id="metricActiveIncidents">0</div>
-                    <div class="dm-insight-note">Ongoing, dispatched, or on-site</div>
-                </div>
-
-                <div class="dm-insight-card">
-                    <div class="dm-insight-label">Events This Week</div>
-                    <div class="dm-insight-value" id="metricEventsThisWeek">0</div>
-                    <div class="dm-insight-note">Newly recorded events in the last 7 days</div>
-                </div>
-
-                <div class="dm-insight-card">
-                    <div class="dm-insight-label">Latest Event</div>
-                    <div class="dm-insight-highlight" id="metricLatestEvent">No recent event</div>
-                    <div class="dm-insight-note" id="metricLatestEventSubtext">Waiting for data</div>
-                </div>
-            </div>
-
-            <div class="dm-legend-card">
-                <h3>Status &amp; Severity Guide</h3>
-                <div class="dm-legend-list">
-                    <div class="dm-legend-item">
-                        <span class="severity-badge severity-high">High</span>
-                        <span>Immediate attention required</span>
-                    </div>
-                    <div class="dm-legend-item">
-                        <span class="severity-badge severity-medium">Medium</span>
-                        <span>Monitor closely and prepare response</span>
-                    </div>
-                    <div class="dm-legend-item">
-                        <span class="severity-badge severity-low">Low</span>
-                        <span>Minimal impact or already stabilized</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </section>
+        <!---->
+    </div>
 </main>
 
-<!-- Calamity Modal -->
-<div class="modal modal-xl" id="calamityModal" aria-hidden="true">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div>
-                <h3>Add Calamity</h3>
-                <p class="modal-subtitle">Register a calamity event and affected area details.</p>
+<div class="modal" id="calamityModal" aria-hidden="true">
+    <div class="modal-content dm-modal-content dm-form-modal-content">
+        <div class="modal-header dm-form-modal-header">
+            <div class="dm-form-modal-title-wrap">
+                <span class="dm-form-modal-kicker">Calamity Record</span>
+                <h3 id="calamityModalTitle">Add Calamity</h3>
+                <p class="dm-form-modal-subtitle">
+                    Capture disaster details, affected areas, and situation context.
+                </p>
             </div>
             <button class="modal-close" id="closeCalamityModalBtn" type="button">
                 <i class="fas fa-times"></i>
@@ -354,106 +369,122 @@
         </div>
 
         <form id="calamityForm" class="dm-form">
-            <div class="dm-form-section">
-                <h4 class="dm-form-section-title">Event Information</h4>
-                <div class="dm-form-grid">
-                    <div class="form-group">
-                        <label for="calamityTypeSelect">Type</label>
-                        <select id="calamityTypeSelect" required></select>
-                    </div>
+            <div class="dm-form-modal-body">
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-cloud-showers-heavy"></i>
+                        Event Information
+                    </h4>
 
-                    <div class="form-group">
-                        <label for="calamitySeveritySelect">Severity</label>
-                        <select id="calamitySeveritySelect" required></select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="calamityDateInput">Date</label>
-                        <input type="date" id="calamityDateInput" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="calamityStatusSelect">Status</label>
-                        <select id="calamityStatusSelect" required></select>
-                    </div>
-
-                    <div class="form-group full">
-                        <label for="eventNameInput">Event Name / Typhoon Name</label>
-                        <input type="text" id="eventNameInput" placeholder="Example: Typhoon Egay / Flood in Poblacion">
-                    </div>
-
-                    <div class="form-group full">
-                        <label for="calamityDescriptionInput">Description</label>
-                        <textarea id="calamityDescriptionInput" rows="4" placeholder="Describe the event, affected area, and current situation."></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dm-form-section">
-                <h4 class="dm-form-section-title">Affected Area</h4>
-                <div class="dm-form-grid">
-                    <div class="form-group">
-                        <label for="affectedAreaTypeSelect">Affected Scope</label>
-                        <select id="affectedAreaTypeSelect" required></select>
-                    </div>
-
-                    <div class="form-group" id="primaryBarangayGroup">
-                        <label for="primaryBarangayInput">Primary Barangay</label>
-                        <div class="dm-searchable-group">
-                            <input type="text" id="primaryBarangayInput" autocomplete="off" placeholder="Search barangay">
-                            <div id="primaryBarangayResults" class="dm-search-results"></div>
+                    <div class="dm-form-grid">
+                        <div class="form-group">
+                            <label for="calamityTypeSelect">Type</label>
+                            <select id="calamityTypeSelect" required></select>
                         </div>
-                    </div>
 
-                    <div class="form-group full hidden" id="multiBarangayGroup">
-                        <label>Affected Barangays</label>
-                        <div class="dm-searchable-group">
-                            <input type="text" id="barangaySearchInput" autocomplete="off" placeholder="Search and add barangays">
-                            <div id="barangaySearchResults" class="dm-search-results"></div>
+                        <div class="form-group" id="eventNameGroup">
+                            <label for="eventNameInput">Event Name</label>
+                            <input type="text" id="eventNameInput" placeholder="Enter event name">
                         </div>
-                        <div id="selectedBarangays" class="dm-selected-tags"></div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="dm-form-section">
-                <h4 class="dm-form-section-title">Coordination & Impact</h4>
-                <div class="dm-form-grid">
-                    <div class="form-group full">
-                        <label for="coordinatorInput">Coordinator</label>
-                        <div class="dm-searchable-group">
-                            <input type="text" id="coordinatorInput" autocomplete="off" placeholder="Search coordinator / responder">
+                        <div class="form-group">
+                            <label for="calamitySeveritySelect">Severity</label>
+                            <select id="calamitySeveritySelect" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="calamityStatusSelect">Status</label>
+                            <select id="calamityStatusSelect" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="calamityDateInput">Date</label>
+                            <input type="date" id="calamityDateInput" required>
+                        </div>
+
+                         <div class="form-group dm-picker-block">
+                            <label for="coordinatorInput">Assign Coordinator</label>
+                            <div class="dm-picker-input-wrap dm-searchable-group">
+                                <input type="text" id="coordinatorInput" class="dm-picker-input" placeholder="Search coordinator" autocomplete="off">
+                            </div>
                             <div id="coordinatorResults" class="dm-search-results"></div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="damageCostInput">Estimated Damage Cost</label>
-                        <input type="number" id="damageCostInput" min="0" step="0.01" placeholder="0.00">
-                    </div>
+                        <div class="form-group">
+                            <label for="damageCostInput">Damage Cost</label>
+                            <input type="number" id="damageCostInput" min="0" step="0.01" placeholder="0.00">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="casualtiesInput">Casualties</label>
-                        <input type="number" id="casualtiesInput" min="0" placeholder="0">
+                        <div class="form-group">
+                            <label for="casualtiesInput">Casualties</label>
+                            <input type="number" id="casualtiesInput" min="0" placeholder="0">
+                        </div>
                     </div>
-                </div>
+                </section>
+
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-map-location-dot"></i>
+                        Affected Area
+                    </h4>
+
+                    <div class="dm-form-grid">
+
+                        <div class="form-group">
+                            <label for="affectedAreaTypeSelect">Affected Scope</label>
+                            <select id="affectedAreaTypeSelect" required></select>
+                        </div>
+
+                        <div class="form-group dm-picker-block" id="primaryBarangayGroup">
+                            <label for="primaryBarangayInput">Primary Barangay</label>
+                            <div id="primaryBarangaySelected" class="dm-selected-single hidden"></div>
+                            <div class="dm-picker-input-wrap dm-searchable-group">
+                                <input type="text" id="primaryBarangayInput" class="dm-picker-input" placeholder="Search barangay" autocomplete="off">
+                            </div>
+                            <div id="primaryBarangayResults" class="dm-search-results"></div>
+                        </div>
+
+                        <div class="form-group dm-picker-block hidden" id="multiBarangayGroup">
+                            <label for="barangaySearchInput">Affected Barangays</label>
+                            <div id="selectedBarangays" class="dm-selected-chips"></div>
+                            <div class="dm-picker-input-wrap dm-searchable-group">
+                                <input type="text" id="barangaySearchInput" class="dm-picker-input" placeholder="Search barangays" autocomplete="off">
+                            </div>
+                            <div id="barangaySearchResults" class="dm-search-results"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-file-lines"></i>
+                        Assessment Notes
+                    </h4>
+
+                    <div class="form-group form-group-full">
+                        <label for="calamityDescriptionInput">Description</label>
+                        <textarea id="calamityDescriptionInput" rows="4" required></textarea>
+                    </div>
+                </section>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelCalamityBtn">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="submitCalamityBtn">Save Calamity</button>
+            <div class="dm-form-actions dm-modal-footer-actions">
+                <button type="button" class="btn btn-light" id="cancelCalamityBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveCalamityBtn">Save Calamity</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Incident Modal -->
-<div class="modal modal-xl" id="incidentModal" aria-hidden="true">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div>
-                <h3>Add Incident</h3>
-                <p class="modal-subtitle">Register an incident for operational monitoring and response.</p>
+<div class="modal" id="incidentModal" aria-hidden="true">
+    <div class="modal-content dm-modal-content dm-form-modal-content">
+        <div class="modal-header dm-form-modal-header">
+            <div class="dm-form-modal-title-wrap">
+                <span class="dm-form-modal-kicker">Incident Record</span>
+                <h3 id="incidentModalTitle">Add Incident</h3>
+                <p class="dm-form-modal-subtitle">
+                    Capture response details, field status, and incident context.
+                </p>
             </div>
             <button class="modal-close" id="closeIncidentModalBtn" type="button">
                 <i class="fas fa-times"></i>
@@ -461,87 +492,125 @@
         </div>
 
         <form id="incidentForm" class="dm-form">
-            <div class="dm-form-section">
-                <h4 class="dm-form-section-title">Incident Information</h4>
-                <div class="dm-form-grid">
-                    <div class="form-group">
-                        <label for="incidentTypeSelect">Type</label>
-                        <select id="incidentTypeSelect" required></select>
-                    </div>
+            <div class="dm-form-modal-body">
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Incident Information
+                    </h4>
 
-                    <div class="form-group">
-                        <label for="incidentSeveritySelect">Severity</label>
-                        <select id="incidentSeveritySelect" required></select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="incidentDateInput">Date</label>
-                        <input type="date" id="incidentDateInput" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="incidentStatusSelect">Status</label>
-                        <select id="incidentStatusSelect" required></select>
-                    </div>
-
-                    <div class="form-group full">
-                        <label for="incidentDescriptionInput">Description</label>
-                        <textarea id="incidentDescriptionInput" rows="4" placeholder="Describe the incident, scene conditions, and current response status."></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dm-form-section">
-                <h4 class="dm-form-section-title">Location & Assignment</h4>
-                <div class="dm-form-grid">
-                    <div class="form-group">
-                        <label for="incidentBarangayInput">Barangay</label>
-                        <div class="dm-searchable-group">
-                            <input type="text" id="incidentBarangayInput" autocomplete="off" placeholder="Search barangay">
-                            <div id="incidentBarangayResults" class="dm-search-results"></div>
+                    <div class="dm-form-grid">
+                        <div class="form-group">
+                            <label for="incidentTypeSelect">Type</label>
+                            <select id="incidentTypeSelect" required></select>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="incidentResponderInput">Assigned Responder</label>
-                        <div class="dm-searchable-group">
-                            <input type="text" id="incidentResponderInput" autocomplete="off" placeholder="Search responder">
+                        <div class="form-group">
+                            <label for="incidentSeveritySelect">Severity</label>
+                            <select id="incidentSeveritySelect" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="incidentStatusSelect">Status</label>
+                            <select id="incidentStatusSelect" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="incidentDateInput">Date</label>
+                            <input type="date" id="incidentDateInput" required>
+                        </div>
+
+                        <div class="form-group dm-picker-block">
+                            <label for="incidentResponderInput">Assign Responder</label>
+                            <div class="dm-picker-input-wrap dm-searchable-group">
+                                <input type="text" id="incidentResponderInput" class="dm-picker-input" placeholder="Search responder" autocomplete="off">
+                            </div>
                             <div id="incidentResponderResults" class="dm-search-results"></div>
                         </div>
                     </div>
-                </div>
+                </section>
+
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-location-dot"></i>
+                        Location Details
+                    </h4>
+
+                    <div class="dm-form-grid">
+                        <div class="form-group dm-picker-block">
+                            <label for="incidentBarangayInput">Barangay</label>
+                            <div class="dm-picker-input-wrap dm-searchable-group">
+                                <input type="text" id="incidentBarangayInput" class="dm-picker-input" placeholder="Search barangay" autocomplete="off">
+                            </div>
+                            <div id="incidentBarangayResults" class="dm-search-results"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dm-form-section">
+                    <h4 class="dm-form-section-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Operational Notes
+                    </h4>
+
+                    <div class="form-group form-group-full">
+                        <label for="incidentDescriptionInput">Description</label>
+                        <textarea id="incidentDescriptionInput" rows="4" required></textarea>
+                    </div>
+                </section>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelIncidentBtn">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="submitIncidentBtn">Save Incident</button>
+            <div class="dm-form-actions dm-modal-footer-actions">
+                <button type="button" class="btn btn-light" id="cancelIncidentBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveIncidentBtn">Save Incident</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- View Event Modal -->
-<div class="modal modal-xxl" id="viewEventModal" aria-hidden="true">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div>
-                <h3>Event Details</h3>
-                <p class="modal-subtitle">Review the selected event and full encoded record.</p>
+<!--Modal of add, update and delete-->
+<div class="modal" id="actionConfirmModal" aria-hidden="true">
+    <div class="modal-content app-action-modal">
+        <div class="modal-header app-action-modal-header">
+            <div class="app-action-modal-title-wrap">
+                <span class="app-action-modal-kicker" id="actionConfirmKicker">Confirmation</span>
+                <h3 id="actionConfirmTitle">Confirm Action</h3>
             </div>
-            <button class="modal-close" id="closeViewEventModalBtn" type="button">
+
+            <button class="modal-close" id="actionConfirmCloseBtn" type="button" aria-label="Close confirmation modal">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
-        <div class="dm-view-content">
-            <div id="viewEventContent"></div>
+        <div class="app-action-modal-body">
+            <div class="app-action-hero" id="actionConfirmHero">
+                <div class="app-action-icon neutral" id="actionConfirmIconWrap">
+                    <i class="fas fa-circle-info" id="actionConfirmIcon"></i>
+                </div>
+
+                <div class="app-action-copy">
+                    <p class="app-action-message" id="actionConfirmMessage">
+                        Are you sure you want to continue?
+                    </p>
+                    <p class="app-action-submessage" id="actionConfirmSubmessage">
+                        Please review this action before proceeding.
+                    </p>
+                </div>
+            </div>
+
+            <div class="app-action-note hidden" id="actionConfirmNote"></div>
         </div>
 
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="closeViewEventFooterBtn">Close</button>
+        <div class="dm-modal-footer-actions app-action-footer">
+            <button type="button" class="btn btn-light" id="actionConfirmCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="actionConfirmSubmitBtn">
+                <span class="action-btn-text" id="actionConfirmSubmitText">Confirm</span>
+            </button>
         </div>
     </div>
 </div>
+
+<div class="overlay" id="overlay"></div>
 
 <footer class="footer">
     <div class="footer-container">
@@ -549,51 +618,11 @@
             <div class="footer-section footer-info">
                 <h3>MDRRM System</h3>
                 <p>Disaster Risk Reduction and Management Operations</p>
-                <div class="footer-socials">
-                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" title="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-link" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                </div>
-            </div>
-
-            <div class="footer-section footer-links">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="#dashboard">Dashboard</a></li>
-                    <li><a href="#alerts">Alerts</a></li>
-                    <li><a href="#reports">Reports</a></li>
-                    <li><a href="#resources">Resources</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section footer-support">
-                <h4>Support</h4>
-                <ul>
-                    <li><a href="#help">Help Center</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                    <li><a href="#privacy">Privacy Policy</a></li>
-                    <li><a href="#terms">Terms of Service</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section footer-contact">
-                <h4>Contact</h4>
-                <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-                <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
-                <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
             </div>
         </div>
-
         <div class="footer-bottom">
             <div class="footer-copyright">
                 <p>&copy; 2026 MDRRM - Disaster Risk Reduction &amp; Management. All rights reserved.</p>
-            </div>
-            <div class="footer-bottom-links">
-                <a href="#sitemap">Sitemap</a>
-                <span class="divider">|</span>
-                <a href="#accessibility">Accessibility</a>
-                <span class="divider">|</span>
-                <a href="#copyright">Copyright</a>
             </div>
         </div>
     </div>
@@ -603,6 +632,7 @@
 
 <script src="/js/loginUserInfo.js"></script>
 <script src="/js/navbar.js"></script>
+<script src="/js/action-confirm-modal.js"></script>
 <script src="/js/disaster-management.js"></script>
 </body>
 </html>

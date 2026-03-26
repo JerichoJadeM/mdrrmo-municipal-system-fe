@@ -1,5 +1,6 @@
 const API_BASE = "http://localhost:8080/api";
 
+let barangayPagination = null;
 const weatherState = {
     rawData: null,
     filteredBarangays: [],
@@ -9,6 +10,49 @@ const weatherState = {
 
 document.addEventListener("DOMContentLoaded", async () => {
     bindWeatherEvents();
+
+    barangayPagination = createPaginationController({
+        infoId: "barangayPaginationInfo",
+        controlsId: "barangayPaginationControls",
+        pageSizeSelectId: "barangayPageSize",
+        initialPage: 1,
+        initialPageSize: weatherState.barangayPageSize,
+        itemLabel: "barangays",
+        buttonClass: "barangay-page-btn",
+        ellipsisClass: "barangay-page-btn",
+        prevLabel: "Prev",
+        nextLabel: "Next",
+        onRenderRows: (pageRows) => {
+            const tbody = document.getElementById("barangayRiskTableBody");
+            if (!tbody) return;
+
+            if (!pageRows.length && !weatherState.filteredBarangays.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">No barangay risk data available.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = pageRows.map(row => `
+                <tr>
+                    <td>${escapeHtml(row.barangayName || "--")}</td>
+                    <td>${renderFlag(row.floodProne)}</td>
+                    <td>${renderFlag(row.landslideProne)}</td>
+                    <td>${renderFlag(row.coastal)}</td>
+                    <td>
+                        <span class="risk-badge ${normalizeRiskClass(row.riskLevel)}">
+                            ${escapeHtml(row.riskLevel || "--")}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(row.reason || "--")}</td>
+                    <td>${escapeHtml(row.recommendation || "--")}</td>
+                </tr>
+            `).join("");
+        }
+    });
+
     await loadMunicipalForecast();
 });
 
@@ -298,126 +342,8 @@ function formatShortDate(value) {
 }
 
 function renderBarangayRiskTable(rows) {
-    const tbody = document.getElementById("barangayRiskTableBody");
-    if (!tbody) return;
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="empty-state">No barangay risk data available.</td>
-            </tr>
-        `;
-        renderBarangayPagination(0, 0, 0);
-        return;
-    }
-
-    const total = rows.length;
-    const pageSize = weatherState.barangayPageSize;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-    if (weatherState.barangayPage > totalPages) {
-        weatherState.barangayPage = totalPages;
-    }
-
-    const startIndex = (weatherState.barangayPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, total);
-    const pageRows = rows.slice(startIndex, endIndex);
-
-    tbody.innerHTML = pageRows.map(row => `
-        <tr>
-            <td>${escapeHtml(row.barangayName || "--")}</td>
-            <td>${renderFlag(row.floodProne)}</td>
-            <td>${renderFlag(row.landslideProne)}</td>
-            <td>${renderFlag(row.coastal)}</td>
-            <td>
-                <span class="risk-badge ${normalizeRiskClass(row.riskLevel)}">
-                    ${escapeHtml(row.riskLevel || "--")}
-                </span>
-            </td>
-            <td>${escapeHtml(row.reason || "--")}</td>
-            <td>${escapeHtml(row.recommendation || "--")}</td>
-        </tr>
-    `).join("");
-
-    renderBarangayPagination(startIndex + 1, endIndex, total);
-}
-
-function renderBarangayPagination(start, end, total) {
-    const info = document.getElementById("barangayPaginationInfo");
-    const controls = document.getElementById("barangayPaginationControls");
-
-    if (info) {
-        if (total === 0) {
-            info.textContent = "Showing 0 to 0 of 0 barangays";
-        } else {
-            info.textContent = `Showing ${start} to ${end} of ${total} barangays`;
-        }
-    }
-
-    if (!controls) return;
-
-    if (total === 0) {
-        controls.innerHTML = "";
-        return;
-    }
-
-    const totalPages = Math.max(1, Math.ceil(total / weatherState.barangayPageSize));
-    const currentPage = weatherState.barangayPage;
-
-    const pages = buildBarangayPageNumbers(totalPages, currentPage);
-
-    controls.innerHTML = `
-        <button class="barangay-page-btn" ${currentPage === 1 ? "disabled" : ""} data-page="${currentPage - 1}">
-            Prev
-        </button>
-
-        ${pages.map(page =>
-            page === "..."
-                ? `<span class="barangay-page-btn" style="pointer-events:none; opacity:0.7;">...</span>`
-                : `<button class="barangay-page-btn ${page === currentPage ? "active" : ""}" data-page="${page}">${page}</button>`
-        ).join("")}
-
-        <button class="barangay-page-btn" ${currentPage === totalPages ? "disabled" : ""} data-page="${currentPage + 1}">
-            Next
-        </button>
-    `;
-
-    controls.querySelectorAll("[data-page]").forEach(button => {
-        button.addEventListener("click", () => {
-            const page = Number(button.dataset.page);
-            if (!page || page < 1 || page > totalPages) return;
-
-            weatherState.barangayPage = page;
-            renderBarangayRiskTable(weatherState.filteredBarangays);
-        });
-    });
-}
-
-function buildBarangayPageNumbers(totalPages, currentPage) {
-    if (totalPages <= 7) {
-        return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    const pages = [1];
-
-    if (currentPage > 3) {
-        pages.push("...");
-    }
-
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-
-    for (let i = start; i <= end; i++) {
-        pages.push(i);
-    }
-
-    if (currentPage < totalPages - 2) {
-        pages.push("...");
-    }
-
-    pages.push(totalPages);
-
-    return pages;
+    if (!barangayPagination) return;
+    barangayPagination.setRows(rows);
 }
 
 function renderAlerts(alerts) {
