@@ -13,6 +13,7 @@ window.applyFrontendRbac = applyFrontendRbac;
 
 document.addEventListener('DOMContentLoaded', function() {
     applyFrontendRbac();
+
     // Elements
     const userDropdownBtn = document.getElementById('userDropdownBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize user name from localStorage
     initializeUserInfo();
+    patchAdminDropdownLinks();
 
     // User Dropdown Toggle
     if (userDropdownBtn && userDropdown) {
@@ -189,13 +191,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (notificationBtn) {
         notificationBtn.addEventListener('click', function() {
-            console.log('Notifications clicked');
+            window.location.href = 'admin.html#notifications';
         });
     }
 
     if (messageBtn) {
         messageBtn.addEventListener('click', function() {
-            console.log('Messages clicked');
+            window.location.href = 'admin.html#messages';
         });
     }
 
@@ -231,6 +233,30 @@ function initializeUserInfo() {
     if (!userNameDisplay) {
         console.warn('userNameDisplay element not found');
     }
+}
+
+/**
+ * Patch dropdown links so they route to the admin sections
+ */
+function patchAdminDropdownLinks() {
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (!dropdownMenu) return;
+
+    const dropdownItems = dropdownMenu.querySelectorAll('a.dropdown-item');
+
+    dropdownItems.forEach(link => {
+        const text = (link.textContent || '').trim().toLowerCase();
+
+        if (text.includes('profile')) {
+            link.setAttribute('href', 'admin.html#profile');
+        } else if (text.includes('notification')) {
+            link.setAttribute('href', 'admin.html#notifications');
+        } else if (text.includes('message')) {
+            link.setAttribute('href', 'admin.html#messages');
+        } else if (text.includes('change password')) {
+            link.setAttribute('href', 'admin.html#password');
+        }
+    });
 }
 
 /**
@@ -297,7 +323,6 @@ function updateUserName(name) {
     }
 }
 
-
 function getCurrentUserInfo() {
     try {
         const raw = localStorage.getItem("loginUserInfo");
@@ -333,7 +358,7 @@ function applyFrontendRbac() {
     const canManage = canAccessManagementPages(currentUser);
 
     const reportsMenuItem = document.querySelector('a[href="reports.html"]')?.closest(".menu-item");
-    const adminMenuItem = document.querySelector('a[href="#admin"]')?.closest(".menu-item");
+    const adminMenuItem = document.querySelector('a[href="admin.html"]')?.closest(".menu-item");
     const settingsMenuItem = document.querySelector('a[href="#settings"]')?.closest(".menu-item");
 
     if (!canManage) {
@@ -342,3 +367,62 @@ function applyFrontendRbac() {
         if (settingsMenuItem) settingsMenuItem.style.display = "none";
     }
 }
+
+// modal for global confirmation
+// (function () {
+//     let confirmAction = null;
+
+//     function closeAppConfirm() {
+//         const modal = document.getElementById("appConfirmModal");
+//         if (modal) {
+//             modal.classList.remove("active");
+//             document.body.style.overflow = "auto";
+//         }
+//         confirmAction = null;
+//     }
+
+//     function openAppConfirm({
+//         title = "Please Confirm",
+//         message = "Are you sure you want to continue?",
+//         confirmText = "Confirm",
+//         cancelText = "Cancel",
+//         kicker = "Confirmation",
+//         onConfirm = null
+//     }) {
+//         const modal = document.getElementById("appConfirmModal");
+//         if (!modal) return;
+
+//         document.getElementById("appConfirmTitle").textContent = title;
+//         document.getElementById("appConfirmMessage").textContent = message;
+//         document.getElementById("appConfirmKicker").textContent = kicker;
+//         document.getElementById("appConfirmProceedBtn").textContent = confirmText;
+//         document.getElementById("appConfirmCancelBtn").textContent = cancelText;
+
+//         confirmAction = onConfirm;
+//         modal.classList.add("active");
+//         document.body.style.overflow = "hidden";
+//     }
+
+//     async function handleConfirmProceed() {
+//         if (typeof confirmAction === "function") {
+//             const action = confirmAction;
+//             closeAppConfirm();
+//             await action();
+//             return;
+//         }
+//         closeAppConfirm();
+//     }
+
+//     document.addEventListener("DOMContentLoaded", function () {
+//         document.getElementById("appConfirmCloseBtn")?.addEventListener("click", closeAppConfirm);
+//         document.getElementById("appConfirmCancelBtn")?.addEventListener("click", closeAppConfirm);
+//         document.getElementById("appConfirmProceedBtn")?.addEventListener("click", handleConfirmProceed);
+
+//         document.getElementById("appConfirmModal")?.addEventListener("click", function (e) {
+//             if (e.target === this) closeAppConfirm();
+//         });
+//     });
+
+//     window.openAppConfirm = openAppConfirm;
+//     window.closeAppConfirm = closeAppConfirm;
+// })();

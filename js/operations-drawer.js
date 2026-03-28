@@ -1649,7 +1649,48 @@ async function confirmTransitionReview() {
         showToastSafe("Operation updated successfully.", "success");
     } catch (error) {
         console.error("Error confirming transition review:", error);
-        showToastSafe("Failed to update operation.", "error");
+
+        const parsed = await parseApiError(error);
+
+        if (parsed.code === "APPROVAL_REQUIRED") {
+            try {
+                const requestTitle =
+                    config.type === "INCIDENT"
+                        ? `Approval request for ${config.mode.replaceAll("_", " ")} on incident #${data.id}`
+                        : `Approval request for ${config.mode.replaceAll("_", " ")} on calamity #${data.id}`;
+
+                await submitApprovalRequest({
+                    requestType: parsed.requestType || "OPERATION_ACKNOWLEDGEMENT",
+                    title: requestTitle,
+                    description: [
+                        `User requests approval before proceeding.`,
+                        description ? `Update: ${description}` : "",
+                        overrideReason ? `Override reason: ${overrideReason}` : ""
+                    ].filter(Boolean).join(" "),
+                    referenceType: parsed.referenceType || config.type,
+                    referenceId: parsed.referenceId || data.id,
+                    payloadJson: JSON.stringify({
+                        mode: config.mode,
+                        type: config.type,
+                        eventId: data.id,
+                        description,
+                        responderId: responderId ? Number(responderId) : null,
+                        selectedResources: config.selectedResources || [],
+                        overrideReason
+                    })
+                });
+
+                showToastSafe("Approval request submitted. Please wait for manager/admin approval.", "info");
+                closeTransitionReviewModal();
+                return;
+            } catch (requestError) {
+                console.error("Failed to submit approval request:", requestError);
+                showToastSafe("Approval was required, but the request could not be submitted.", "error");
+                return;
+            }
+        }
+
+        showToastSafe(parsed.message || "Failed to update operation.", "error");
     }
 }
 

@@ -377,9 +377,26 @@ window.openInventoryAdjustModal = async function (item) {
             await window.loadInventorySection();
             if (window.loadReliefSection) await window.loadReliefSection();
         } catch (error) {
+            const parsed = await parseResourceError(error);
+
+            if (parsed.code === "APPROVAL_REQUIRED") {
+                await submitResourceApprovalRequest({
+                    requestType: "STOCK_ADJUSTMENT",
+                    title: `Stock adjustment request for ${item.name}`,
+                    description: `Requested stock adjustment for inventory item ${item.name}.`,
+                    referenceType: "INVENTORY",
+                    referenceId: item.id,
+                    payloadJson: JSON.stringify(payload)
+                });
+
+                closeResourcesModal();
+                showToast("Approval request submitted for stock adjustment.", "info");
+                return;
+            }
+
             console.error("Failed to adjust stock", error);
-            showToast("Failed to adjust stock.", "error");
-        }
+            showToast(parsed.message || "Failed to adjust stock.", "error");
+}
     });
 };
 

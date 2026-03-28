@@ -193,4 +193,20 @@ async function initOperationsPage() {
     }
 }
 
+// for admin integration
+async function parseApiError(error) {
+    try {
+        return JSON.parse(error.message);
+    } catch {
+        return { message: error.message || "Request failed." };
+    }
+}
+
+async function submitApprovalRequest(payload) {
+    return apiRequest(`${API_BASE}/approval-requests`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+}
+
 document.addEventListener("DOMContentLoaded", initOperationsPage);

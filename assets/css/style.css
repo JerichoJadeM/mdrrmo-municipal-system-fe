@@ -2403,3 +2403,111 @@ html, body {
         flex: 1 1 140px;
     }
 }
+
+/* Share hero block*/
+
+.dashboard-hero,
+.alerts-hero,
+.weather-hero,
+.page-hero,
+.resources-header {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-lg);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    color: var(--text-light);
+    border: none;
+    box-shadow: var(--shadow-md);
+}
+
+.dashboard-hero::after,
+.alerts-hero::after,
+.weather-hero::after,
+.page-hero::after,
+.resources-header::after {
+    content: "";
+    position: absolute;
+    inset: auto -8% -45% auto;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
+
+.dashboard-hero-content,
+.alerts-hero-content,
+.weather-hero-content,
+.page-hero-content,
+.resources-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard-hero .section-badge,
+.alerts-hero .section-badge,
+.weather-hero .section-badge,
+.page-hero .section-badge,
+.resources-header .page-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: var(--spacing-sm);
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-light);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.dashboard-hero h2,
+.alerts-hero h2,
+.weather-hero h2,
+.page-hero h1,
+.page-hero h2,
+.resources-header h1 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.dashboard-hero p,
+.alerts-hero p,
+.weather-hero p,
+.page-hero p,
+.resources-header p,
+.page-subtitle {
+    margin: 0;
+    color: rgba(236, 240, 241, 0.92);
+    max-width: 760px;
+    line-height: 1.7;
+}
+
+.dashboard-hero-meta,
+.alerts-hero-actions,
+.weather-hero-actions,
+.page-hero-actions,
+.resources-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* Global modal for confirmation
+.app-confirm-modal-content {
+    max-width: 520px;
+    width: min(520px, calc(100vw - 32px));
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #dbe5ef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.20), 0 8px 22px rgba(15, 23, 42, 0.10);
+} */

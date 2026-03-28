@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administration - MDRRMO</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/admin.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userDropdownBtn">
+                        <span class="admin-navbar-avatar" id="navbarUserAvatar">U</span>
+                        <span class="user-name" id="userNameDisplay">User</span>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="admin.html#profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="admin.html#notifications" class="dropdown-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notifications</span>
+                        </a>
+                        <a href="admin.html#messages" class="dropdown-item">
+                            <i class="fas fa-message"></i>
+                            <span>Messages</span>
+                        </a>
+                        <a href="admin.html#password" class="dropdown-item">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navbar-title">
+                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+            </div>
+
+            <div class="navbar-notifications">
+                <button class="notification-btn" id="notificationBtn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+                </button>
+                <button class="message-btn" id="messageBtn" title="Messages">
+                    <i class="fas fa-envelope"></i>
+                    <span class="message-badge" id="messageBadge" style="display:none;">0</span>
+                </button>
+            </div>
+
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item"><a href="index.html"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+            <li class="menu-item"><a href="weather-forecast.html"><i class="fas fa-cloud"></i><span>Weather Forecast</span></a></li>
+            <li class="menu-item"><a href="alerts-and-warnings.html"><i class="fas fa-bell"></i><span>Alerts & Warnings</span></a></li>
+            <li class="menu-item"><a href="disaster-management.html"><i class="fas fa-exclamation-circle"></i><span>Disaster Management</span></a></li>
+            <li class="menu-item"><a href="operations.html"><i class="fas fa-tasks"></i><span>Operations</span></a></li>
+            <li class="menu-item"><a href="resources.html"><i class="fas fa-cube"></i><span>Resources</span></a></li>
+            <li class="menu-item active"><a href="admin.html"><i class="fas fa-users-cog"></i><span>Administration</span></a></li>
+            <li class="menu-item"><a href="reports.html"><i class="fas fa-file-alt"></i><span>Reports</span></a></li>
+            <li class="menu-item"><a href="#settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="page-content main-content admin-page">
+        <section class="admin-hero card-section page-hero">
+            <div class="page-hero-content admin-hero-content">
+                <div class="section-badge">
+                    <i class="fas fa-user-shield"></i>
+                    Access & Account Management
+                </div>
+                <h2>Administration</h2>
+                <p>
+                    Manage profile, notifications, approvals, internal messaging, user accounts,
+                    and access controls in one unified workspace.
+                </p>
+            </div>
+
+            <div class="page-hero-actions admin-hero-actions">
+                <a href="admin.html#profile" class="action-btn secondary-btn"><i class="fas fa-user"></i>Profile</a>
+                <a href="admin.html#notifications" class="action-btn secondary-btn"><i class="fas fa-bell"></i>Notifications</a>
+                <a href="admin.html#approvals" class="action-btn secondary-btn"><i class="fas fa-clipboard-check"></i>Approvals</a>
+                <a href="admin.html#messages" class="action-btn primary-btn"><i class="fas fa-envelope"></i>Messages</a>
+            </div>
+        </section>
+
+        <section class="admin-meta-panel card-section">
+            <div class="admin-meta-row">
+                <div class="admin-meta-left">
+                    <span class="report-tag"><i class="fas fa-building-shield"></i>MDRRMO Administration</span>
+                    <span class="report-tag" id="adminRoleTag"><i class="fas fa-user-shield"></i>Role: --</span>
+                    <span class="report-tag" id="adminAccountStatusTag"><i class="fas fa-circle-check"></i>Status: --</span>
+                </div>
+                <div class="admin-meta-right" id="adminLastUpdatedText">Last updated: --</div>
+            </div>
+        </section>
+
+        <section class="admin-main-grid">
+            <aside class="card-section admin-sidebar-panel">
+                <div class="section-header">
+                    <div>
+                        <h3>Workspace</h3>
+                        <p>Account tools and administration controls</p>
+                    </div>
+                </div>
+
+                <div class="admin-nav" id="adminNav">
+                    <button class="admin-nav-btn active" data-section="profile" type="button">
+                        <i class="fas fa-user-circle"></i><span>My Profile</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="notifications" type="button">
+                        <i class="fas fa-bell"></i><span>Notifications</span>
+                        <span class="admin-nav-badge" id="panelNotificationBadge">0</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="approvals" type="button">
+                        <i class="fas fa-clipboard-check"></i><span>Approvals</span>
+                        <span class="admin-nav-badge" id="panelApprovalBadge">0</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="messages" type="button">
+                        <i class="fas fa-envelope"></i><span>Messages</span>
+                        <span class="admin-nav-badge" id="panelMessageBadge">0</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="users" type="button">
+                        <i class="fas fa-users"></i><span>User Accounts</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="roles" type="button">
+                        <i class="fas fa-user-shield"></i><span>Roles & Access</span>
+                    </button>
+                    <button class="admin-nav-btn" data-section="password" type="button">
+                        <i class="fas fa-key"></i><span>Change Password</span>
+                    </button>
+                </div>
+            </aside>
+
+            <div class="admin-content-column">
+                <section class="admin-panel active" id="panel-profile">
+                    <div class="card-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>My Profile</h3>
+                                <p>Update your personal information and profile picture.</p>
+                            </div>
+                        </div>
+
+                        <div class="admin-profile-layout">
+                            <div class="admin-profile-side">
+                                <div class="admin-avatar-shell" id="profileAvatarPreview">
+                                    <span class="admin-avatar-fallback">U</span>
+                                </div>
+
+                                <div class="admin-avatar-actions">
+                                    <input type="file" id="profilePhotoInput" accept="image/*" hidden>
+                                    <button class="action-btn secondary-btn" type="button" id="selectPhotoBtn">
+                                        <i class="fas fa-upload"></i>Upload Photo
+                                    </button>
+                                    <button class="action-btn secondary-btn" type="button" id="removePhotoBtn">
+                                        <i class="fas fa-trash"></i>Remove Photo
+                                    </button>
+                                </div>
+
+                                <div class="admin-profile-pills">
+                                    <span class="report-tag" id="profileRolePill">USER</span>
+                                    <span class="status-badge ready" id="profileStatusPill">Active</span>
+                                </div>
+                            </div>
+
+                            <form id="profileForm" class="admin-form-wrap">
+                                <div class="admin-form-grid two-columns">
+                                    <div class="form-group">
+                                        <label for="profileFullName">Full Name</label>
+                                        <input type="text" id="profileFullName" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="profileUsername">Username</label>
+                                        <input type="text" id="profileUsername" disabled>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="profileEmail">Email</label>
+                                        <input type="email" id="profileEmail">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="profileNumber">Mobile Number</label>
+                                        <input type="text" id="profileNumber">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="profilePosition">Position</label>
+                                        <input type="text" id="profilePosition">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="profileOffice">Office</label>
+                                        <input type="text" id="profileOffice">
+                                    </div>
+                                </div>
+
+                                <div class="admin-flag-row">
+                                    <span class="report-tag" id="profileResponderFlag"><i class="fas fa-user-check"></i>Responder Eligible</span>
+                                    <span class="report-tag" id="profileCoordinatorFlag"><i class="fas fa-clipboard-check"></i>Coordinator Eligible</span>
+                                </div>
+
+                                <div class="admin-form-actions">
+                                    <button class="action-btn primary-btn" type="submit">
+                                        <i class="fas fa-save"></i>Save Profile
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-notifications">
+                    <div class="card-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>Notifications</h3>
+                                <p>Assignments, requests, operational updates, and system notices.</p>
+                            </div>
+
+                            <div class="admin-toolbar">
+                                <div class="form-group compact-group">
+                                    <label for="notificationFilter">Filter</label>
+                                    <select id="notificationFilter">
+                                        <option value="ALL">All</option>
+                                        <option value="UNREAD">Unread</option>
+                                        <option value="ASSIGNMENT">Assignments</option>
+                                        <option value="REQUEST">Requests</option>
+                                        <option value="REQUEST_DECISION">Request Decisions</option>
+                                        <option value="WARNING">Warnings</option>
+                                        <option value="MESSAGE">Messages</option>
+                                        <option value="SYSTEM">System</option>
+                                    </select>
+                                </div>
+
+                                <button class="action-btn secondary-btn" type="button" id="markAllReadBtn">
+                                    Mark all as read
+                                </button>
+                                <button class="action-btn secondary-btn" type="button" id="clearReadNotificationsBtn" disabled>
+                                    Clear read
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-notification-list" id="notificationList"></div>
+                        <div class="app-pagination-bar admin-section-pagination hidden" id="notificationsPaginationBar">
+                            <div class="app-pagination-left">
+                                <div class="app-pagination-info" id="notificationsPaginationInfo">
+                                    Showing 0 to 0 of 0 notifications
+                                </div>
+
+                                <div class="app-page-size-wrap">
+                                    <label for="notificationsPageSize">Rows per page</label>
+                                    <select id="notificationsPageSize">
+                                        <option value="5" selected>5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="app-pagination-controls" id="notificationsPaginationControls"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-approvals">
+                    <div class="card-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>Approvals</h3>
+                                <p>Review pending approval requests and make decisions.</p>
+                            </div>
+
+                            <div class="admin-toolbar">
+                                <div class="form-group compact-group">
+                                    <label for="approvalViewFilter">View</label>
+                                    <select id="approvalViewFilter">
+                                        <option value="PENDING">Pending</option>
+                                        <option value="MINE">My Requests</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-approval-list" id="approvalList"></div>
+                        <div class="app-pagination-bar admin-section-pagination hidden" id="approvalsPaginationBar">
+                            <div class="app-pagination-left">
+                                <div class="app-pagination-info" id="approvalsPaginationInfo">
+                                    Showing 0 to 0 of 0 approvals
+                                </div>
+
+                                <div class="app-page-size-wrap">
+                                    <label for="approvalsPageSize">Rows per page</label>
+                                    <select id="approvalsPageSize">
+                                        <option value="5" selected>5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="app-pagination-controls" id="approvalsPaginationControls"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-messages">
+                    <div class="card-section admin-messages-card">
+                        <div class="admin-messages-shell">
+                            <aside class="admin-messages-sidebar">
+                                <div class="section-header">
+                                    <div>
+                                        <h3>Messages</h3>
+                                        <p>Internal coordination and communication</p>
+                                    </div>
+                                    <button class="action-btn primary-btn" type="button" id="newMessageBtn">
+                                        <i class="fas fa-plus"></i>New
+                                    </button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="messageSearchInput">Search</label>
+                                    <input type="text" id="messageSearchInput" placeholder="Search users or conversations...">
+                                </div>
+
+                                <div class="admin-conversation-list" id="conversationList"></div>
+                                <div class="app-pagination-bar admin-conversation-pagination-bar hidden" id="conversationPaginationBar">
+                                    <div class="app-pagination-left">
+                                        <div class="app-pagination-info" id="conversationPaginationInfo">
+                                            Showing 0 to 0 of 0 conversations
+                                        </div>
+
+                                        <div class="app-page-size-wrap admin-page-size-wrap-compact">
+                                            <label for="conversationPageSize">Rows</label>
+                                            <select id="conversationPageSize">
+                                                <option value="3" selected>3</option>
+                                                <option value="5">5</option>
+                                                <option value="8">8</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="app-pagination-controls" id="conversationPaginationControls"></div>
+                                </div>
+                            </aside>
+
+                            <section class="admin-thread">
+                                <div class="admin-thread-header" id="threadHeader">
+                                    <div class="admin-thread-header-main">
+                                        <div class="admin-thread-header-avatar" id="threadHeaderAvatar">U</div>
+                                        <div class="admin-thread-header-copy">
+                                            <h3>Select a conversation</h3>
+                                            <p>View and continue internal communication.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="admin-thread-pinned hidden" id="threadPinnedMessage"></div>
+                                <div class="admin-thread-body" id="threadMessages">
+                                    <div class="empty-state-card">Select a conversation to view messages.</div>
+                                </div>
+
+                                <form class="admin-thread-compose" id="composeForm">
+                                    <div class="form-group admin-compose-group">
+                                        <label for="composeInput">Message</label>
+                                        <textarea id="composeInput" rows="3" placeholder="Type your message..."></textarea>
+                                    </div>
+
+                                    <button class="action-btn primary-btn" type="submit">
+                                        <i class="fas fa-paper-plane"></i>Send
+                                    </button>
+                                </form>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-users">
+                    <div class="card-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>User Accounts</h3>
+                                <p>View user profiles and manage role, account status, and operational eligibility.</p>
+                            </div>
+
+                            <div class="admin-toolbar admin-user-toolbar">
+                                <button class="action-btn primary-btn" type="button" id="addUserBtn">
+                                    <i class="fas fa-user-plus"></i>Add User
+                                </button>
+
+                                <div class="form-group compact-group wide-search">
+                                    <label for="userSearchInput">Search</label>
+                                    <input type="text" id="userSearchInput" placeholder="Search users...">
+                                </div>
+
+                                <div class="form-group compact-group">
+                                    <label for="userRoleFilter">Role</label>
+                                    <select id="userRoleFilter">
+                                        <option value="">All Roles</option>
+                                        <option value="USER">User</option>
+                                        <option value="MANAGER">Manager</option>
+                                        <option value="ADMIN">Admin</option>
+                                        <option value="VIEWER">Viewer</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group compact-group">
+                                    <label for="userStatusFilter">Status</label>
+                                    <select id="userStatusFilter">
+                                        <option value="">All Status</option>
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="INACTIVE">Inactive</option>
+                                        <option value="SUSPENDED">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="app-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Contact</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Responder</th>
+                                        <th>Coordinator</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-roles">
+                    <div class="card-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>Roles & Access</h3>
+                                <p>Current access model and role responsibilities.</p>
+                            </div>
+                        </div>
+
+                        <div class="admin-roles-grid">
+                            <article class="admin-role-card">
+                                <span class="report-tag">USER</span>
+                                <h4>Standard Staff Access</h4>
+                                <p>Regular operational access for assigned modules and workflows.</p>
+                            </article>
+                            <article class="admin-role-card">
+                                <span class="report-tag">MANAGER</span>
+                                <h4>Operational Oversight</h4>
+                                <p>Can review requests, approve decisions, and manage elevated operations.</p>
+                            </article>
+                            <article class="admin-role-card">
+                                <span class="report-tag">ADMIN</span>
+                                <h4>Full Administration Access</h4>
+                                <p>Can manage users, roles, decisions, account access, and administrative controls.</p>
+                            </article>
+                            <article class="admin-role-card">
+                                <span class="report-tag">VIEWER</span>
+                                <h4>Read-only Monitoring</h4>
+                                <p>For viewing dashboards and records without editing privileges.</p>
+                            </article>
+                        </div>
+
+                        <div class="admin-subsection">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Recent Role Changes</h3>
+                                    <p>Track promotions, demotions, and eligibility updates.</p>
+                                </div>
+                            </div>
+                            <div class="admin-role-change-list" id="roleChangeList"></div>
+                            <div class="app-pagination-bar admin-section-pagination hidden" id="roleChangesPaginationBar">
+                                <div class="app-pagination-left">
+                                    <div class="app-pagination-info" id="roleChangesPaginationInfo">
+                                        Showing 0 to 0 of 0 role changes
+                                    </div>
+
+                                    <div class="app-page-size-wrap">
+                                        <label for="roleChangesPageSize">Rows per page</label>
+                                        <select id="roleChangesPageSize">
+                                            <option value="5" selected>5</option>
+                                            <option value="10">10</option>
+                                            <option value="15">15</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="app-pagination-controls" id="roleChangesPaginationControls"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-panel" id="panel-password">
+                    <div class="card-section admin-password-card">
+                        <div class="section-header">
+                            <div>
+                                <h3>Change Password</h3>
+                                <p>Update your password securely.</p>
+                            </div>
+                        </div>
+
+                        <form id="passwordForm">
+                            <div class="admin-form-grid">
+                                <div class="form-group">
+                                    <label for="currentPassword">Current Password</label>
+                                    <input type="password" id="currentPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">New Password</label>
+                                    <input type="password" id="newPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">Confirm New Password</label>
+                                    <input type="password" id="confirmPassword" required>
+                                </div>
+                            </div>
+
+                            <div class="admin-password-hint" id="passwordHint">
+                                Use at least 8 characters and make sure the new passwords match.
+                            </div>
+
+                            <div class="admin-form-actions">
+                                <button class="action-btn primary-btn" type="submit">
+                                    <i class="fas fa-key"></i>Update Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!--Modals-->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="modal-close" id="logoutModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body"><p>Are you sure you want to logout?</p></div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="logoutCancel"><i class="fas fa-times"></i>Cancel</button>
+                <button class="btn btn-logout" id="logoutConfirm"><i class="fas fa-sign-out-alt"></i>Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="userManageModal">
+        <div class="modal-content admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker">User Management</span>
+                    <h3>Manage User</h3>
+                    <p class="admin-modal-subtitle">Update role, account status, and operational eligibility.</p>
+                </div>
+                <button class="modal-close" id="closeUserModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form class="admin-modal-body" id="userModalForm">
+                <input type="hidden" id="userModalId">
+
+                <div class="admin-modal-form-grid">
+                    <div class="form-group">
+                        <label for="userModalFullName">Full Name</label>
+                        <input type="text" id="userModalFullName" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="userModalEmail">Email</label>
+                        <input type="text" id="userModalEmail" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="userModalRole">Role</label>
+                        <select id="userModalRole">
+                            <option value="USER">USER</option>
+                            <option value="MANAGER">MANAGER</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="VIEWER">VIEWER</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userModalStatus">Status</label>
+                        <select id="userModalStatus">
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                            <option value="SUSPENDED">SUSPENDED</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-modal-flags">
+                    <label class="report-tag admin-checkbox-tag">
+                        <input type="checkbox" id="userModalResponder">
+                        <span>Responder Eligible</span>
+                    </label>
+                    <label class="report-tag admin-checkbox-tag">
+                        <input type="checkbox" id="userModalCoordinator">
+                        <span>Coordinator Eligible</span>
+                    </label>
+                </div>
+
+                <div class="admin-modal-footer">
+                    <button class="btn btn-cancel" type="button" id="cancelUserModalBtn">Cancel</button>
+                    <button class="btn btn-primary" type="submit" id="saveUserModalBtn">
+                        <i class="fas fa-save"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="viewUserModal">
+        <div class="modal-content admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker">User Profile</span>
+                    <h3>View User</h3>
+                    <p class="admin-modal-subtitle">View user details and account profile.</p>
+                </div>
+                <button class="modal-close" id="closeViewUserModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="admin-modal-body">
+                <div class="admin-view-user">
+                    <div class="admin-view-user-avatar" id="viewUserAvatar">U</div>
+                    <div class="admin-view-user-grid">
+                        <div><strong>Name:</strong> <span id="viewUserFullName">--</span></div>
+                        <div><strong>Email:</strong> <span id="viewUserEmail">--</span></div>
+                        <div><strong>Number:</strong> <span id="viewUserNumber">--</span></div>
+                        <div><strong>Role:</strong> <span id="viewUserRole">--</span></div>
+                        <div><strong>Status:</strong> <span id="viewUserStatus">--</span></div>
+                        <div><strong>Position:</strong> <span id="viewUserPosition">--</span></div>
+                        <div><strong>Office:</strong> <span id="viewUserOffice">--</span></div>
+                        <div><strong>Responder Eligible:</strong> <span id="viewUserResponder">--</span></div>
+                        <div><strong>Coordinator Eligible:</strong> <span id="viewUserCoordinator">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-modal-footer">
+                <button class="btn btn-cancel" type="button" id="closeViewUserModalFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="addUserModal">
+        <div class="modal-content admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker">Create User</span>
+                    <h3>Add User</h3>
+                    <p class="admin-modal-subtitle">Scaffold for creating a new account.</p>
+                </div>
+                <button class="modal-close" id="closeAddUserModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form class="admin-modal-body" id="addUserForm">
+                <div class="admin-modal-form-grid">
+                    <div class="form-group">
+                        <label for="addUserFirstName">First Name</label>
+                        <input type="text" id="addUserFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserMiddleName">Middle Name</label>
+                        <input type="text" id="addUserMiddleName">
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserLastName">Last Name</label>
+                        <input type="text" id="addUserLastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserEmail">Email</label>
+                        <input type="email" id="addUserEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserNumber">Mobile Number</label>
+                        <input type="text" id="addUserNumber">
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserPassword">Password</label>
+                        <input type="password" id="addUserPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserPosition">Position</label>
+                        <input type="text" id="addUserPosition">
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserOffice">Office</label>
+                        <input type="text" id="addUserOffice" value="MDRRMO">
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserRole">Role</label>
+                        <select id="addUserRole">
+                            <option value="USER">USER</option>
+                            <option value="MANAGER">MANAGER</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="VIEWER">VIEWER</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addUserStatus">Status</label>
+                        <select id="addUserStatus">
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                            <option value="SUSPENDED">SUSPENDED</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-modal-flags">
+                    <label class="report-tag admin-checkbox-tag">
+                        <input type="checkbox" id="addUserResponder">
+                        <span>Responder Eligible</span>
+                    </label>
+                    <label class="report-tag admin-checkbox-tag">
+                        <input type="checkbox" id="addUserCoordinator">
+                        <span>Coordinator Eligible</span>
+                    </label>
+                </div>
+
+                <div class="admin-modal-footer">
+                    <button class="btn btn-cancel" type="button" id="cancelAddUserModalBtn">Cancel</button>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-user-plus"></i>Create User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="newMessageModal">
+        <div class="modal-content admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker">Messages</span>
+                    <h3>New Message</h3>
+                    <p class="admin-modal-subtitle">Start a new conversation with another user.</p>
+                </div>
+                <button class="modal-close" id="closeMessageModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form class="admin-modal-body" id="newMessageForm">
+                <div class="form-group admin-recipient-group">
+                    <label for="messageRecipientSearch">Recipient</label>
+                    <input type="hidden" id="messageRecipient">
+                    <input
+                        type="text"
+                        id="messageRecipientSearch"
+                        placeholder="Search user by name..."
+                        autocomplete="off"
+                        required
+                    >
+                    <div class="admin-recipient-results hidden" id="messageRecipientResults"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="messageInitialText">Message</label>
+                    <textarea id="messageInitialText" rows="5" placeholder="Type your message..." required></textarea>
+                </div>
+
+                <div class="admin-modal-footer">
+                    <button class="btn btn-cancel" type="button" id="cancelMessageModalBtn">Cancel</button>
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i>Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="approvalDecisionModal">
+        <div class="modal-content admin-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker">Approval Decision</span>
+                    <h3 id="approvalDecisionTitle">Review Request</h3>
+                    <p class="admin-modal-subtitle">Approve or reject the selected request.</p>
+                </div>
+                <button class="modal-close" id="closeApprovalDecisionModalBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form class="admin-modal-body" id="approvalDecisionForm">
+                <input type="hidden" id="approvalDecisionRequestId">
+                <input type="hidden" id="approvalDecisionAction">
+
+                <div class="form-group">
+                    <label for="approvalDecisionRemarks">Remarks</label>
+                    <textarea id="approvalDecisionRemarks" rows="5" placeholder="Enter remarks (optional)"></textarea>
+                </div>
+
+                <div class="admin-modal-footer">
+                    <button class="btn btn-cancel" type="button" id="cancelApprovalDecisionModalBtn">Cancel</button>
+                    <button class="btn btn-primary" type="submit" id="confirmApprovalDecisionBtn">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="appConfirmModal">
+        <div class="modal-content app-confirm-modal-content">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title-wrap">
+                    <span class="admin-modal-kicker" id="appConfirmKicker">Confirmation</span>
+                    <h3 id="appConfirmTitle">Please Confirm</h3>
+                    <p class="admin-modal-subtitle" id="appConfirmMessage">Are you sure you want to continue?</p>
+                </div>
+                <button class="modal-close" id="appConfirmCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="admin-modal-footer">
+                <button class="btn btn-cancel" type="button" id="appConfirmCancelBtn">Cancel</button>
+                <button class="btn btn-primary" type="button" id="appConfirmProceedBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/loginUserInfo.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="assets/ui-js/ui-pagination.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

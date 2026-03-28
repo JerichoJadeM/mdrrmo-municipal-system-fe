@@ -9,61 +9,60 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <div class="navbar-user">
-                <div class="user-dropdown">
-                    <button class="user-btn" id="userDropdownBtn">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="user-name" id="userNameDisplay">User</span>
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-user">
+            <div class="user-dropdown">
+                <button class="user-btn" id="userDropdownBtn">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="user-name" id="userNameDisplay">User</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="admin.html#profile" class="dropdown-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="admin.html#notifications" class="dropdown-item">
+                        <i class="fas fa-bell"></i>
+                        <span>Notification</span>
+                    </a>
+                    <a href="admin.html#messages" class="dropdown-item">
+                        <i class="fas fa-message"></i>
+                        <span>Messages</span>
+                    </a>
+                    <a href="admin.html#password" class="dropdown-item">
+                        <i class="fas fa-key"></i>
+                        <span>Change Password</span>
+                    </a>
+                    <hr class="dropdown-divider">
+                    <button class="dropdown-item logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
                     </button>
-                    <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="#profile" class="dropdown-item">
-                            <i class="fas fa-user"></i>
-                            <span>Profile</span>
-                        </a>
-                        <a href="#notifications" class="dropdown-item">
-                            <i class="fas fa-bell"></i>
-                            <span>Notification</span>
-                        </a>
-                        <a href="#messages" class="dropdown-item">
-                            <i class="fas fa-message"></i>
-                            <span>Messages</span>
-                        </a>
-                        <a href="change-password.html" class="dropdown-item">
-                            <i class="fas fa-key"></i>
-                            <span>Change Password</span>
-                        </a>
-                        <hr class="dropdown-divider">
-                        <button class="dropdown-item logout-btn" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </button>
-                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="navbar-title">
-                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
-            </div>
+        <div class="navbar-title">
+            <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+        </div>
 
-            <div class="navbar-notifications">
-                <button class="notification-btn" id="notificationBtn" title="Notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                </button>
-                <button class="message-btn" id="messageBtn" title="Messages">
-                    <i class="fas fa-envelope"></i>
-                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
-                </button>
-            </div>
-
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
+        <div class="navbar-notifications">
+            <button class="notification-btn" id="notificationBtn" title="Notifications">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+            <button class="message-btn" id="messageBtn" title="Messages">
+                <i class="fas fa-envelope"></i>
+                <span class="message-badge" id="messageBadge" style="display: none;">0</span>
             </button>
         </div>
-    </nav>
+
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</nav>
 
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
@@ -122,7 +121,7 @@
             </li>
 
             <li class="menu-item">
-                <a href="admin">
+                <a href="admin.html">
                     <i class="fas fa-users-cog"></i>
                     <span>Administration</span>
                 </a>

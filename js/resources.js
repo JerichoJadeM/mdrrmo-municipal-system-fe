@@ -486,3 +486,16 @@ function showToast(message, type = "info", duration = 2800) {
         setTimeout(() => toast.remove(), 220);
     }, duration);
 }
+
+// for admin integration
+async function submitResourceApprovalRequest(payload) {
+    return apiSend("/approval-requests", "POST", payload);
+}
+
+async function parseResourceError(error) {
+    try {
+        return JSON.parse(error.message);
+    } catch {
+        return { message: error.message || "Request failed." };
+    }
+}
