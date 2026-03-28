@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserInfo();
     patchAdminDropdownLinks();
 
+    // localStorage.setItem("userName", state.profile.fullName);
+    // sessionStorage.setItem("userName", state.profile.fullName);
+
     // User Dropdown Toggle
     if (userDropdownBtn && userDropdown) {
         userDropdownBtn.addEventListener('click', function(e) {

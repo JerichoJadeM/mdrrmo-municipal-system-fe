@@ -194,30 +194,25 @@
                             <form id="profileForm" class="admin-form-wrap">
                                 <div class="admin-form-grid two-columns">
                                     <div class="form-group">
-                                        <label for="profileFullName">Full Name</label>
-                                        <input type="text" id="profileFullName" required>
+                                        <label for="profileFirstName">First Name</label>
+                                        <input type="text" id="profileFirstName" required>
                                     </div>
-
                                     <div class="form-group">
-                                        <label for="profileUsername">Username</label>
-                                        <input type="text" id="profileUsername" disabled>
+                                        <label for="profileMiddleName">Middle Name</label>
+                                        <input type="text" id="profileMiddleName">
                                     </div>
-
                                     <div class="form-group">
-                                        <label for="profileEmail">Email</label>
-                                        <input type="email" id="profileEmail">
+                                        <label for="profileLastName">Last Name</label>
+                                        <input type="text" id="profileLastName" required>
                                     </div>
-
                                     <div class="form-group">
                                         <label for="profileNumber">Mobile Number</label>
                                         <input type="text" id="profileNumber">
                                     </div>
-
                                     <div class="form-group">
                                         <label for="profilePosition">Position</label>
                                         <input type="text" id="profilePosition">
                                     </div>
-
                                     <div class="form-group">
                                         <label for="profileOffice">Office</label>
                                         <input type="text" id="profileOffice">
@@ -536,23 +531,21 @@
                         </div>
 
                         <form id="passwordForm">
+                            <div id="message" class="message-text"></div>
+
                             <div class="admin-form-grid">
                                 <div class="form-group">
-                                    <label for="currentPassword">Current Password</label>
-                                    <input type="password" id="currentPassword" required>
+                                    <label for="oldPassword">Current Password</label>
+                                    <input type="password" id="oldPassword" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="newPassword">New Password</label>
                                     <input type="password" id="newPassword" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="confirmPassword">Confirm New Password</label>
-                                    <input type="password" id="confirmPassword" required>
+                                    <label for="newPassword2">Confirm New Password</label>
+                                    <input type="password" id="newPassword2" required>
                                 </div>
-                            </div>
-
-                            <div class="admin-password-hint" id="passwordHint">
-                                Use at least 8 characters and make sure the new passwords match.
                             </div>
 
                             <div class="admin-form-actions">
@@ -648,30 +641,131 @@
     </div>
 
     <div class="modal" id="viewUserModal">
-        <div class="modal-content admin-modal-content">
+        
+        <!-- User Profile -->
+        <div class="modal-content admin-modal-content admin-business-profile-modal">
             <div class="admin-modal-header">
                 <div class="admin-modal-title-wrap">
                     <span class="admin-modal-kicker">User Profile</span>
-                    <h3>View User</h3>
-                    <p class="admin-modal-subtitle">View user details and account profile.</p>
+                    <h3>Account Profile</h3>
+                    <p class="admin-modal-subtitle">Review account identity, access level, and operational readiness.</p>
                 </div>
-                <button class="modal-close" id="closeViewUserModalBtn"><i class="fas fa-times"></i></button>
+                <button class="modal-close" id="closeViewUserModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
 
             <div class="admin-modal-body">
-                <div class="admin-view-user">
-                    <div class="admin-view-user-avatar" id="viewUserAvatar">U</div>
-                    <div class="admin-view-user-grid">
-                        <div><strong>Name:</strong> <span id="viewUserFullName">--</span></div>
-                        <div><strong>Email:</strong> <span id="viewUserEmail">--</span></div>
-                        <div><strong>Number:</strong> <span id="viewUserNumber">--</span></div>
-                        <div><strong>Role:</strong> <span id="viewUserRole">--</span></div>
-                        <div><strong>Status:</strong> <span id="viewUserStatus">--</span></div>
-                        <div><strong>Position:</strong> <span id="viewUserPosition">--</span></div>
-                        <div><strong>Office:</strong> <span id="viewUserOffice">--</span></div>
-                        <div><strong>Responder Eligible:</strong> <span id="viewUserResponder">--</span></div>
-                        <div><strong>Coordinator Eligible:</strong> <span id="viewUserCoordinator">--</span></div>
-                    </div>
+                <div class="admin-business-profile">
+                    <section class="admin-business-profile-hero">
+                        <div class="admin-business-profile-left">
+                            <div class="admin-view-user-avatar admin-business-profile-avatar" id="viewUserAvatar">U</div>
+
+                            <div class="admin-business-profile-copy">
+                                <div class="admin-business-profile-topline">
+                                    <span class="admin-business-chip" id="viewUserRole">--</span>
+                                    <span class="status-badge ready" id="viewUserStatus">--</span>
+                                </div>
+
+                                <h3 id="viewUserFullName">--</h3>
+                                <p id="viewUserPosition">--</p>
+
+                                <div class="admin-business-profile-meta">
+                                    <div class="admin-business-meta-item">
+                                        <i class="fas fa-building"></i>
+                                        <span id="viewUserOffice">--</span>
+                                    </div>
+                                    <div class="admin-business-meta-item">
+                                        <i class="fas fa-envelope"></i>
+                                        <span id="viewUserEmail">--</span>
+                                    </div>
+                                    <div class="admin-business-meta-item">
+                                        <i class="fas fa-phone"></i>
+                                        <span id="viewUserNumber">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="admin-business-profile-grid">
+                        <article class="admin-business-card">
+                            <div class="admin-business-card-head">
+                                <div class="admin-business-card-icon">
+                                    <i class="fas fa-id-badge"></i>
+                                </div>
+                                <div>
+                                    <h4>Account Summary</h4>
+                                    <p>Primary account identity and access designation.</p>
+                                </div>
+                            </div>
+
+                            <div class="admin-business-info-list">
+                                <div class="admin-business-info-row">
+                                    <strong>Full Name</strong>
+                                    <span id="viewUserFullNameSummary">--</span>
+                                </div>
+                                <div class="admin-business-info-row">
+                                    <strong>Role</strong>
+                                    <span id="viewUserRoleSummary">--</span>
+                                </div>
+                                <div class="admin-business-info-row">
+                                    <strong>Position</strong>
+                                    <span id="viewUserPositionSummary">--</span>
+                                </div>
+                                <div class="admin-business-info-row">
+                                    <strong>Office</strong>
+                                    <span id="viewUserOfficeSummary">--</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="admin-business-card">
+                            <div class="admin-business-card-head">
+                                <div class="admin-business-card-icon">
+                                    <i class="fas fa-address-book"></i>
+                                </div>
+                                <div>
+                                    <h4>Contact Information</h4>
+                                    <p>Official contact details registered in the account.</p>
+                                </div>
+                            </div>
+
+                            <div class="admin-business-info-list">
+                                <div class="admin-business-info-row">
+                                    <strong>Email Address</strong>
+                                    <span id="viewUserEmailSummary">--</span>
+                                </div>
+                                <div class="admin-business-info-row">
+                                    <strong>Mobile Number</strong>
+                                    <span id="viewUserNumberSummary">--</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="admin-business-card">
+                            <div class="admin-business-card-head">
+                                <div class="admin-business-card-icon">
+                                    <i class="fas fa-helmet-safety"></i>
+                                </div>
+                                <div>
+                                    <h4>Operational Eligibility</h4>
+                                    <p>Field and coordination readiness within the MDRRMO workflow.</p>
+                                </div>
+                            </div>
+
+                            <div class="admin-business-eligibility">
+                                <div class="admin-business-eligibility-item" id="viewUserResponderCard">
+                                    <div class="admin-business-eligibility-label">Responder Eligibility</div>
+                                    <div class="admin-business-eligibility-value" id="viewUserResponder">--</div>
+                                </div>
+                                <div class="admin-business-eligibility-item" id="viewUserCoordinatorCard">
+                                    <div class="admin-business-eligibility-label">Coordinator Eligibility</div>
+                                    <div class="admin-business-eligibility-value" id="viewUserCoordinator">--</div>
+                                </div>
+                            </div>
+                        </article>
+                    </section>
                 </div>
             </div>
 
@@ -680,7 +774,7 @@
             </div>
         </div>
     </div>
-
+        
     <div class="modal" id="addUserModal">
         <div class="modal-content admin-modal-content">
             <div class="admin-modal-header">
@@ -854,5 +948,6 @@
     <script src="js/navbar.js"></script>
     <script src="assets/ui-js/ui-pagination.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/change-password.js"></script>
 </body>
 </html>

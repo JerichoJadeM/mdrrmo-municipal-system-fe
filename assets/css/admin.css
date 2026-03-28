@@ -876,6 +876,110 @@
     flex-wrap: wrap;
 }
 
+/*User Password*/
+#message.message-text {
+    display: none;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    border: 1px solid transparent;
+}
+
+#message.message-text.show {
+    display: block;
+}
+
+#message.message-text.success {
+    background: rgba(39, 174, 96, 0.12);
+    color: #1e8449;
+    border-color: rgba(39, 174, 96, 0.28);
+}
+
+#message.message-text.error {
+    background: rgba(231, 76, 60, 0.12);
+    color: #c0392b;
+    border-color: rgba(231, 76, 60, 0.28);
+}
+
+/* =========================================================
+   USER PROFILE VIEW MODAL
+========================================================= */
+.admin-view-user-rich {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-view-user-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid rgba(189, 195, 199, 0.35);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.admin-view-user-hero-copy h3 {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    color: var(--text-dark);
+}
+
+.admin-view-user-hero-copy p {
+    margin: 0 0 10px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.admin-view-user-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-view-user-sections {
+    display: grid;
+    gap: 14px;
+}
+
+.admin-view-user-card {
+    padding: 16px;
+    border: 1px solid rgba(189, 195, 199, 0.35);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-view-user-card h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.admin-view-user-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-view-user-grid div {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-view-user-grid strong {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.admin-view-user-grid span {
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
 /* =========================================================
    ROLES
 ========================================================= */
@@ -1105,6 +1209,146 @@
 }
 
 /* =========================================================
+   PAGINATION CONTROLS - SHARED LOOK
+========================================================= */
+.admin-section-pagination .app-pagination-left,
+.admin-conversation-pagination-bar .app-pagination-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-section-pagination .app-pagination-info,
+.admin-conversation-pagination-bar .app-pagination-info {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.admin-section-pagination .app-page-size-wrap,
+.admin-conversation-pagination-bar .app-page-size-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.admin-section-pagination .app-page-size-wrap label,
+.admin-conversation-pagination-bar .app-page-size-wrap label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.admin-section-pagination .app-page-size-wrap select,
+.admin-conversation-pagination-bar .app-page-size-wrap select {
+    min-width: 76px;
+    height: 38px;
+    padding: 0 36px 0 12px;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 16px,
+        calc(100% - 12px) 16px;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+.admin-section-pagination .app-page-size-wrap select:focus,
+.admin-conversation-pagination-bar .app-page-size-wrap select:focus {
+    border-color: var(--primary-color, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.admin-section-pagination .app-pagination-controls,
+.admin-conversation-pagination-bar .app-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-section-pagination .app-page-btn,
+.admin-conversation-pagination-bar .app-page-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.admin-section-pagination .app-page-btn:hover,
+.admin-conversation-pagination-bar .app-page-btn:hover {
+    border-color: rgba(44, 90, 160, 0.22);
+    color: var(--primary-blue);
+    background: #f8fbff;
+}
+
+.admin-section-pagination .app-page-btn.active,
+.admin-conversation-pagination-bar .app-page-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+}
+
+/* =========================================================
+   SMALLER PAGINATION FOR MESSAGES ONLY
+========================================================= */
+.admin-conversation-pagination-bar .app-pagination-info {
+    font-size: 12px;
+}
+
+.admin-conversation-pagination-bar .app-page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 10px;
+}
+
+.admin-conversation-pagination-bar .app-page-size-wrap {
+    padding: 6px 10px;
+}
+
+.admin-conversation-pagination-bar .app-page-size-wrap label {
+    font-size: 12px;
+}
+
+.admin-conversation-pagination-bar .app-page-size-wrap select {
+    min-width: 70px;
+    height: 32px;
+    font-size: 12px;
+    padding: 0 30px 0 10px;
+    background-position:
+        calc(100% - 16px) 13px,
+        calc(100% - 11px) 13px;
+}
+
+/* =========================================================
    EMPTY STATE
 ========================================================= */
 .empty-state-card {
@@ -1317,4 +1561,225 @@
 .admin-page-size-wrap-compact select:focus {
     border-color: var(--primary-color, #2563eb);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* User Business Profile */
+.admin-business-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-business-profile-hero {
+    border: 1px solid rgba(189, 195, 199, 0.35);
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(44, 90, 160, 0.08) 0%, #ffffff 55%, #f8fbff 100%);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-business-profile-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.admin-business-profile-avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 28px;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-business-profile-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.admin-business-profile-topline {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.admin-business-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(44, 90, 160, 0.10);
+    color: var(--primary-blue);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-business-profile-copy h3 {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+    color: #0f172a;
+}
+
+.admin-business-profile-copy p {
+    margin: 0 0 14px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.admin-business-profile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.admin-business-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(203, 213, 225, 0.65);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-business-meta-item i {
+    color: var(--primary-blue);
+}
+
+.admin-business-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.admin-business-card {
+    border: 1px solid rgba(189, 195, 199, 0.35);
+    border-radius: 18px;
+    background: #fff;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.admin-business-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.admin-business-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: rgba(44, 90, 160, 0.10);
+    color: var(--primary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.admin-business-card-head h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    color: #0f172a;
+}
+
+.admin-business-card-head p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-business-info-list {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-business-info-row {
+    display: grid;
+    gap: 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.admin-business-info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.admin-business-info-row strong {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.admin-business-info-row span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+.admin-business-eligibility {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-business-eligibility-item {
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    border-radius: 16px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.admin-business-eligibility-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.admin-business-eligibility-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.admin-business-eligibility-item.is-eligible {
+    background: rgba(39, 174, 96, 0.10);
+    border-color: rgba(39, 174, 96, 0.24);
+}
+
+.admin-business-eligibility-item.is-eligible .admin-business-eligibility-value {
+    color: #1e8449;
+}
+
+.admin-business-eligibility-item.is-not-eligible {
+    background: rgba(231, 76, 60, 0.10);
+    border-color: rgba(231, 76, 60, 0.24);
+}
+
+.admin-business-eligibility-item.is-not-eligible .admin-business-eligibility-value {
+    color: #c0392b;
+}
+
+@media (max-width: 960px) {
+    .admin-business-profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-business-profile-left {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }

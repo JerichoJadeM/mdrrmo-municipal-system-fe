@@ -145,6 +145,14 @@ function canDeleteUsers() {
     return isAdmin();
 }
 
+function canViewApprovalsTab() {
+    return isAdminOrManager();
+}
+
+function canViewRolesTab() {
+    return isAdmin();
+}
+
 function toggleSectionPaginationBar(barId, totalCount, threshold) {
     const bar = document.getElementById(barId);
     if (!bar) return;
@@ -181,14 +189,50 @@ function renderThreadHeaderAvatar(conversation) {
     avatarNode.innerHTML = buildUserAvatarHtml(matchedUser, conversation.displayName || "U");
 }
 
+function persistProfileCache() {
+    if (!state.profile) return;
+
+    const profile = state.profile;
+    const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(" ");
+
+    const cached = safeJsonParse(localStorage.getItem("loginUserInfo")) || {};
+
+    localStorage.setItem("loginUserInfo", JSON.stringify({
+        ...cached,
+        id: profile.id,
+        firstName: profile.firstName || "",
+        middleName: profile.middleName || "",
+        lastName: profile.lastName || "",
+        fullName,
+        username: fullName,
+        email: profile.email || "",
+        number: profile.number || "",
+        position: profile.position || "",
+        office: profile.office || "",
+        profileImageUrl: profile.profileImageUrl || "",
+        accountStatus: profile.accountStatus || "ACTIVE",
+        responderEligible: !!profile.responderEligible,
+        coordinatorEligible: !!profile.coordinatorEligible,
+        authorities: profile.authorities || []
+    }));
+
+    localStorage.setItem("userName", fullName || "");
+    localStorage.setItem("userEmail", profile.email || "");
+    sessionStorage.setItem("userName", fullName || "");
+    sessionStorage.setItem("userEmail", profile.email || "");
+}
+
 async function loadAdminData() {
     state.profile = await loadProfile();
+    persistProfileCache();
+    applyAdminTabVisibility();
+
     state.notifications = await loadNotifications();
     state.approvalsPending = await loadApprovalsPending();
     state.approvalsMine = await loadApprovalsMine();
     state.conversations = await loadConversations();
     state.users = await loadUsers();
-    state.roleChanges = [];
+    state.roleChanges = await loadRoleChanges();
 
     renderProfile();
     renderNotifications();
@@ -203,31 +247,50 @@ async function loadAdminData() {
     updateUserActionsVisibility();
 }
 
+async function loadRoleChanges() {
+    try {
+        const rows = await apiRequest(`${API_BASE}/admin/audit-logs`);
+        console.log("loaded role changes =", rows);
+        return Array.isArray(rows) ? rows : [];
+    } catch (error) {
+        console.error("Failed to load role changes:", error);
+        return [];
+    }
+}
+
 async function loadProfile() {
-    const cached = safeJsonParse(localStorage.getItem("loginUserInfo"));
+    const cached = safeJsonParse(localStorage.getItem("loginUserInfo")) || {};
+
     try {
         const user = await apiRequest(`${API_BASE}/users/info`);
-        const authorities = user.authorities || cached?.authorities || [];
+        const authorities = user.authorities || cached.authorities || [];
+
         return {
-            id: user.id,
-            fullName: user.fullName || cached?.fullName || "",
-            username: user.username || user.email || cached?.email || "",
-            email: user.email || cached?.email || "",
-            number: user.number || cached?.number || "",
-            position: user.position || "",
-            office: user.office || "MDRRMO",
-            profileImageUrl: user.profileImageUrl || localStorage.getItem("mdrrmo_profile_photo") || "",
-            accountStatus: user.accountStatus || "ACTIVE",
-            responderEligible: !!user.responderEligible,
-            coordinatorEligible: !!user.coordinatorEligible,
+            id: user.id ?? cached.id ?? null,
+            firstName: user.firstName || cached.firstName || "",
+            middleName: user.middleName || cached.middleName || "",
+            lastName: user.lastName || cached.lastName || "",
+            fullName: user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || cached.fullName || "",
+            username: user.username || user.fullName || user.email || cached.username || cached.fullName || cached.email || "",
+            email: user.email || cached.email || "",
+            number: user.number || cached.number || "",
+            position: user.position || cached.position || "",
+            office: user.office || cached.office || "MDRRMO",
+            profileImageUrl: user.profileImageUrl || cached.profileImageUrl || localStorage.getItem("mdrrmo_profile_photo") || "",
+            accountStatus: user.accountStatus || cached.accountStatus || "ACTIVE",
+            responderEligible: !!(user.responderEligible ?? cached.responderEligible),
+            coordinatorEligible: !!(user.coordinatorEligible ?? cached.coordinatorEligible),
             authorities
         };
     } catch (error) {
-        if (cached) {
+        if (Object.keys(cached).length) {
             return {
-                id: cached.id,
-                fullName: cached.fullName || "",
-                username: cached.username || cached.email || "",
+                id: cached.id ?? null,
+                firstName: cached.firstName || "",
+                middleName: cached.middleName || "",
+                lastName: cached.lastName || "",
+                fullName: cached.fullName || [cached.firstName, cached.middleName, cached.lastName].filter(Boolean).join(" "),
+                username: cached.username || cached.fullName || cached.email || "",
                 email: cached.email || "",
                 number: cached.number || "",
                 position: cached.position || "",
@@ -239,7 +302,24 @@ async function loadProfile() {
                 authorities: cached.authorities || []
             };
         }
-        return null;
+
+        return {
+            id: null,
+            firstName: "",
+            middleName: "",
+            lastName: "",
+            fullName: "",
+            username: "",
+            email: "",
+            number: "",
+            position: "",
+            office: "MDRRMO",
+            profileImageUrl: localStorage.getItem("mdrrmo_profile_photo") || "",
+            accountStatus: "ACTIVE",
+            responderEligible: false,
+            coordinatorEligible: false,
+            authorities: []
+        };
     }
 }
 
@@ -313,6 +393,14 @@ function getHashSection() {
 }
 
 function showSection(section) {
+    if (section === "approvals" && !canViewApprovalsTab()) {
+        section = "profile";
+    }
+
+    if (section === "roles" && !canViewRolesTab()) {
+        section = "profile";
+    }
+
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
         button.classList.toggle("active", button.dataset.section === section);
     });
@@ -326,9 +414,9 @@ function renderProfile() {
     if (!state.profile) return;
     const profile = state.profile;
 
-    setValue("profileFullName", profile.fullName || "");
-    setValue("profileUsername", profile.username || "");
-    setValue("profileEmail", profile.email || "");
+    setValue("profileFirstName", profile.firstName || "");
+    setValue("profileMiddleName", profile.middleName || "");
+    setValue("profileLastName", profile.lastName || "");
     setValue("profileNumber", profile.number || "");
     setValue("profilePosition", profile.position || "");
     setValue("profileOffice", profile.office || "");
@@ -344,7 +432,7 @@ function renderProfile() {
     document.getElementById("profileCoordinatorFlag").innerHTML =
         `<i class="fas fa-clipboard-check"></i> ${profile.coordinatorEligible ? "Coordinator Eligible" : "Not Coordinator Eligible"}`;
 
-    renderAvatar("profileAvatarPreview", profile.profileImageUrl, profile.fullName);
+    renderAvatar("profileAvatarPreview", profile.profileImageUrl, profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(" "));
 }
 
 function setValue(id, value) {
@@ -370,7 +458,7 @@ function syncNavbarAvatar() {
     if (state.profile.profileImageUrl) {
         node.innerHTML = `<img src="${escapeHtml(state.profile.profileImageUrl)}" alt="User Avatar">`;
     } else {
-        node.textContent = getInitials(state.profile.fullName);
+        node.textContent = getInitials(state.profile.fullName || [state.profile.firstName, state.profile.middleName, state.profile.lastName].filter(Boolean).join(" "));
     }
 }
 
@@ -657,6 +745,7 @@ async function renderThread(conversationId) {
         renderThreadHeaderAvatar(null);
         body.innerHTML = `<div class="empty-state-card">Select a conversation to view messages.</div>`;
         updateThreadScrollState(0);
+        renderPinnedMessageStrip([]);
         return;
     }
 
@@ -670,6 +759,7 @@ async function renderThread(conversationId) {
         if (!Array.isArray(messages) || !messages.length) {
             body.innerHTML = `<div class="empty-state-card">No messages yet.</div>`;
             updateThreadScrollState(0);
+            renderPinnedMessageStrip([]);
             return;
         }
 
@@ -677,40 +767,40 @@ async function renderThread(conversationId) {
         renderPinnedMessageStrip(currentThreadMessages);
 
         body.innerHTML = currentThreadMessages.map(message => {
-        const mine = state.profile && message.senderUserId === state.profile.id;
-        const senderUser = state.users.find(user => user.id === message.senderUserId);
-        const avatarHtml = buildUserAvatarHtml(senderUser, message.senderName || "U");
+            const mine = state.profile && message.senderUserId === state.profile.id;
+            const senderUser = state.users.find(user => user.id === message.senderUserId);
+            const avatarHtml = buildUserAvatarHtml(senderUser, message.senderName || "U");
 
-        return `
-            <article class="admin-thread-row ${mine ? "mine" : ""}" id="thread-message-${message.id}" data-message-id="${message.id}">
-                <div class="admin-thread-avatar">${avatarHtml}</div>
+            return `
+                <article class="admin-thread-row ${mine ? "mine" : ""}" id="thread-message-${message.id}" data-message-id="${message.id}">
+                    <div class="admin-thread-avatar">${avatarHtml}</div>
 
-                <div class="admin-thread-message ${mine ? "mine" : ""}">
-                    <div class="admin-thread-message-top">
-                        <div class="admin-thread-message-flags">
-                            ${message.editedAt ? `<span class="admin-thread-flag muted">Edited</span>` : ""}
-                        </div>
+                    <div class="admin-thread-message ${mine ? "mine" : ""}">
+                        <div class="admin-thread-message-top">
+                            <div class="admin-thread-message-flags">
+                                ${message.editedAt ? `<span class="admin-thread-flag muted">Edited</span>` : ""}
+                            </div>
 
-                        <div class="admin-thread-message-menu-wrap">
-                            <button class="admin-thread-message-menu-btn" type="button" data-message-menu-btn="${message.id}">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <div class="admin-thread-message-menu" id="threadMessageMenu-${message.id}">
-                                <button type="button" data-thread-action="pin" data-message-id="${message.id}">
-                                    ${message.pinned ? "Unpin" : "Pin"}
+                            <div class="admin-thread-message-menu-wrap">
+                                <button class="admin-thread-message-menu-btn" type="button" data-message-menu-btn="${message.id}">
+                                    <i class="fas fa-ellipsis-h"></i>
                                 </button>
-                                <button type="button" data-thread-action="edit" data-message-id="${message.id}">Edit</button>
-                                <button type="button" data-thread-action="delete" data-message-id="${message.id}">Delete</button>
+                                <div class="admin-thread-message-menu" id="threadMessageMenu-${message.id}">
+                                    <button type="button" data-thread-action="pin" data-message-id="${message.id}">
+                                        ${message.pinned ? "Unpin" : "Pin"}
+                                    </button>
+                                    <button type="button" data-thread-action="edit" data-message-id="${message.id}">Edit</button>
+                                    <button type="button" data-thread-action="delete" data-message-id="${message.id}">Delete</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="admin-thread-text">${escapeHtml(message.content || "")}</div>
-                    <div class="admin-thread-time">${escapeHtml(formatDateTime(message.createdAt))}</div>
-                </div>
-            </article>
-        `;
-    }).join("");
+                        <div class="admin-thread-text">${escapeHtml(message.content || "")}</div>
+                        <div class="admin-thread-time">${escapeHtml(formatDateTime(message.createdAt))}</div>
+                    </div>
+                </article>
+            `;
+        }).join("");
 
         updateThreadScrollState(currentThreadMessages.length);
         bindThreadMessageMenus();
@@ -1016,20 +1106,22 @@ function renderRoleChanges() {
     const list = document.getElementById("roleChangeList");
     if (!list) return;
 
-    toggleSectionPaginationBar("roleChangesPaginationBar", state.roleChanges.length, 5);
-    toggleSectionScrollable(list, state.roleChanges.length, 6);
+    const rows = Array.isArray(state.roleChanges) ? state.roleChanges : [];
 
-    if (!state.roleChanges.length) {
-        list.innerHTML = `<div class="empty-state-card">Recent role change history can be added from audit logs later.</div>`;
+    toggleSectionPaginationBar("roleChangesPaginationBar", rows.length, 5);
+    toggleSectionScrollable(list, rows.length, 6);
+
+    if (!rows.length) {
+        list.innerHTML = `<div class="empty-state-card">No recent role or eligibility updates found.</div>`;
         return;
     }
 
     if (!roleChangesPagination) {
-        renderRoleChangeRows(state.roleChanges.slice(0, 5));
+        renderRoleChangeRows(rows.slice(0, 5));
         return;
     }
 
-    roleChangesPagination.setRows(state.roleChanges);
+    roleChangesPagination.setRows(rows);
 }
 
 function renderRoleChangeRows(pageRows) {
@@ -1038,8 +1130,10 @@ function renderRoleChangeRows(pageRows) {
 
     list.innerHTML = pageRows.map(item => `
         <article class="admin-role-change-item">
-            <strong>${escapeHtml(item.text)}</strong>
-            <div class="admin-user-subtext">${escapeHtml(item.date)}</div>
+            <strong>${escapeHtml(item.description || item.actionType || "Role update")}</strong>
+            <div class="admin-user-subtext">
+                ${escapeHtml(item.performedBy || "--")} • ${escapeHtml(formatDateTime(item.performedAt || item.createdAt))}
+            </div>
         </article>
     `).join("");
 }
@@ -1122,12 +1216,9 @@ function bindProfileActions() {
                     state.profile.profileImageUrl = updatedUser?.profileImageUrl || base64;
                     localStorage.setItem("mdrrmo_profile_photo", state.profile.profileImageUrl);
 
+                    persistProfileCache();
                     renderProfile();
                     syncNavbarAvatar();
-
-                    const cached = safeJsonParse(localStorage.getItem("loginUserInfo")) || {};
-                    cached.profileImageUrl = state.profile.profileImageUrl;
-                    localStorage.setItem("loginUserInfo", JSON.stringify(cached));
 
                     state.users = await loadUsers();
                     renderUserTable();
@@ -1162,12 +1253,9 @@ function bindProfileActions() {
                     state.profile.profileImageUrl = updatedUser?.profileImageUrl || "";
                     localStorage.removeItem("mdrrmo_profile_photo");
 
+                    persistProfileCache();
                     renderProfile();
                     syncNavbarAvatar();
-
-                    const cached = safeJsonParse(localStorage.getItem("loginUserInfo")) || {};
-                    cached.profileImageUrl = "";
-                    localStorage.setItem("loginUserInfo", JSON.stringify(cached));
 
                     state.users = await loadUsers();
                     renderUserTable();
@@ -1183,6 +1271,25 @@ function bindProfileActions() {
     document.getElementById("profileForm")?.addEventListener("submit", async event => {
         event.preventDefault();
 
+        if (!state.profile) return;
+
+        const firstName = document.getElementById("profileFirstName").value.trim();
+        const middleName = document.getElementById("profileMiddleName").value.trim();
+        const lastName = document.getElementById("profileLastName").value.trim();
+        const number = document.getElementById("profileNumber").value.trim();
+        const position = document.getElementById("profilePosition").value.trim();
+        const office = document.getElementById("profileOffice").value.trim();
+
+        if (!firstName) {
+            showToastMessage("First name is required.", "error");
+            return;
+        }
+
+        if (!lastName) {
+            showToastMessage("Last name is required.", "error");
+            return;
+        }
+
         openActionConfirm({
             title: "Confirm Profile Update",
             message: "Are you sure you want to save your profile changes?",
@@ -1190,7 +1297,53 @@ function bindProfileActions() {
             kicker: "Profile Update",
             variant: "save",
             onConfirm: async () => {
-                showToastMessage("Profile update endpoint can be wired next.", "info");
+                try {
+                    const updatedUser = await apiRequest(`${API_BASE}/users/me/profile`, {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            firstName,
+                            middleName,
+                            lastName,
+                            number,
+                            position,
+                            office
+                        })
+                    });
+
+                    const computedFullName = updatedUser.fullName ?? [firstName, middleName, lastName].filter(Boolean).join(" ");
+
+                    state.profile = {
+                        ...state.profile,
+                        id: updatedUser.id ?? state.profile.id,
+                        firstName,
+                        middleName,
+                        lastName,
+                        fullName: computedFullName,
+                        username: computedFullName,
+                        email: updatedUser.email ?? state.profile.email,
+                        number: updatedUser.number ?? number,
+                        position: updatedUser.position ?? position,
+                        office: updatedUser.office ?? office,
+                        profileImageUrl: updatedUser.profileImageUrl ?? state.profile.profileImageUrl,
+                        accountStatus: updatedUser.accountStatus ?? state.profile.accountStatus,
+                        responderEligible: updatedUser.responderEligible ?? state.profile.responderEligible,
+                        coordinatorEligible: updatedUser.coordinatorEligible ?? state.profile.coordinatorEligible,
+                        authorities: updatedUser.authorities || state.profile.authorities
+                    };
+
+                    persistProfileCache();
+                    renderProfile();
+                    syncNavbarAvatar();
+                    updateMetaBar();
+
+                    showToastMessage("Profile updated successfully.", "success");
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
+                } catch (error) {
+                    showToastMessage(error.message || "Failed to update profile.", "error");
+                }
             }
         });
     });
@@ -1642,15 +1795,43 @@ function openViewUserModal(userId) {
         avatar.textContent = getInitials(user.fullName);
     }
 
+    const roleText = derivePrimaryRole(user.authorities || []);
+    const statusText = capitalize(user.accountStatus || "--");
+    const positionText = user.position || "--";
+    const officeText = user.office || "--";
+    const emailText = user.email || "--";
+    const numberText = user.number || "--";
+    const responderText = user.responderEligible ? "Eligible" : "Not Eligible";
+    const coordinatorText = user.coordinatorEligible ? "Eligible" : "Not Eligible";
+
     document.getElementById("viewUserFullName").textContent = user.fullName || "--";
-    document.getElementById("viewUserEmail").textContent = user.email || "--";
-    document.getElementById("viewUserNumber").textContent = user.number || "--";
-    document.getElementById("viewUserRole").textContent = derivePrimaryRole(user.authorities || []);
-    document.getElementById("viewUserStatus").textContent = user.accountStatus || "--";
-    document.getElementById("viewUserPosition").textContent = user.position || "--";
-    document.getElementById("viewUserOffice").textContent = user.office || "--";
-    document.getElementById("viewUserResponder").textContent = user.responderEligible ? "Yes" : "No";
-    document.getElementById("viewUserCoordinator").textContent = user.coordinatorEligible ? "Yes" : "No";
+    document.getElementById("viewUserPosition").textContent = positionText;
+    document.getElementById("viewUserEmail").textContent = emailText;
+    document.getElementById("viewUserNumber").textContent = numberText;
+    document.getElementById("viewUserOffice").textContent = officeText;
+
+    document.getElementById("viewUserRole").textContent = roleText;
+    const statusNode = document.getElementById("viewUserStatus");
+    statusNode.textContent = statusText;
+    statusNode.className = `status-badge ${String(user.accountStatus || "").toUpperCase() === "ACTIVE" ? "ready" : "attention"}`;
+
+    document.getElementById("viewUserFullNameSummary").textContent = user.fullName || "--";
+    document.getElementById("viewUserRoleSummary").textContent = roleText;
+    document.getElementById("viewUserPositionSummary").textContent = positionText;
+    document.getElementById("viewUserOfficeSummary").textContent = officeText;
+    document.getElementById("viewUserEmailSummary").textContent = emailText;
+    document.getElementById("viewUserNumberSummary").textContent = numberText;
+    document.getElementById("viewUserResponder").textContent = responderText;
+    document.getElementById("viewUserCoordinator").textContent = coordinatorText;
+
+    const responderCard = document.getElementById("viewUserResponderCard");
+    const coordinatorCard = document.getElementById("viewUserCoordinatorCard");
+
+    responderCard.classList.toggle("is-eligible", !!user.responderEligible);
+    responderCard.classList.toggle("is-not-eligible", !user.responderEligible);
+
+    coordinatorCard.classList.toggle("is-eligible", !!user.coordinatorEligible);
+    coordinatorCard.classList.toggle("is-not-eligible", !user.coordinatorEligible);
 
     openModal("viewUserModal");
 }
@@ -1684,47 +1865,7 @@ async function deleteUser(userId) {
 }
 
 function bindPasswordForm() {
-    document.getElementById("passwordForm")?.addEventListener("submit", async event => {
-        event.preventDefault();
-
-        const currentPassword = document.getElementById("currentPassword").value.trim();
-        const newPassword = document.getElementById("newPassword").value.trim();
-        const confirmPassword = document.getElementById("confirmPassword").value.trim();
-        const hint = document.getElementById("passwordHint");
-
-        if (newPassword.length < 8) {
-            hint.textContent = "New password must be at least 8 characters.";
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            hint.textContent = "New password and confirmation do not match.";
-            return;
-        }
-
-        openActionConfirm({
-            title: "Confirm Password Update",
-            message: "Are you sure you want to update your password?",
-            confirmText: "Update Password",
-            kicker: "Security",
-            variant: "warning",
-            onConfirm: async () => {
-                try {
-                    await apiRequest(`${API_BASE}/users/password`, {
-                        method: "PUT",
-                        body: JSON.stringify({ currentPassword, newPassword })
-                    });
-
-                    hint.textContent = "Password updated successfully.";
-                    event.target.reset();
-                    showToastMessage("Password updated successfully.", "success");
-                } catch (error) {
-                    hint.textContent = "Failed to update password.";
-                    showToastMessage(error.message || "Failed to update password.", "error");
-                }
-            }
-        });
-    });
+    // handled by change-password.js
 }
 
 function bindModals() {
@@ -1740,8 +1881,8 @@ function bindModals() {
     document.getElementById("closeMessageModalBtn")?.addEventListener("click", () => closeModal("newMessageModal"));
     document.getElementById("cancelMessageModalBtn")?.addEventListener("click", () => closeModal("newMessageModal"));
 
-    document.getElementById("closeApprovalDecisionModalBtn")?.addEventListener("click", () => closeApprovalDecisionModal);
-    document.getElementById("cancelApprovalDecisionModalBtn")?.addEventListener("click", () => closeApprovalDecisionModal);
+    document.getElementById("closeApprovalDecisionModalBtn")?.addEventListener("click", () => closeApprovalDecisionModal());
+    document.getElementById("cancelApprovalDecisionModalBtn")?.addEventListener("click", () => closeApprovalDecisionModal());
 
     ["userManageModal", "viewUserModal", "addUserModal", "newMessageModal", "approvalDecisionModal"].forEach(id => {
         const modal = document.getElementById(id);
@@ -1940,4 +2081,18 @@ function closeActionConfirm() {
     document.getElementById("actionConfirmModal")?.classList.remove("active");
     document.body.style.overflow = "auto";
     __appConfirmAction = null;
+}
+
+function applyAdminTabVisibility() {
+    const approvalsBtn = document.querySelector('.admin-nav-btn[data-section="approvals"]');
+    const approvalsPanel = document.getElementById("panel-approvals");
+
+    const rolesBtn = document.querySelector('.admin-nav-btn[data-section="roles"]');
+    const rolesPanel = document.getElementById("panel-roles");
+
+    if (approvalsBtn) approvalsBtn.style.display = canViewApprovalsTab() ? "" : "none";
+    if (approvalsPanel && !canViewApprovalsTab()) approvalsPanel.classList.remove("active");
+
+    if (rolesBtn) rolesBtn.style.display = canViewRolesTab() ? "" : "none";
+    if (rolesPanel && !canViewRolesTab()) rolesPanel.classList.remove("active");
 }
