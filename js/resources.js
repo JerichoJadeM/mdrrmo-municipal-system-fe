@@ -15,6 +15,12 @@ const resourcesState = {
     selectedBudgetId: null
 };
 
+window.parseResourceError = parseResourceError;
+window.isApprovalSubmittedMessage = isApprovalSubmittedMessage;
+window.refreshGlobalAdminBadgesIfAvailable = refreshGlobalAdminBadgesIfAvailable;
+window.loadReliefOperationOptions = loadReliefOperationOptions;
+window.loadEvacuationActivationOptions = loadEvacuationActivationOptions;
+
 document.addEventListener("DOMContentLoaded", async () => {
     bindResourcesTabs();
     bindResourcesGlobalActions();
@@ -32,6 +38,67 @@ async function loadResourcesPage() {
     ]);
 
     await loadActiveResourcesTab();
+}
+
+async function loadEvacuationActivationOptions() {
+    const centers = await apiGet("/evacuation-centers").catch(() => []);
+
+    return (Array.isArray(centers) ? centers : [])
+        .map(center => ({
+            label: `${center.name || "Unnamed Center"}${center.barangayName ? ` (${center.barangayName})` : ""}`,
+            value: center.id
+        }));
+}
+
+async function loadReliefOperationOptions() {
+    const [incidents, calamities] = await Promise.all([
+        apiGet("/incidents").catch(() => []),
+        apiGet("/calamities").catch(() => [])
+    ]);
+
+    const incidentOptions = (Array.isArray(incidents) ? incidents : []).map(item => ({
+        label: `Incident - ${item.type || "Unknown"}${item.barangayName ? ` (${item.barangayName})` : ""}`,
+        value: `INCIDENT:${item.id}`,
+        meta: {
+            type: "INCIDENT",
+            id: item.id
+        }
+    }));
+
+    const calamityOptions = (Array.isArray(calamities) ? calamities : []).map(item => ({
+        label: `Calamity - ${item.eventName || item.type || "Unknown"}${item.primaryBarangayName ? ` (${item.primaryBarangayName})` : ""}`,
+        value: `CALAMITY:${item.id}`,
+        meta: {
+            type: "CALAMITY",
+            id: item.id
+        }
+    }));
+
+    return [...incidentOptions, ...calamityOptions];
+}
+
+async function parseResourceError(error) {
+    try {
+        return JSON.parse(error.message);
+    } catch {
+        return {
+            message: error.message || "Request failed."
+        };
+    }
+}
+
+function isApprovalSubmittedMessage(message) {
+    return /submitted for approval/i.test(String(message || ""));
+}
+
+async function refreshGlobalAdminBadgesIfAvailable() {
+    if (typeof window.refreshGlobalAdminBadges === "function") {
+        try {
+            await window.refreshGlobalAdminBadges();
+        } catch (error) {
+            console.warn("Failed to refresh navbar badges:", error);
+        }
+    }
 }
 
 function canManageReliefTemplates() {
@@ -232,11 +299,47 @@ async function apiGet(path) {
     return apiRequest(`${API_BASE}${path}`);
 }
 
-async function apiSend(path, method, body) {
-    return apiRequest(`${API_BASE}${path}`, {
+async function apiSend(path, method = "POST", payload = null) {
+    const token = localStorage.getItem("jwtToken");
+
+    const response = await fetch(`${API_BASE}${path}`, {
         method,
-        body: body ? JSON.stringify(body) : undefined
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: payload != null ? JSON.stringify(payload) : null
     });
+
+    const contentType = response.headers.get("content-type") || "";
+    let body = null;
+
+    if (contentType.includes("application/json")) {
+        try {
+            body = await response.json();
+        } catch {
+            body = null;
+        }
+    } else {
+        try {
+            body = await response.text();
+        } catch {
+            body = null;
+        }
+    }
+
+    if (!response.ok) {
+        if (body && typeof body === "object") {
+            throw new Error(JSON.stringify(body));
+        }
+        throw new Error(
+            typeof body === "string" && body
+                ? body
+                : `Request failed with status ${response.status}`
+        );
+    }
+
+    return body;
 }
 
 async function loadBarangayOptions() {

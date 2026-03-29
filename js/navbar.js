@@ -1,328 +1,411 @@
+// navbar.js
 // ===================================
 // Navbar and Sidebar Navigation Script
 // ===================================
 
 // Make functions global so they can be called from other scripts
 window.updateUserName = updateUserName;
+window.updateUserAvatar = updateUserAvatar;
 window.initializeUserInfo = initializeUserInfo;
 window.handleLogout = handleLogout;
 window.performLogout = performLogout;
 window.closeLogoutModal = closeLogoutModal;
 window.closeAllMenus = closeAllMenus;
 window.applyFrontendRbac = applyFrontendRbac;
+window.refreshGlobalAdminBadges = refreshGlobalAdminBadges;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     applyFrontendRbac();
 
-    // Elements
-    const userDropdownBtn = document.getElementById('userDropdownBtn');
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    const userDropdown = document.querySelector('.user-dropdown');
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    const sidebarClose = document.getElementById('sidebarClose');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const sidebarToggle = document.getElementById('sidebarToggle');
+    const userDropdownBtn = document.getElementById("userDropdownBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+    const userDropdown = document.querySelector(".user-dropdown");
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const sidebarClose = document.getElementById("sidebarClose");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const sidebarToggle = document.getElementById("sidebarToggle");
 
-    // Initialize user name from localStorage
     initializeUserInfo();
     patchAdminDropdownLinks();
+    refreshGlobalAdminBadges();
 
-    // localStorage.setItem("userName", state.profile.fullName);
-    // sessionStorage.setItem("userName", state.profile.fullName);
-
-    // User Dropdown Toggle
     if (userDropdownBtn && userDropdown) {
-        userDropdownBtn.addEventListener('click', function(e) {
+        userDropdownBtn.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
-            userDropdown.classList.toggle('active');
-            console.log('Dropdown toggled, active:', userDropdown.classList.contains('active'));
+            userDropdown.classList.toggle("active");
         });
     }
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener("click", function (e) {
         if (userDropdown && !userDropdown.contains(e.target)) {
-            userDropdown.classList.remove('active');
+            userDropdown.classList.remove("active");
         }
     });
 
-    // Close dropdown when clicking on menu items
-    const dropdownLinks = dropdownMenu ? dropdownMenu.querySelectorAll('a') : [];
+    const dropdownLinks = dropdownMenu ? dropdownMenu.querySelectorAll("a") : [];
     dropdownLinks.forEach(link => {
-        link.addEventListener('click', function() {
+        link.addEventListener("click", function () {
             if (userDropdown) {
-                userDropdown.classList.remove('active');
+                userDropdown.classList.remove("active");
             }
         });
     });
 
-    // Sidebar Menu Toggle (Mobile)
     if (menuToggle && sidebar && overlay) {
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-            menuToggle.classList.toggle('active');
+        menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+            overlay.classList.toggle("active");
+            menuToggle.classList.toggle("active");
         });
     }
 
-    // Sidebar Toggle Button (Desktop)
     if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
+        sidebarToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("collapsed");
 
-            const pageContent = document.querySelector('.page-content, .main-content');
+            const pageContent = document.querySelector(".page-content, .main-content");
             if (pageContent) {
-                pageContent.classList.toggle('sidebar-collapsed');
+                pageContent.classList.toggle("sidebar-collapsed");
             }
 
-            const footer = document.querySelector('.footer');
+            const footer = document.querySelector(".footer");
             if (footer) {
-                footer.classList.toggle('sidebar-collapsed');
+                footer.classList.toggle("sidebar-collapsed");
             }
         });
     }
 
-    // Sidebar Close Button
     if (sidebarClose) {
-        sidebarClose.addEventListener('click', function() {
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-            if (menuToggle) menuToggle.classList.remove('active');
+        sidebarClose.addEventListener("click", function () {
+            if (sidebar) sidebar.classList.remove("active");
+            if (overlay) overlay.classList.remove("active");
+            if (menuToggle) menuToggle.classList.remove("active");
         });
     }
 
-    // Overlay Click to Close Sidebar
     if (overlay) {
-        overlay.addEventListener('click', function() {
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-            if (menuToggle) menuToggle.classList.remove('active');
+        overlay.addEventListener("click", function () {
+            if (sidebar) sidebar.classList.remove("active");
+            overlay.classList.remove("active");
+            if (menuToggle) menuToggle.classList.remove("active");
         });
     }
 
-    // Close sidebar when clicking menu items
-    const menuItems = document.querySelectorAll('.menu-item a');
+    const menuItems = document.querySelectorAll(".menu-item a");
     menuItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener("click", function () {
             if (window.innerWidth < 768) {
-                if (sidebar) sidebar.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
-                if (menuToggle) menuToggle.classList.remove('active');
+                if (sidebar) sidebar.classList.remove("active");
+                if (overlay) overlay.classList.remove("active");
+                if (menuToggle) menuToggle.classList.remove("active");
             }
         });
     });
 
-    // Logout Button Handler
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
+        logoutBtn.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
             handleLogout();
         });
     }
 
-    // Modal handlers
-    const logoutModal = document.getElementById('logoutModal');
-    const logoutConfirm = document.getElementById('logoutConfirm');
-    const logoutCancel = document.getElementById('logoutCancel');
-    const logoutModalClose = document.getElementById('logoutModalClose');
+    const logoutModal = document.getElementById("logoutModal");
+    const logoutConfirm = document.getElementById("logoutConfirm");
+    const logoutCancel = document.getElementById("logoutCancel");
+    const logoutModalClose = document.getElementById("logoutModalClose");
 
     if (logoutConfirm) {
-        logoutConfirm.addEventListener('click', function() {
+        logoutConfirm.addEventListener("click", function () {
             performLogout();
         });
     }
 
     if (logoutCancel) {
-        logoutCancel.addEventListener('click', function() {
+        logoutCancel.addEventListener("click", function () {
             closeLogoutModal();
         });
     }
 
     if (logoutModalClose) {
-        logoutModalClose.addEventListener('click', function() {
+        logoutModalClose.addEventListener("click", function () {
             closeLogoutModal();
         });
     }
 
-    // Close modal when clicking outside
     if (logoutModal) {
-        logoutModal.addEventListener('click', function(e) {
+        logoutModal.addEventListener("click", function (e) {
             if (e.target === logoutModal) {
                 closeLogoutModal();
             }
         });
     }
 
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
             closeLogoutModal();
         }
     });
 
-    // Notification and Message Badge Management
-    const notificationBtn = document.getElementById('notificationBtn');
-    const messageBtn = document.getElementById('messageBtn');
-    const notificationBadge = document.getElementById('notificationBadge');
-    const messageBadge = document.getElementById('messageBadge');
+    const notificationBtn = document.getElementById("notificationBtn");
+    const messageBtn = document.getElementById("messageBtn");
+    const notificationBadge = document.getElementById("notificationBadge");
+    const messageBadge = document.getElementById("messageBadge");
 
-    window.updateNotificationBadge = function(count) {
-        if (notificationBadge) {
-            if (count > 0) {
-                notificationBadge.textContent = count >= 99 ? '99+' : count;
-                notificationBadge.style.display = 'flex';
-            } else {
-                notificationBadge.style.display = 'none';
-            }
+    window.updateNotificationBadge = function (count) {
+        if (!notificationBadge) return;
+
+        if (count > 0) {
+            notificationBadge.textContent = count >= 99 ? "99+" : String(count);
+            notificationBadge.style.display = "flex";
+        } else {
+            notificationBadge.style.display = "none";
         }
     };
 
-    window.updateMessageBadge = function(count) {
-        if (messageBadge) {
-            if (count > 0) {
-                messageBadge.textContent = count >= 99 ? '99+' : count;
-                messageBadge.style.display = 'flex';
-            } else {
-                messageBadge.style.display = 'none';
-            }
+    window.updateMessageBadge = function (count) {
+        if (!messageBadge) return;
+
+        if (count > 0) {
+            messageBadge.textContent = count >= 99 ? "99+" : String(count);
+            messageBadge.style.display = "flex";
+        } else {
+            messageBadge.style.display = "none";
         }
     };
 
     if (notificationBtn) {
-        notificationBtn.addEventListener('click', function() {
-            window.location.href = 'admin.html#notifications';
+        notificationBtn.addEventListener("click", function () {
+            window.location.href = "admin.html#notifications";
         });
     }
 
     if (messageBtn) {
-        messageBtn.addEventListener('click', function() {
-            window.location.href = 'admin.html#messages';
+        messageBtn.addEventListener("click", function () {
+            window.location.href = "admin.html#messages";
         });
     }
 
-    // Handle window resize for responsive behavior
-    window.addEventListener('resize', function() {
+    window.addEventListener("resize", function () {
         if (window.innerWidth >= 768) {
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
-            if (menuToggle) menuToggle.classList.remove('active');
+            if (sidebar) sidebar.classList.remove("active");
+            if (overlay) overlay.classList.remove("active");
+            if (menuToggle) menuToggle.classList.remove("active");
         }
     });
 });
 
-/**
- * Initialize user information from local storage or session
- */
 function initializeUserInfo() {
-    const userNameDisplay = document.getElementById('userNameDisplay');
+    const userNameDisplay = document.getElementById("userNameDisplay");
 
-    let userName = localStorage.getItem('userName') ||
-                   sessionStorage.getItem('userName');
-
-    if (userName) {
-        updateUserName(userName);
-    } else {
-        const userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
-        if (userEmail) {
-            const emailName = userEmail.split('@')[0];
-            updateUserName(emailName);
-        }
+    let user = null;
+    try {
+        const raw = localStorage.getItem("loginUserInfo");
+        user = raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.error("Failed to parse loginUserInfo:", error);
     }
 
-    if (!userNameDisplay) {
-        console.warn('userNameDisplay element not found');
+    const fullName =
+        user?.fullName ||
+        localStorage.getItem("userName") ||
+        sessionStorage.getItem("userName") ||
+        "";
+
+    const email =
+        user?.email ||
+        localStorage.getItem("userEmail") ||
+        sessionStorage.getItem("userEmail") ||
+        "";
+
+    const profileImageUrl =
+        user?.profileImageUrl ||
+        localStorage.getItem("mdrrmo_profile_photo") ||
+        "";
+
+    if (fullName) {
+        updateUserName(fullName);
+    } else if (email) {
+        updateUserName(email.split("@")[0]);
+    } else if (userNameDisplay) {
+        userNameDisplay.textContent = "User";
     }
+
+    updateUserAvatar(profileImageUrl, fullName || email || "User");
 }
 
-/**
- * Patch dropdown links so they route to the admin sections
- */
 function patchAdminDropdownLinks() {
-    const dropdownMenu = document.getElementById('dropdownMenu');
+    const dropdownMenu = document.getElementById("dropdownMenu");
     if (!dropdownMenu) return;
 
-    const dropdownItems = dropdownMenu.querySelectorAll('a.dropdown-item');
+    const dropdownItems = dropdownMenu.querySelectorAll("a.dropdown-item");
 
     dropdownItems.forEach(link => {
-        const text = (link.textContent || '').trim().toLowerCase();
+        const text = (link.textContent || "").trim().toLowerCase();
 
-        if (text.includes('profile')) {
-            link.setAttribute('href', 'admin.html#profile');
-        } else if (text.includes('notification')) {
-            link.setAttribute('href', 'admin.html#notifications');
-        } else if (text.includes('message')) {
-            link.setAttribute('href', 'admin.html#messages');
-        } else if (text.includes('change password')) {
-            link.setAttribute('href', 'admin.html#password');
+        if (text.includes("profile")) {
+            link.setAttribute("href", "admin.html#profile");
+        } else if (text.includes("notification")) {
+            link.setAttribute("href", "admin.html#notifications");
+        } else if (text.includes("message")) {
+            link.setAttribute("href", "admin.html#messages");
+        } else if (text.includes("change password")) {
+            link.setAttribute("href", "admin.html#password");
         }
     });
 }
 
-/**
- * Handle logout functionality - Show modal confirmation
- */
 function handleLogout() {
-    const logoutModal = document.getElementById('logoutModal');
+    const logoutModal = document.getElementById("logoutModal");
     if (logoutModal) {
-        logoutModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        logoutModal.classList.add("active");
+        document.body.style.overflow = "hidden";
     }
 }
 
-/**
- * Perform actual logout
- */
 function performLogout() {
-    localStorage.removeItem('jwtToken');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userName');
-    sessionStorage.removeItem('userEmail');
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userNumber");
+    localStorage.removeItem("userAuthorities");
+    localStorage.removeItem("loginUserInfo");
+    localStorage.removeItem("mdrrmo_profile_photo");
 
-    window.location.href = 'login.html';
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("userEmail");
+
+    window.location.href = "login.html";
 }
 
-/**
- * Close logout modal
- */
 function closeLogoutModal() {
-    const logoutModal = document.getElementById('logoutModal');
+    const logoutModal = document.getElementById("logoutModal");
     if (logoutModal) {
-        logoutModal.classList.remove('active');
-        document.body.style.overflow = 'auto';
+        logoutModal.classList.remove("active");
+        document.body.style.overflow = "auto";
     }
 }
 
-/**
- * Close all menus
- */
 function closeAllMenus() {
-    const userDropdown = document.querySelector('.user-dropdown');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+    const userDropdown = document.querySelector(".user-dropdown");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
 
-    if (userDropdown) userDropdown.classList.remove('active');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
+    if (userDropdown) userDropdown.classList.remove("active");
+    if (sidebar) sidebar.classList.remove("active");
+    if (overlay) overlay.classList.remove("active");
 }
 
-/**
- * Update user name display
- * @param {string} name - The user's name to display
- */
 function updateUserName(name) {
-    const userNameDisplay = document.getElementById('userNameDisplay');
+    const userNameDisplay = document.getElementById("userNameDisplay");
     if (name && userNameDisplay) {
-        let firstName = name.split(' ')[0];
+        let firstName = name.split(" ")[0] || "User";
         firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
         userNameDisplay.textContent = firstName;
-        console.log('User name updated to:', firstName);
-    } else if (!userNameDisplay) {
-        console.warn('userNameDisplay element not found');
+    }
+}
+
+function updateUserAvatar(profileImageUrl, fullName) {
+    const avatarNode = document.getElementById("navbarUserAvatar");
+    if (!avatarNode) return;
+
+    const initials = (fullName || "U")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(part => part[0].toUpperCase())
+        .join("") || "U";
+
+    avatarNode.style.backgroundImage = "";
+    avatarNode.style.backgroundSize = "";
+    avatarNode.style.backgroundPosition = "";
+    avatarNode.style.backgroundRepeat = "";
+    avatarNode.style.overflow = "hidden";
+    avatarNode.style.display = "inline-flex";
+    avatarNode.style.alignItems = "center";
+    avatarNode.style.justifyContent = "center";
+
+    if (profileImageUrl) {
+        avatarNode.innerHTML = `
+            <img
+                src="${profileImageUrl}"
+                alt="${fullName || "User Avatar"}"
+                style="
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    display: block;
+                "
+            >
+        `;
+
+        const img = avatarNode.querySelector("img");
+        if (img) {
+            img.onerror = function () {
+                avatarNode.innerHTML = "";
+                avatarNode.textContent = initials;
+            };
+        }
+        return;
+    }
+
+    avatarNode.innerHTML = "";
+    avatarNode.textContent = initials;
+}
+async function refreshGlobalAdminBadges() {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return;
+
+    const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
+
+    try {
+        const [notificationsRes, conversationsRes] = await Promise.all([
+            fetch("http://localhost:8080/api/notifications", { headers }),
+            fetch("http://localhost:8080/api/messages/conversations", { headers })
+        ]);
+
+        let unreadNotifications = 0;
+        let unreadMessages = 0;
+
+        if (notificationsRes.ok) {
+            const notifications = await notificationsRes.json();
+
+            unreadNotifications = (notifications || []).filter(item =>
+                !item.isRead && String(item.type || "").toUpperCase() !== "MESSAGE"
+            ).length;
+
+            const unreadMessagesFromNotifications = (notifications || []).filter(item =>
+                !item.isRead && String(item.type || "").toUpperCase() === "MESSAGE"
+            ).length;
+
+            unreadMessages = Math.max(unreadMessages, unreadMessagesFromNotifications);
+        }
+
+        if (conversationsRes.ok) {
+            const conversations = await conversationsRes.json();
+            const unreadMessagesFromThreads = (conversations || []).reduce(
+                (sum, item) => sum + Number(item.unreadCount || 0),
+                0
+            );
+            unreadMessages = Math.max(unreadMessages, unreadMessagesFromThreads);
+        }
+
+        if (typeof window.updateNotificationBadge === "function") {
+            window.updateNotificationBadge(unreadNotifications);
+        }
+
+        if (typeof window.updateMessageBadge === "function") {
+            window.updateMessageBadge(unreadMessages);
+        }
+    } catch (error) {
+        console.warn("Failed to refresh navbar badges:", error);
     }
 }
 
@@ -370,62 +453,3 @@ function applyFrontendRbac() {
         if (settingsMenuItem) settingsMenuItem.style.display = "none";
     }
 }
-
-// modal for global confirmation
-// (function () {
-//     let confirmAction = null;
-
-//     function closeAppConfirm() {
-//         const modal = document.getElementById("appConfirmModal");
-//         if (modal) {
-//             modal.classList.remove("active");
-//             document.body.style.overflow = "auto";
-//         }
-//         confirmAction = null;
-//     }
-
-//     function openAppConfirm({
-//         title = "Please Confirm",
-//         message = "Are you sure you want to continue?",
-//         confirmText = "Confirm",
-//         cancelText = "Cancel",
-//         kicker = "Confirmation",
-//         onConfirm = null
-//     }) {
-//         const modal = document.getElementById("appConfirmModal");
-//         if (!modal) return;
-
-//         document.getElementById("appConfirmTitle").textContent = title;
-//         document.getElementById("appConfirmMessage").textContent = message;
-//         document.getElementById("appConfirmKicker").textContent = kicker;
-//         document.getElementById("appConfirmProceedBtn").textContent = confirmText;
-//         document.getElementById("appConfirmCancelBtn").textContent = cancelText;
-
-//         confirmAction = onConfirm;
-//         modal.classList.add("active");
-//         document.body.style.overflow = "hidden";
-//     }
-
-//     async function handleConfirmProceed() {
-//         if (typeof confirmAction === "function") {
-//             const action = confirmAction;
-//             closeAppConfirm();
-//             await action();
-//             return;
-//         }
-//         closeAppConfirm();
-//     }
-
-//     document.addEventListener("DOMContentLoaded", function () {
-//         document.getElementById("appConfirmCloseBtn")?.addEventListener("click", closeAppConfirm);
-//         document.getElementById("appConfirmCancelBtn")?.addEventListener("click", closeAppConfirm);
-//         document.getElementById("appConfirmProceedBtn")?.addEventListener("click", handleConfirmProceed);
-
-//         document.getElementById("appConfirmModal")?.addEventListener("click", function (e) {
-//             if (e.target === this) closeAppConfirm();
-//         });
-//     });
-
-//     window.openAppConfirm = openAppConfirm;
-//     window.closeAppConfirm = closeAppConfirm;
-// })();

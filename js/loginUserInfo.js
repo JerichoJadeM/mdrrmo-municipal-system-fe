@@ -88,30 +88,43 @@ async function loadUserInfo() {
         console.log(user);
 
         // Store user info in localStorage for navbar to use
-        localStorage.setItem('userName', user.fullName);
-        localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('userNumber', user.number);
-        localStorage.setItem('userAuthorities', JSON.stringify(user.authorities || []));
-        localStorage.setItem('loginUserInfo', JSON.stringify(user));
+        
+        const fullName = user.fullName || "";
+        const email = user.email || "";
+        const profileImageUrl = user.profileImageUrl || "";
 
-        // Update navbar user name if navbar script is loaded
-        if (typeof window.updateUserName === 'function') {
-            window.updateUserName(user.fullName);
-        } else if (typeof updateUserName === 'function') {
-            updateUserName(user.fullName);
+        localStorage.setItem("userName", fullName);
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userNumber", user.number || "");
+        localStorage.setItem("userAuthorities", JSON.stringify(user.authorities || []));
+        localStorage.setItem("loginUserInfo", JSON.stringify(user));
+        localStorage.setItem("mdrrmo_profile_photo", profileImageUrl);
+
+        if (typeof window.updateUserName === "function") {
+            window.updateUserName(fullName);
         }
 
-        if(typeof window.applyFrontendRbac === 'function'){
+        if (typeof window.updateUserAvatar === "function") {
+            window.updateUserAvatar(profileImageUrl, fullName);
+        }
+
+        if (typeof window.applyFrontendRbac === "function") {
             window.applyFrontendRbac();
         }
 
+        if (typeof window.refreshGlobalAdminBadges === "function") {
+            window.refreshGlobalAdminBadges();
+        }
+
         // Only append to usersList if it exists (for dashboard page)
-        const ul = document.getElementById('usersList');
+        const ul = document.getElementById("usersList");
         if (ul) {
-            const li = document.createElement('li');
+            const li = document.createElement("li");
             li.textContent = `${user.fullName} ${user.email} (${user.number})`;
             ul.appendChild(li);
         }
+
+            
     } catch (err) {
         console.error(err);
         

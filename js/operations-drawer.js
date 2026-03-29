@@ -1,4 +1,3 @@
-
 let currentDrawerForecast = null;
 let pendingTransitionReview = null;
 let pendingTransitionSuggestedResources = [];
@@ -16,6 +15,15 @@ let transitionEvacuationUpdateTargetId = null;
 let transitionEvacuationSearchResults = [];
 let transitionSelectedEvacuationCenterId = "";
 
+let pendingTransitionAcknowledgementState = {
+    requiresAcknowledgement: false,
+    requestStatus: "NONE", // NONE | PENDING | APPROVED | REJECTED | NOT_REQUIRED
+    requestId: null,
+    reviewedByName: "",
+    reviewedAt: "",
+    remarks: ""
+};
+
 const TRANSITION_RESOURCE_TYPE_OPTIONS = [
     "RELIEF", "MEDICAL", "EQUIPMENT", "TRANSPORT", "COMMUNICATION", "SAFETY", "SHELTER", "FOOD", "WATER", "OTHER"
 ];
@@ -25,6 +33,88 @@ const TRANSITION_RESOURCE_CATEGORY_OPTIONS = [
 const TRANSITION_RESOURCE_UNIT_OPTIONS = [
     "pcs", "box", "pack", "set", "roll", "pair", "bottle", "can", "bag", "sack", "kilo", "kilogram", "gram", "liter", "meter"
 ];
+
+function resetTransitionAcknowledgementState() {
+    pendingTransitionAcknowledgementState = {
+        requiresAcknowledgement: false,
+        requestStatus: "NONE",
+        requestId: null,
+        reviewedByName: "",
+        reviewedAt: "",
+        remarks: ""
+    };
+}
+
+function getAcknowledgementStateLabel() {
+    const status = String(pendingTransitionAcknowledgementState.requestStatus || "NONE").toUpperCase();
+
+    switch (status) {
+        case "NOT_REQUIRED":
+            return { text: "No acknowledgement required", className: "status-badge neutral" };
+        case "PENDING":
+            return { text: "Pending acknowledgement", className: "status-badge warning" };
+        case "APPROVED":
+            return { text: "Acknowledgement approved", className: "status-badge active" };
+        case "REJECTED":
+            return { text: "Acknowledgement rejected", className: "status-badge danger" };
+        default:
+            return pendingTransitionAcknowledgementState.requiresAcknowledgement
+                ? { text: "Acknowledgement required", className: "status-badge warning" }
+                : { text: "No acknowledgement required", className: "status-badge neutral" };
+    }
+}
+
+function renderTransitionAcknowledgementHeaderStatus() {
+    const node = document.getElementById("transitionReviewAckStatus");
+    if (!node) return;
+
+    const state = getAcknowledgementStateLabel();
+    node.className = state.className;
+    node.textContent = state.text;
+}
+
+async function loadTransitionAcknowledgementStatus(config) {
+    resetTransitionAcknowledgementState();
+
+    const warningItems = (pendingTransitionWarnings || []).filter(w => {
+        const level = String(w.level || "").toUpperCase();
+        return level === "WARNING" || level === "CRITICAL";
+    });
+
+    if (!warningItems.length) {
+        pendingTransitionAcknowledgementState.requiresAcknowledgement = false;
+        pendingTransitionAcknowledgementState.requestStatus = "NOT_REQUIRED";
+        renderTransitionAcknowledgementHeaderStatus();
+        syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+        return;
+    }
+
+    pendingTransitionAcknowledgementState.requiresAcknowledgement = true;
+
+    try {
+        const requestType = "OPERATION_ACKNOWLEDGEMENT";
+        const referenceType = config.type;
+        const referenceId = config.data.id;
+        const mode = config.mode || "";
+
+        const response = await apiRequest(
+            `${API_BASE}/approval-requests/status?requestType=${encodeURIComponent(requestType)}&referenceType=${encodeURIComponent(referenceType)}&referenceId=${encodeURIComponent(referenceId)}&mode=${encodeURIComponent(mode)}`
+        );
+
+        if (response) {
+            pendingTransitionAcknowledgementState.requestStatus = String(response.status || "NONE").toUpperCase();
+            pendingTransitionAcknowledgementState.requestId = response.id || null;
+            pendingTransitionAcknowledgementState.reviewedByName = response.reviewedByName || "";
+            pendingTransitionAcknowledgementState.reviewedAt = response.reviewedAt || "";
+            pendingTransitionAcknowledgementState.remarks = response.reviewRemarks || "";
+        }
+    } catch (error) {
+        console.warn("Unable to load acknowledgement status:", error);
+    }
+
+    renderTransitionAcknowledgementHeaderStatus();
+    syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+}
 
 function openOperationsDrawer() {
     document.getElementById("operationsDrawer")?.classList.add("active");
@@ -73,6 +163,9 @@ function resetOperationsDrawer() {
     if (typeof resetOperationsMap === "function") {
         resetOperationsMap();
     }
+
+    window.loadTransitionAcknowledgementStatus = loadTransitionAcknowledgementStatus;
+    window.syncTransitionReviewButtonLabel = syncTransitionReviewButtonLabel;
 }
 
 async function loadOperationsDrawer(type, data) {
@@ -308,7 +401,6 @@ function renderOperationsDrawerQuickActions(type, data) {
             }));
         }
 
-
         return;
     }
 
@@ -344,7 +436,6 @@ function renderOperationsDrawerQuickActions(type, data) {
             });
         }));
     }
-
 }
 
 function createDrawerActionButton(label, handler) {
@@ -360,25 +451,30 @@ function createDrawerActionButton(label, handler) {
    Transition Review Modal
    ========================= */
 
-function openTransitionReviewModal(config) {
+async function openTransitionReviewModal(config) {
     pendingTransitionReview = config;
+    resetTransitionAcknowledgementState();
 
     setDrawerText("transitionReviewTitle", config.title || "Transition Review");
     renderTransitionReviewSummary(config);
     preloadTransitionReviewForm(config);
     renderTransitionReviewLoading();
+    renderTransitionAcknowledgementHeaderStatus();
+    syncTransitionReviewButtonLabel([]);
 
     document.getElementById("transitionReviewModal")?.classList.add("active");
     document.body.style.overflow = "hidden";
 
-    loadTransitionReviewForecast(config);
+    await loadTransitionReviewForecast(config);
 }
 
 function closeTransitionReviewModal() {
     document.getElementById("transitionReviewModal")?.classList.remove("active");
     document.body.style.overflow = "auto";
     pendingTransitionReview = null;
-
+    resetTransitionAcknowledgementState();
+    renderTransitionAcknowledgementHeaderStatus();
+    syncTransitionReviewButtonLabel([]);
     clearTransitionReviewContent();
 }
 
@@ -426,7 +522,7 @@ function renderTransitionReviewSummary(config) {
             </div>
         </div>
     `;
-
+    syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
     box.classList.remove("hidden");
 }
 
@@ -515,7 +611,10 @@ async function loadTransitionReviewForecast(config) {
         renderTransitionEvacuation(forecast.evacuationChecks || []);
         renderTransitionCostDrivers(pendingTransitionCostDrivers);
         renderTransitionWarnings(pendingTransitionWarnings);
-        renderTransitionAcknowledgements(pendingTransitionWarnings);
+
+        await loadTransitionAcknowledgementStatus(config);
+        renderTransitionAcknowledgements(pendingTransitionWarnings || []);
+        syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
     } catch (error) {
         console.error("Error loading transition review forecast:", error);
         if (typeof showToast === "function") {
@@ -603,6 +702,7 @@ function rerenderTransitionDerivedSections() {
     renderTransitionCostDrivers(pendingTransitionCostDrivers);
     renderTransitionWarnings(pendingTransitionWarnings);
     renderTransitionAcknowledgements(pendingTransitionWarnings);
+    syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
 }
 
 function filterEvacuationCenterSuggestions(keyword) {
@@ -794,7 +894,6 @@ async function loadTransitionEvacuationAssignments(config) {
 
 //
 
-
 function renderTransitionSuggestedResources() {
     const container = document.getElementById("transitionSuggestedResources");
     if (!container) return;
@@ -851,7 +950,6 @@ function renderTransitionStockChecks() {
         });
     });
 }
-
 
 function normalizeTransitionSuggestedResources(resources) {
     return (resources || [])
@@ -927,10 +1025,10 @@ function buildTransitionResourceCard(resource, index) {
         ? `<span class="transition-resource-badge">Added</span>`
         : `<span class="transition-resource-badge subtle">Suggested</span>`;
     const action = resource.source === "CUSTOM"
-    ? `<button type="button" class="btn btn-cancel transition-inline-btn" data-resource-action="remove" data-resource-index="${index}">Remove</button>`
-    : (resource.included
-        ? `<button type="button" class="btn btn-cancel transition-inline-btn" data-resource-action="reset" data-resource-index="${index}">Reset</button>`
-        : "");
+        ? `<button type="button" class="btn btn-cancel transition-inline-btn" data-resource-action="remove" data-resource-index="${index}">Remove</button>`
+        : (resource.included
+            ? `<button type="button" class="btn btn-cancel transition-inline-btn" data-resource-action="reset" data-resource-index="${index}">Reset</button>`
+            : "");
     const showInputs = resource.source === "CUSTOM" || resource.included;
 
     return `
@@ -984,7 +1082,6 @@ function buildTransitionSearchField(label, field, value, index) {
         </label>
     `;
 }
-
 
 function buildTransitionSelectField(label, field, value, index, options) {
     const optionMarkup = options.map(option => `
@@ -1197,7 +1294,7 @@ function renderTransitionRelief(reliefReadiness) {
     if (!container) return;
 
     if (!reliefReadiness) {
-        container.innerHTML = `<div class="readiness-empty-card">No relief readiness information available.</div>`;
+        container.innerHTML = `<div class="readiness-empty-card">No relief readiness data available.</div>`;
         return;
     }
 
@@ -1238,10 +1335,10 @@ function renderTransitionEvacuation(evacuationChecks) {
     if (!container) return;
 
     const assignments = Array.isArray(pendingTransitionEvacuationAssignments)
-    ? pendingTransitionEvacuationAssignments.filter(item =>
-        String(item.status || "").toUpperCase() === "OPEN"
-      )
-    : [];
+        ? pendingTransitionEvacuationAssignments.filter(item =>
+            String(item.status || "").toUpperCase() === "OPEN"
+        )
+        : [];
 
     const cardsHtml = assignments.length
         ? assignments.map(item => {
@@ -1406,10 +1503,10 @@ function renderTransitionWarnings(warnings) {
             actions.push(`<button type="button" class="btn btn-primary transition-inline-btn" data-warning-action="assign-responder">Assign responder</button>`);
         }
 
-        if (message.includes("stock") || message.includes("resource") || message.includes("inventory")) {
-            actions.push(`<button type="button" class="btn btn-primary transition-inline-btn" data-warning-action="add-resource">Add resource</button>`);
-            actions.push(`<button type="button" class="btn btn-cancel transition-inline-btn" data-warning-action="open-inventory">Open inventory</button>`);
-        }
+        // if (message.includes("stock") || message.includes("resource") || message.includes("inventory")) {
+        //     actions.push(`<button type="button" class="btn btn-primary transition-inline-btn" data-warning-action="add-resource">Add resource</button>`);
+        //     actions.push(`<button type="button" class="btn btn-cancel transition-inline-btn" data-warning-action="open-inventory">Open inventory</button>`);
+        // }
 
         if (message.includes("evac") || message.includes("capacity") || message.includes("evacuee")) {
             actions.push(`<button type="button" class="btn btn-primary transition-inline-btn" data-warning-action="review-evacuation">Review evacuation</button>`);
@@ -1434,15 +1531,15 @@ function renderTransitionWarnings(warnings) {
                 return;
             }
 
-            if (action === "add-resource") {
-                document.getElementById("transitionAddResourceBtn")?.click();
-                return;
-            }
+            // if (action === "add-resource") {
+            //     document.getElementById("transitionAddResourceBtn")?.click();
+            //     return;
+            // }
 
-            if (action === "open-inventory") {
-                showToastSafe("Resources page is not built yet. Use Inventory module for now.", "info");
-                return;
-            }
+            // if (action === "open-inventory") {
+            //     showToastSafe("Resources page is not built yet. Use Inventory module for now.", "info");
+            //     return;
+            // }
 
             if (action === "review-evacuation") {
                 document.getElementById("transitionEvacuationChecks")?.scrollIntoView({
@@ -1470,40 +1567,148 @@ function renderTransitionAcknowledgements(warnings) {
     if (!warningItems.length) {
         container.innerHTML = `<div class="readiness-empty-card">No acknowledgement required.</div>`;
         overrideBlock.classList.add("hidden");
+        pendingTransitionAcknowledgementState.requiresAcknowledgement = false;
+        pendingTransitionAcknowledgementState.requestStatus = "NOT_REQUIRED";
+        renderTransitionAcknowledgementHeaderStatus();
+        syncTransitionReviewButtonLabel([]);
         return;
     }
 
-    let hasCritical = false;
+    pendingTransitionAcknowledgementState.requiresAcknowledgement = true;
 
-    container.innerHTML = warningItems.map((warning, index) => {
-        const level = String(warning.level || "").toUpperCase();
-        if (level === "CRITICAL") hasCritical = true;
+    if (isElevated) {
+        let hasCritical = false;
 
-        const disabled = level === "CRITICAL" && !isElevated;
-        const helper = level === "CRITICAL" && !isElevated
-            ? `<div class="readiness-item-meta">Manager/Admin override required.</div>`
-            : "";
+        container.innerHTML = warningItems.map((warning) => {
+            const level = String(warning.level || "").toUpperCase();
+            if (level === "CRITICAL") hasCritical = true;
 
-        return `
-            <div class="transition-ack-item">
-                <label>
-                    <input
-                        type="checkbox"
-                        class="transition-ack-checkbox"
-                        data-warning-level="${escapeHtml(level)}"
-                        ${disabled ? "disabled" : ""}
-                    >
-                    <span>
-                        I acknowledge this ${escapeHtml(level.toLowerCase())} warning.<br>
-                        <strong>${escapeHtml(warning.message || "-")}</strong>
-                        ${helper}
-                    </span>
-                </label>
+            return `
+                <div class="transition-ack-item">
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="transition-ack-checkbox"
+                            data-warning-level="${escapeHtml(level)}"
+                        >
+                        <span>
+                            I acknowledge this ${escapeHtml(level.toLowerCase())} warning.<br>
+                            <strong>${escapeHtml(warning.message || "-")}</strong>
+                        </span>
+                    </label>
+                </div>
+            `;
+        }).join("");
+
+        overrideBlock.classList.toggle("hidden", !hasCritical);
+        renderTransitionAcknowledgementHeaderStatus();
+        syncTransitionReviewButtonLabel(warnings);
+        return;
+    }
+
+    const status = String(pendingTransitionAcknowledgementState.requestStatus || "NONE").toUpperCase();
+    const reviewedBy = pendingTransitionAcknowledgementState.reviewedByName || "Manager/Admin";
+    const remarks = pendingTransitionAcknowledgementState.remarks || "";
+
+    let helperText = "Manager/Admin acknowledgement is required before this transition can proceed.";
+    let buttonText = "Request Acknowledgement";
+    let buttonDisabled = false;
+
+    if (status === "PENDING") {
+        helperText = "Your acknowledgement request is pending review.";
+        buttonText = "Pending Acknowledgement";
+        buttonDisabled = true;
+    } else if (status === "APPROVED") {
+        helperText = `Acknowledgement approved by ${reviewedBy}.`;
+        buttonText = "Acknowledgement Approved";
+        buttonDisabled = true;
+    } else if (status === "REJECTED") {
+        helperText = remarks
+            ? `Acknowledgement was rejected by ${reviewedBy}. Remarks: ${remarks}`
+            : `Acknowledgement was rejected by ${reviewedBy}.`;
+        buttonText = "Request Acknowledgement Again";
+        buttonDisabled = false;
+    }
+
+    container.innerHTML = `
+        <div class="transition-ack-request-card">
+            <div class="readiness-item-title">Acknowledgement Required</div>
+            <div class="readiness-item-meta">${escapeHtml(helperText)}</div>
+
+            <div class="transition-ack-warning-list">
+                ${warningItems.map((warning) => `
+                    <div class="transition-ack-warning-preview">
+                        <strong>${escapeHtml(String(warning.level || "").toUpperCase())}</strong><br>
+                        <span>${escapeHtml(warning.message || "-")}</span>
+                    </div>
+                `).join("")}
             </div>
-        `;
-    }).join("");
 
-    overrideBlock.classList.toggle("hidden", !(hasCritical && isElevated));
+            <div class="transition-inline-actions">
+                <button
+                    type="button"
+                    class="btn btn-primary transition-inline-btn"
+                    id="transitionRequestAcknowledgementBtn"
+                    ${buttonDisabled ? "disabled" : ""}
+                >
+                    ${escapeHtml(buttonText)}
+                </button>
+            </div>
+        </div>
+    `;
+
+    overrideBlock.classList.add("hidden");
+
+    document.getElementById("transitionRequestAcknowledgementBtn")?.addEventListener("click", async () => {
+        if (!pendingTransitionReview) return;
+
+        const config = pendingTransitionReview;
+        const data = config.data;
+        const description = (document.getElementById("transitionReviewDescription")?.value || "").trim();
+        const responderId = document.getElementById("transitionResponderId")?.value || "";
+        const overrideReason = (document.getElementById("transitionOverrideReason")?.value || "").trim();
+
+        try {
+            const created = await submitApprovalRequest({
+                requestType: "OPERATION_ACKNOWLEDGEMENT",
+                title: config.type === "INCIDENT"
+                    ? `Acknowledgement request for incident #${data.id}`
+                    : `Acknowledgement request for calamity #${data.id}`,
+                description: [
+                    `Acknowledgement required before proceeding with ${config.mode}.`,
+                    description ? `Update: ${description}` : ""
+                ].filter(Boolean).join(" "),
+                referenceType: config.type,
+                referenceId: data.id,
+                payloadJson: JSON.stringify({
+                    mode: config.mode,
+                    type: config.type,
+                    eventId: data.id,
+                    description,
+                    responderId: responderId ? Number(responderId) : null,
+                    overrideReason,
+                    warnings: warningItems
+                })
+            });
+
+            pendingTransitionAcknowledgementState.requestStatus = "PENDING";
+            pendingTransitionAcknowledgementState.requestId = created?.id || null;
+
+            renderTransitionAcknowledgementHeaderStatus();
+            renderTransitionAcknowledgements(warnings);
+            syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+
+            showToastSafe("Acknowledgement request submitted.", "info");
+            await refreshGlobalAdminBadgesIfAvailable();
+        } catch (error) {
+            console.error("Failed to request acknowledgement:", error);
+            const parsed = await parseApiError(error);
+            showToastSafe(parsed.message || "Failed to request acknowledgement.", "error");
+        }
+    });
+
+    renderTransitionAcknowledgementHeaderStatus();
+    syncTransitionReviewButtonLabel(warnings);
 }
 
 async function confirmTransitionReview() {
@@ -1522,6 +1727,7 @@ async function confirmTransitionReview() {
             unit: item.unit || "",
             reason: item.reason || ""
         }));
+
     const description = (document.getElementById("transitionReviewDescription")?.value || "").trim();
     const responderId = document.getElementById("transitionResponderId")?.value || "";
     const responderName = document.getElementById("transitionResponderSearch")?.value || "";
@@ -1530,42 +1736,40 @@ async function confirmTransitionReview() {
     const roles = getCurrentUserRolesSafe();
     const isElevated = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
 
+    const warningItems = (pendingTransitionWarnings || []).filter(w => {
+        const level = String(w.level || "").toUpperCase();
+        return level === "WARNING" || level === "CRITICAL";
+    });
+
+    const requiresAcknowledgement = warningItems.length > 0;
+    const ackStatus = String(pendingTransitionAcknowledgementState.requestStatus || "NONE").toUpperCase();
+
+    if (requiresAcknowledgement && !isElevated && ackStatus !== "APPROVED") {
+        showToastSafe("Manager/Admin acknowledgement is required before continuing.", "info");
+        return;
+    }
+
     const ackBoxes = Array.from(document.querySelectorAll(".transition-ack-checkbox"));
-    const uncheckedWarnings = ackBoxes.filter(box => !box.disabled && !box.checked);
-    if (uncheckedWarnings.length) {
-        showToastSafe("Please acknowledge required warnings before continuing.", "info");
-        return;
-    }
 
-    const criticalDisabledExists = ackBoxes.some(box =>
-        box.disabled && String(box.dataset.warningLevel || "").toUpperCase() === "CRITICAL"
-    );
-    if (criticalDisabledExists) {
-        showToastSafe("A manager/admin override is required for critical issues.", "error");
-        return;
-    }
+    if (isElevated && warningItems.length) {
+        const uncheckedWarnings = ackBoxes.filter(box => !box.checked);
+        if (uncheckedWarnings.length) {
+            showToastSafe("Please acknowledge required warnings before continuing.", "info");
+            return;
+        }
 
-    const criticalCount = ackBoxes.filter(box =>
-        String(box.dataset.warningLevel || "").toUpperCase() === "CRITICAL"
-    ).length;
-    if (criticalCount > 0 && isElevated && !overrideReason) {
-        showToastSafe("Override reason is required for critical issues.", "info");
-        return;
-    }
+        const criticalCount = ackBoxes.filter(box =>
+            String(box.dataset.warningLevel || "").toUpperCase() === "CRITICAL"
+        ).length;
 
-    const unresolvedCritical = pendingTransitionWarnings.some(w =>
-        String(w.level || "").toUpperCase() === "CRITICAL"
-    );
-
-    if (unresolvedCritical && !isElevated) {
-        showToastSafe("Critical readiness issues must be addressed before confirming.", "error");
-        return;
+        if (criticalCount > 0 && !overrideReason) {
+            showToastSafe("Override reason is required for critical issues.", "info");
+            return;
+        }
     }
 
     try {
         if (config.type === "INCIDENT") {
-            await updateIncidentForTransition(data, description, responderId);
-
             if (config.mode === "DISPATCH_REVIEW") {
                 if (!responderId || !responderName) {
                     showToastSafe("Select a responder from the suggestion list.", "info");
@@ -1574,41 +1778,63 @@ async function confirmTransitionReview() {
 
                 await apiRequest(`${API_BASE}/incidents/${data.id}/dispatch`, {
                     method: "PUT",
-                    body: JSON.stringify({ responderId: Number(responderId) })
+                    body: JSON.stringify({
+                        responderId: Number(responderId),
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
 
             if (config.mode === "ARRIVE_REVIEW") {
                 await apiRequest(`${API_BASE}/incidents/${data.id}/arrive`, {
-                    method: "PUT"
+                    method: "PUT",
+                    body: JSON.stringify({
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
 
             if (config.mode === "RESOLVE_REVIEW") {
                 await apiRequest(`${API_BASE}/incidents/${data.id}/resolve`, {
-                    method: "PUT"
+                    method: "PUT",
+                    body: JSON.stringify({
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
         }
 
         if (config.type === "CALAMITY") {
-            await updateCalamityForTransition(data, description);
-
             if (config.mode === "MONITOR_REVIEW") {
                 await apiRequest(`${API_BASE}/calamities/${data.id}/monitor`, {
-                    method: "PUT"
+                    method: "PUT",
+                    body: JSON.stringify({
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
 
             if (config.mode === "RESOLVE_REVIEW") {
                 await apiRequest(`${API_BASE}/calamities/${data.id}/resolve`, {
-                    method: "PUT"
+                    method: "PUT",
+                    body: JSON.stringify({
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
 
             if (config.mode === "END_REVIEW") {
                 await apiRequest(`${API_BASE}/calamities/${data.id}/end`, {
-                    method: "PUT"
+                    method: "PUT",
+                    body: JSON.stringify({
+                        description: description || null,
+                        overrideReason: overrideReason || null
+                    })
                 });
             }
         }
@@ -1651,47 +1877,53 @@ async function confirmTransitionReview() {
         console.error("Error confirming transition review:", error);
 
         const parsed = await parseApiError(error);
+        const message = String(parsed.message || "").toLowerCase();
 
-        if (parsed.code === "APPROVAL_REQUIRED") {
-            try {
-                const requestTitle =
-                    config.type === "INCIDENT"
-                        ? `Approval request for ${config.mode.replaceAll("_", " ")} on incident #${data.id}`
-                        : `Approval request for ${config.mode.replaceAll("_", " ")} on calamity #${data.id}`;
+        const approvalRequired =
+            parsed.code === "APPROVAL_REQUIRED" ||
+            message.includes("approval required") ||
+            message.includes("acknowledgement approval required");
 
-                await submitApprovalRequest({
-                    requestType: parsed.requestType || "OPERATION_ACKNOWLEDGEMENT",
-                    title: requestTitle,
-                    description: [
-                        `User requests approval before proceeding.`,
-                        description ? `Update: ${description}` : "",
-                        overrideReason ? `Override reason: ${overrideReason}` : ""
-                    ].filter(Boolean).join(" "),
-                    referenceType: parsed.referenceType || config.type,
-                    referenceId: parsed.referenceId || data.id,
-                    payloadJson: JSON.stringify({
-                        mode: config.mode,
-                        type: config.type,
-                        eventId: data.id,
-                        description,
-                        responderId: responderId ? Number(responderId) : null,
-                        selectedResources: config.selectedResources || [],
-                        overrideReason
-                    })
-                });
-
-                showToastSafe("Approval request submitted. Please wait for manager/admin approval.", "info");
-                closeTransitionReviewModal();
-                return;
-            } catch (requestError) {
-                console.error("Failed to submit approval request:", requestError);
-                showToastSafe("Approval was required, but the request could not be submitted.", "error");
-                return;
-            }
+        if (approvalRequired) {
+            showToastSafe("This transition still requires manager/admin acknowledgement.", "error");
+            await loadTransitionAcknowledgementStatus(config);
+            renderTransitionAcknowledgements(pendingTransitionWarnings || []);
+            syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+            return;
         }
 
         showToastSafe(parsed.message || "Failed to update operation.", "error");
     }
+}
+
+function syncTransitionReviewButtonLabel(warnings = []) {
+    const confirmBtn = document.getElementById("transitionReviewConfirm");
+    if (!confirmBtn) return;
+
+    const warningItems = (warnings || []).filter(w => {
+        const level = String(w.level || "").toUpperCase();
+        return level === "WARNING" || level === "CRITICAL";
+    });
+
+    const requiresAcknowledgement = warningItems.length > 0;
+    const roles = getCurrentUserRolesSafe();
+    const isElevated = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    const ackStatus = String(pendingTransitionAcknowledgementState?.requestStatus || "NONE").toUpperCase();
+
+    if (!requiresAcknowledgement) {
+        confirmBtn.textContent = "Confirm Transition";
+        confirmBtn.disabled = false;
+        return;
+    }
+
+    if (isElevated) {
+        confirmBtn.textContent = "Confirm Transition";
+        confirmBtn.disabled = false;
+        return;
+    }
+
+    confirmBtn.textContent = "Confirm Transition";
+    confirmBtn.disabled = ackStatus !== "APPROVED";
 }
 
 async function updateIncidentForTransition(data, description, responderId) {
@@ -1757,6 +1989,10 @@ function clearTransitionReviewContent() {
     pendingTransitionCustomResources = [];
     pendingTransitionStockChecksRaw = [];
     pendingTransitionInventoryCatalog = [];
+    pendingTransitionWarnings = [];
+    pendingTransitionCostDrivers = [];
+    pendingTransitionEvacuationAssignments = [];
+    pendingEvacuationCenterCatalog = [];
 
     document.removeEventListener("click", handleTransitionSuggestionOutsideClick, true);
 }

@@ -24,6 +24,51 @@ async function apiRequest(url, options = {}) {
     return null;
 }
 
+async function parseApiError(error) {
+    try {
+        return JSON.parse(error.message);
+    } catch {
+        return { message: error.message || "Request failed." };
+    }
+}
+
+async function submitApprovalRequest(payload) {
+    return apiRequest(`${API_BASE}/approval-requests`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+}
+
+async function refreshGlobalAdminBadgesIfAvailable() {
+    if (typeof window.refreshGlobalAdminBadges === "function") {
+        try {
+            await window.refreshGlobalAdminBadges();
+        } catch (error) {
+            console.warn("Failed to refresh navbar badges:", error);
+        }
+    }
+}
+
+function canApproveDirectly() {
+    try {
+        const roles = JSON.parse(localStorage.getItem("userAuthorities") || "[]");
+        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    } catch {
+        return false;
+    }
+}
+
+function transitionNeedsApproval(warnings = []) {
+    return Array.isArray(warnings) && warnings.some(item =>
+        item?.requiresManagerApproval ||
+        String(item?.level || "").toUpperCase() === "CRITICAL" ||
+        String(item?.level || "").toUpperCase() === "WARNING"
+    );
+}
+
+window.canApproveDirectly = canApproveDirectly;
+window.transitionNeedsApproval = transitionNeedsApproval;
+
 function formatDateTime(value) {
     if (!value) return "-";
     const parsed = new Date(value);

@@ -93,11 +93,13 @@ function renderInventoryTable(items) {
                                 ${canManageInventoryMasterData() ? `
                                     <button class="btn btn-sm btn-secondary" data-edit-id="${item.id}">Edit</button>
                                 ` : ""}
-                                ${canOperateInventory() ? `
+                                ${hasAnyRole("MANAGER", "ADMIN") ? `
                                     <button class="btn btn-sm btn-primary" data-adjust-id="${item.id}">Adjust Stock</button>
                                 ` : ""}
                                 ${canOperateInventory() ? `
-                                    <button class="btn btn-sm btn-secondary" data-procure-id="${item.id}">Procure</button>
+                                    <button class="btn btn-sm btn-secondary" data-procure-id="${item.id}">
+                                        ${hasAnyRole("MANAGER", "ADMIN") ? "Save Procurement" : "Request Procurement"}
+                                    </button>
                                 ` : ""}
                             </div>
                         </td>
@@ -265,8 +267,14 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
 window.openInventoryAdjustModal = async function (item) {
     if (!canOperateInventory()) return;
 
+    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    if (!isElevated) {
+        showToast("Only manager/admin can adjust stock directly.", "error");
+        return;
+    }
+
     const incidentOptions = await loadIncidentOptions();
-    const calamityOptions = await loadCalamityOptions();
+    const submitLabel = "Apply Adjustment";
 
     openResourcesModal({
         title: `Adjust Stock - ${escapeHtml(item.name)}`,
@@ -278,16 +286,19 @@ window.openInventoryAdjustModal = async function (item) {
                 </div>
 
                 <div class="form-group">
-                    <label>Available Quantity</label>
+                    <label>Current Available</label>
                     <input type="text" value="${formatNumber(item.availableQuantity)}" disabled>
                 </div>
 
                 <div class="form-group">
                     <label>Action Type</label>
-                    <select name="actionType" id="inventoryActionTypeInput">
-                        ${INVENTORY_ACTION_OPTIONS.map(option => `
-                            <option value="${option}">${option}</option>
-                        `).join("")}
+                    <select name="actionType" id="inventoryAdjustActionType" required>
+                        <option value="ADJUSTMENT">ADJUSTMENT</option>
+                        <option value="DAMAGED">DAMAGED</option>
+                        <option value="RESTOCK">RESTOCK</option>
+                        <option value="RETURN">RETURN</option>
+                        <option value="DEPLOY">DEPLOY</option>
+                        <option value="CONSUMED">CONSUMED</option>
                     </select>
                 </div>
 
@@ -296,107 +307,76 @@ window.openInventoryAdjustModal = async function (item) {
                     <input type="number" name="quantity" min="1" required>
                 </div>
 
-                <div class="form-group searchable-group">
-                    <label>Incident</label>
-                    <input type="text" id="incidentLookupInput" autocomplete="off" placeholder="Search incident type, barangay, status, or ID">
-                    <input type="hidden" id="incidentLookupIdInput">
-                    <div class="searchable-dropdown" id="incidentLookupDropdown"></div>
-                </div>
-
-                <div class="form-group searchable-group">
-                    <label>Calamity</label>
-                    <input type="text" id="calamityLookupInput" autocomplete="off" placeholder="Search calamity type, severity, status, or ID">
-                    <input type="hidden" id="calamityLookupIdInput">
-                    <div class="searchable-dropdown" id="calamityLookupDropdown"></div>
+                <div class="form-group searchable-group full">
+                    <label>Linked Incident (Optional)</label>
+                    <input type="text" id="inventoryAdjustIncidentInput" autocomplete="off" placeholder="Search incident">
+                    <input type="hidden" id="inventoryAdjustIncidentIdInput">
+                    <div class="searchable-dropdown" id="inventoryAdjustIncidentDropdown"></div>
                 </div>
             </form>
         `,
         footerHtml: `
             <button class="btn btn-secondary" id="cancelInventoryAdjustBtn">Cancel</button>
-            <button class="btn btn-primary" id="submitInventoryAdjustBtn">Apply Adjustment</button>
+            <button class="btn btn-primary" id="submitInventoryAdjustBtn">${submitLabel}</button>
         `
     });
 
     bindSearchableDropdown({
-        inputId: "incidentLookupInput",
-        dropdownId: "incidentLookupDropdown",
-        hiddenInputId: "incidentLookupIdInput",
+        inputId: "inventoryAdjustIncidentInput",
+        dropdownId: "inventoryAdjustIncidentDropdown",
+        hiddenInputId: "inventoryAdjustIncidentIdInput",
         options: incidentOptions,
         getLabel: option => option.label,
-        getValue: option => option.value,
-        onSelect: () => {
-            const calamityHidden = document.getElementById("calamityLookupIdInput");
-            const calamityInput = document.getElementById("calamityLookupInput");
-            if (calamityHidden) calamityHidden.value = "";
-            if (calamityInput) calamityInput.value = "";
-        }
-    });
-
-    bindSearchableDropdown({
-        inputId: "calamityLookupInput",
-        dropdownId: "calamityLookupDropdown",
-        hiddenInputId: "calamityLookupIdInput",
-        options: calamityOptions,
-        getLabel: option => option.label,
-        getValue: option => option.value,
-        onSelect: () => {
-            const incidentHidden = document.getElementById("incidentLookupIdInput");
-            const incidentInput = document.getElementById("incidentLookupInput");
-            if (incidentHidden) incidentHidden.value = "";
-            if (incidentInput) incidentInput.value = "";
-        }
+        getValue: option => option.value
     });
 
     document.getElementById("cancelInventoryAdjustBtn")?.addEventListener("click", closeResourcesModal);
 
-    document.getElementById("submitInventoryAdjustBtn")?.addEventListener("click", async () => {
+    document.getElementById("submitInventoryAdjustBtn")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const originalText = button.textContent;
+
         const form = document.getElementById("inventoryAdjustForm");
         const formData = new FormData(form);
+        const incidentIdRaw = document.getElementById("inventoryAdjustIncidentIdInput")?.value?.trim();
 
-        const incidentIdRaw = document.getElementById("incidentLookupIdInput")?.value?.trim();
-        const calamityIdRaw = document.getElementById("calamityLookupIdInput")?.value?.trim();
+        const payload = {
+            actionType: formData.get("actionType")?.toString().trim() || "",
+            quantity: Number(formData.get("quantity") || 0),
+            incidentId: incidentIdRaw ? Number(incidentIdRaw) : null,
+            performedById: null
+        };
 
-        if (incidentIdRaw && calamityIdRaw) {
-            showToast("Choose only one operation link: either incident or calamity.", "error");
+        if (!payload.actionType) {
+            showToast("Please select an action type.", "error");
             return;
         }
 
-        const payload = {
-            actionType: formData.get("actionType")?.toString().trim(),
-            quantity: Number(formData.get("quantity") || 0),
-            incidentId: incidentIdRaw ? Number(incidentIdRaw) : null,
-            calamityId: calamityIdRaw ? Number(calamityIdRaw) : null
-        };
+        if (payload.quantity <= 0) {
+            showToast("Quantity must be greater than 0.", "error");
+            return;
+        }
 
         try {
+            button.disabled = true;
+            button.textContent = "Applying...";
+
             await apiSend(`/inventory/${item.id}/adjust-stock`, "PATCH", payload);
 
             closeResourcesModal();
-            showToast("Inventory adjusted successfully.", "success");
+            showToast("Stock adjustment applied successfully.", "success");
+
             await refreshResourcesHeader();
             await window.loadInventorySection();
             if (window.loadReliefSection) await window.loadReliefSection();
         } catch (error) {
             const parsed = await parseResourceError(error);
-
-            if (parsed.code === "APPROVAL_REQUIRED") {
-                await submitResourceApprovalRequest({
-                    requestType: "STOCK_ADJUSTMENT",
-                    title: `Stock adjustment request for ${item.name}`,
-                    description: `Requested stock adjustment for inventory item ${item.name}.`,
-                    referenceType: "INVENTORY",
-                    referenceId: item.id,
-                    payloadJson: JSON.stringify(payload)
-                });
-
-                closeResourcesModal();
-                showToast("Approval request submitted for stock adjustment.", "info");
-                return;
-            }
-
             console.error("Failed to adjust stock", error);
             showToast(parsed.message || "Failed to adjust stock.", "error");
-}
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
     });
 };
 
@@ -408,6 +388,9 @@ window.openInventoryProcurementModal = async function (item) {
         loadIncidentOptions(),
         loadCalamityOptions()
     ]);
+
+    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const submitLabel = isElevated ? "Save Procurement" : "Request Procurement";
 
     openResourcesModal({
         title: `Procure / Replenish - ${escapeHtml(item.name)}`,
@@ -474,7 +457,7 @@ window.openInventoryProcurementModal = async function (item) {
         `,
         footerHtml: `
             <button class="btn btn-secondary" id="cancelInventoryProcurementBtn">Cancel</button>
-            <button class="btn btn-primary" id="submitInventoryProcurementBtn">Save Procurement</button>
+            <button class="btn btn-primary" id="submitInventoryProcurementBtn">${submitLabel}</button>
         `
     });
 
@@ -564,19 +547,41 @@ window.openInventoryProcurementModal = async function (item) {
 
         try {
             button.disabled = true;
-            button.textContent = "Saving...";
+            button.textContent = isElevated ? "Saving..." : "Submitting...";
 
-            await apiSend(`/inventory/${item.id}/procure`, "PATCH", payload);
+            const result = await apiSend(`/inventory/${item.id}/procure`, "PATCH", payload);
 
             closeResourcesModal();
-            showToast("Procurement saved successfully.", "success");
-            await refreshResourcesHeader();
-            await window.loadInventorySection();
-            if (window.loadReliefSection) await window.loadReliefSection();
-            if (window.loadBudgetSection) await window.loadBudgetSection();
+
+            const message =
+                (result && typeof result === "object" && result.message)
+                    ? result.message
+                    : (isElevated
+                        ? "Procurement saved successfully."
+                        : "Procurement request submitted for approval.");
+
+            showToast(message, isElevated ? "success" : "info");
+
+            if (isElevated) {
+                await refreshResourcesHeader();
+                await window.loadInventorySection();
+                if (window.loadReliefSection) await window.loadReliefSection();
+                if (window.loadBudgetSection) await window.loadBudgetSection();
+            } else {
+                await refreshGlobalAdminBadgesIfAvailable();
+            }
         } catch (error) {
+            const parsed = await parseResourceError(error);
+
+            if (isApprovalSubmittedMessage(parsed.message)) {
+                closeResourcesModal();
+                showToast(parsed.message || "Procurement request submitted for approval.", "info");
+                await refreshGlobalAdminBadgesIfAvailable();
+                return;
+            }
+
             console.error("Failed to save procurement", error);
-            showToast("Failed to save procurement.", "error");
+            showToast(parsed.message || "Failed to save procurement.", "error");
         } finally {
             button.disabled = false;
             button.textContent = originalText;

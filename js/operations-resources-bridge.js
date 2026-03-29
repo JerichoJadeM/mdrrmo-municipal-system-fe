@@ -869,8 +869,16 @@
                 renderTransitionWarnings(typeof pendingTransitionWarnings !== "undefined" ? pendingTransitionWarnings : []);
             }
 
+            if (typeof loadTransitionAcknowledgementStatus === "function") {
+                await loadTransitionAcknowledgementStatus(config);
+            }
+
             if (typeof renderTransitionAcknowledgements === "function") {
                 renderTransitionAcknowledgements(typeof pendingTransitionWarnings !== "undefined" ? pendingTransitionWarnings : []);
+            }
+
+            if (typeof syncTransitionReviewButtonLabel === "function") {
+                syncTransitionReviewButtonLabel(typeof pendingTransitionWarnings !== "undefined" ? pendingTransitionWarnings : []);
             }
 
             patchActionButtonsBridge(document);

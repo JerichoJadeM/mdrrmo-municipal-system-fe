@@ -532,20 +532,10 @@ function openDeleteReliefPackTemplateModal(templateId, templateName) {
 }
 
 async function openReliefPackDistributionModal(readiness) {
-    const [incidentOptionsRaw, calamityOptionsRaw] = await Promise.all([
-        loadIncidentOptions(),
-        loadCalamityOptions()
-    ]);
-
-    const incidentOptions = (incidentOptionsRaw || []).filter(option => {
-        const status = String(option.status || "").toUpperCase();
-        return status !== "RESOLVED";
-    });
-
-    const calamityOptions = (calamityOptionsRaw || []).filter(option => {
-        const status = String(option.status || "").toUpperCase();
-        return status !== "ENDED";
-    });
+    const operations = await loadReliefOperationOptions();
+    const centers = await loadEvacuationActivationOptions();
+    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const submitLabel = isElevated ? "Distribute Pack" : "Request Pack Distribution";
 
     openResourcesModal({
         title: `Distribute Pack - ${escapeHtml(readiness.templateName)}`,
@@ -557,16 +547,16 @@ async function openReliefPackDistributionModal(readiness) {
                 </div>
 
                 <div class="form-group">
-                    <label>Available Packs</label>
+                    <label>Max Producible Packs</label>
                     <input type="text" value="${formatNumber(readiness.maxProduciblePacks)}" disabled>
                 </div>
 
-                <div class="form-group">
-                    <label>Operation Type</label>
-                    <select id="reliefPackOperationType">
-                        <option value="INCIDENT">Incident</option>
-                        <option value="CALAMITY">Calamity</option>
-                    </select>
+                <div class="form-group searchable-group full">
+                    <label>Operation</label>
+                    <input type="text" id="reliefPackOperationInput" autocomplete="off" placeholder="Search incident or calamity" required>
+                    <input type="hidden" id="reliefPackOperationTypeInput">
+                    <input type="hidden" id="reliefPackOperationIdInput">
+                    <div class="searchable-dropdown" id="reliefPackOperationDropdown"></div>
                 </div>
 
                 <div class="form-group">
@@ -574,145 +564,129 @@ async function openReliefPackDistributionModal(readiness) {
                     <input type="number" name="packCount" min="1" max="${Number(readiness.maxProduciblePacks || 0)}" required>
                 </div>
 
-                <div class="form-group searchable-group" id="reliefPackIncidentGroup">
-                    <label>Incident</label>
-                    <input type="text" id="reliefPackIncidentInput" autocomplete="off" placeholder="Search incident">
-                    <input type="hidden" id="reliefPackIncidentIdInput">
-                    <div class="searchable-dropdown" id="reliefPackIncidentDropdown"></div>
+                <div class="form-group searchable-group full">
+                    <label>Evacuation Center (Optional)</label>
+                    <input type="text" id="reliefPackCenterInput" autocomplete="off" placeholder="Search evacuation center">
+                    <input type="hidden" id="reliefPackCenterIdInput">
+                    <div class="searchable-dropdown" id="reliefPackCenterDropdown"></div>
                 </div>
 
-                <div class="form-group searchable-group hidden" id="reliefPackCalamityGroup">
-                    <label>Calamity</label>
-                    <input type="text" id="reliefPackCalamityInput" autocomplete="off" placeholder="Search calamity">
-                    <input type="hidden" id="reliefPackCalamityIdInput">
-                    <div class="searchable-dropdown" id="reliefPackCalamityDropdown"></div>
-                </div>
-
-                <div class="form-group searchable-group hidden" id="reliefPackEvacuationGroup">
-                    <label>Evacuation Center</label>
-                    <input type="text" id="reliefPackEvacuationInput" autocomplete="off" placeholder="Search evacuation center">
-                    <input type="hidden" id="reliefPackEvacuationIdInput">
-                    <div class="searchable-dropdown" id="reliefPackEvacuationDropdown"></div>
-                </div>
-
-                <div class="form-group full">
-                    <div class="metric-card">
-                        <div class="metric-label">Estimated Total Pack Value</div>
-                        <div class="metric-value" id="reliefPackDistributionValue">${renderPackCost(readiness)}</div>
+                ${
+                    !isElevated
+                        ? `
+                    <div class="form-group full">
+                        <div class="info-pill">
+                            <i class="fas fa-clipboard-check"></i>
+                            This pack distribution may require manager/admin approval before execution.
+                        </div>
                     </div>
-                </div>
+                `
+                        : ""
+                }
             </form>
         `,
         footerHtml: `
-            <button class="btn btn-secondary" id="cancelReliefPackDistributionBtn" type="button">Cancel</button>
-            <button class="btn btn-primary" id="submitReliefPackDistributionBtn" type="button">Submit Pack Distribution</button>
+            <button class="btn btn-secondary" id="cancelReliefPackDistributionBtn">Cancel</button>
+            <button class="btn btn-primary" id="submitReliefPackDistributionBtn">${submitLabel}</button>
         `
     });
 
-    try {
-        bindSearchableDropdown({
-            inputId: "reliefPackIncidentInput",
-            dropdownId: "reliefPackIncidentDropdown",
-            hiddenInputId: "reliefPackIncidentIdInput",
-            options: incidentOptions,
-            getLabel: option => option.label,
-            getValue: option => option.value,
-            onSelect: async selected => {
-                await handleReliefPackOperationSelection("INCIDENT", selected);
-            }
-        });
+    bindSearchableDropdown({
+        inputId: "reliefPackOperationInput",
+        dropdownId: "reliefPackOperationDropdown",
+        options: operations,
+        getLabel: option => option.label,
+        getValue: option => option.value,
+        onSelect: selected => {
+            const typeNode = document.getElementById("reliefPackOperationTypeInput");
+            const idNode = document.getElementById("reliefPackOperationIdInput");
+            if (typeNode) typeNode.value = selected.meta?.type || "";
+            if (idNode) idNode.value = selected.meta?.id || "";
+        }
+    });
 
-        bindSearchableDropdown({
-            inputId: "reliefPackCalamityInput",
-            dropdownId: "reliefPackCalamityDropdown",
-            hiddenInputId: "reliefPackCalamityIdInput",
-            options: calamityOptions,
-            getLabel: option => option.label,
-            getValue: option => option.value,
-            onSelect: async selected => {
-                await handleReliefPackOperationSelection("CALAMITY", selected);
-            }
-        });
-    } catch (error) {
-        console.error("Failed to bind pack distribution dropdowns", error);
-    }
+    bindSearchableDropdown({
+        inputId: "reliefPackCenterInput",
+        dropdownId: "reliefPackCenterDropdown",
+        hiddenInputId: "reliefPackCenterIdInput",
+        options: centers,
+        getLabel: option => option.label,
+        getValue: option => option.value
+    });
 
-    bindReliefPackOperationToggle();
-    bindReliefPackDistributionValuePreview(readiness);
+    document.getElementById("cancelReliefPackDistributionBtn")?.addEventListener("click", closeResourcesModal);
 
-    const cancelBtn = document.getElementById("cancelReliefPackDistributionBtn");
-    const submitBtn = document.getElementById("submitReliefPackDistributionBtn");
+    document.getElementById("submitReliefPackDistributionBtn")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const originalText = button.textContent;
 
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", () => {
+        const form = document.getElementById("reliefPackDistributionForm");
+        const formData = new FormData(form);
+
+        const operationType = document.getElementById("reliefPackOperationTypeInput")?.value?.trim();
+        const operationIdRaw = document.getElementById("reliefPackOperationIdInput")?.value?.trim();
+        const centerIdRaw = document.getElementById("reliefPackCenterIdInput")?.value?.trim();
+
+        if (!operationType || !operationIdRaw) {
+            showToast("Please select an incident or calamity.", "error");
+            return;
+        }
+
+        const packCount = Number(formData.get("packCount") || 0);
+        if (packCount <= 0) {
+            showToast("Pack count must be greater than 0.", "error");
+            return;
+        }
+
+        if (Number(readiness.maxProduciblePacks || 0) > 0 && packCount > Number(readiness.maxProduciblePacks)) {
+            showToast("Pack count exceeds max producible packs.", "error");
+            return;
+        }
+
+        const payload = {
+            packCount,
+            evacuationActivationId: centerIdRaw ? Number(centerIdRaw) : null
+        };
+
+        const endpoint =
+            operationType === "INCIDENT"
+                ? `/relief-pack-templates/${readiness.templateId}/distribute/incidents/${Number(operationIdRaw)}`
+                : `/relief-pack-templates/${readiness.templateId}/distribute/calamities/${Number(operationIdRaw)}`;
+
+        try {
+            button.disabled = true;
+            button.textContent = isElevated ? "Distributing..." : "Submitting...";
+
+            await apiSend(endpoint, "POST", payload);
+
             closeResourcesModal();
-        });
-    }
+            showToast(
+                isElevated
+                    ? "Relief pack distributed successfully."
+                    : "Relief pack distribution completed successfully.",
+                "success"
+            );
 
-    if (submitBtn) {
-        submitBtn.addEventListener("click", async (event) => {
-            const button = event.currentTarget;
-            const originalText = button.textContent;
+            await refreshResourcesHeader();
+            if (window.loadReliefSection) await window.loadReliefSection();
+            await window.loadInventorySection();
+        } catch (error) {
+            const parsed = await parseResourceError(error);
 
-            const form = document.getElementById("reliefPackDistributionForm");
-            const formData = new FormData(form);
-
-            const operationType = document.getElementById("reliefPackOperationType")?.value;
-            const incidentIdRaw = document.getElementById("reliefPackIncidentIdInput")?.value?.trim();
-            const calamityIdRaw = document.getElementById("reliefPackCalamityIdInput")?.value?.trim();
-            const evacuationActivationIdRaw = document.getElementById("reliefPackEvacuationIdInput")?.value?.trim();
-
-            if (operationType === "INCIDENT" && !incidentIdRaw) {
-                showToast("Please select an incident.", "error");
-                return;
-            }
-
-            if (operationType === "CALAMITY" && !calamityIdRaw) {
-                showToast("Please select a calamity.", "error");
-                return;
-            }
-
-            const packCount = Number(formData.get("packCount") || 0);
-
-            if (packCount <= 0) {
-                showToast("Pack count must be greater than 0.", "error");
-                return;
-            }
-
-            if (packCount > Number(readiness.maxProduciblePacks || 0)) {
-                showToast("Pack count exceeds producible pack limit.", "error");
-                return;
-            }
-
-            const payload = {
-                packCount,
-                evacuationActivationId: evacuationActivationIdRaw ? Number(evacuationActivationIdRaw) : null
-            };
-
-            try {
-                button.disabled = true;
-                button.textContent = "Submitting...";
-
-                if (operationType === "INCIDENT") {
-                    await apiSend(`/relief-pack-templates/${readiness.templateId}/distribute/incidents/${incidentIdRaw}`, "POST", payload);
-                } else {
-                    await apiSend(`/relief-pack-templates/${readiness.templateId}/distribute/calamities/${calamityIdRaw}`, "POST", payload);
-                }
-
+            if (isApprovalSubmittedMessage(parsed.message)) {
                 closeResourcesModal();
-                showToast("Relief pack distributed successfully.", "success");
-                await refreshResourcesHeader();
-                await window.loadReliefSection();
-                await window.loadInventorySection();
-            } catch (error) {
-                console.error("Failed to distribute relief pack", error);
-                showToast("Failed to distribute relief pack.", "error");
-            } finally {
-                button.disabled = false;
-                button.textContent = originalText;
+                showToast(parsed.message || "Relief pack distribution request submitted for approval.", "info");
+                await refreshGlobalAdminBadgesIfAvailable();
+                return;
             }
-        });
-    }
+
+            console.error("Failed to distribute relief pack", error);
+            showToast(parsed.message || "Failed to distribute relief pack.", "error");
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    });
 }
 
 function bindReliefPackOperationToggle() {
@@ -809,27 +783,17 @@ function bindReliefPackEvacuationDropdown(options) {
 /* ---------- Existing direct relief distribution ---------- */
 
 async function openReliefDistributionModal(item) {
-    const [incidentOptionsRaw, calamityOptionsRaw] = await Promise.all([
-        loadIncidentOptions(),
-        loadCalamityOptions()
-    ]);
-
-    const incidentOptions = (incidentOptionsRaw || []).filter(option => {
-        const status = String(option.status || "").toUpperCase();
-        return status !== "RESOLVED";
-    });
-
-    const calamityOptions = (calamityOptionsRaw || []).filter(option => {
-        const status = String(option.status || "").toUpperCase();
-        return status !== "ENDED";
-    });
+    const operations = await loadReliefOperationOptions();
+    const centers = await loadEvacuationActivationOptions();
+    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const submitLabel = isElevated ? "Distribute Item" : "Request Distribution";
 
     openResourcesModal({
         title: `Distribute Relief - ${escapeHtml(item.name)}`,
         bodyHtml: `
             <form id="reliefDistributionForm" class="form-grid">
                 <div class="form-group">
-                    <label>Item</label>
+                    <label>Inventory Item</label>
                     <input type="text" value="${escapeHtml(item.name)}" disabled>
                 </div>
 
@@ -838,80 +802,68 @@ async function openReliefDistributionModal(item) {
                     <input type="text" value="${formatNumber(item.availableQuantity)} ${escapeHtml(item.unit || "")}" disabled>
                 </div>
 
-                <div class="form-group">
-                    <label>Operation Type</label>
-                    <select id="reliefOperationType">
-                        <option value="INCIDENT">Incident</option>
-                        <option value="CALAMITY">Calamity</option>
-                    </select>
+                <div class="form-group searchable-group full">
+                    <label>Operation</label>
+                    <input type="text" id="reliefOperationInput" autocomplete="off" placeholder="Search incident or calamity" required>
+                    <input type="hidden" id="reliefOperationTypeInput">
+                    <input type="hidden" id="reliefOperationIdInput">
+                    <div class="searchable-dropdown" id="reliefOperationDropdown"></div>
                 </div>
 
                 <div class="form-group">
                     <label>Quantity</label>
-                    <input type="number" name="quantity" min="1" max="${Number(item.availableQuantity || 0)}" required>
+                    <input type="number" name="quantity" min="1" required>
                 </div>
 
-                <div class="form-group searchable-group" id="reliefIncidentGroup">
-                    <label>Incident</label>
-                    <input type="text" id="reliefIncidentInput" autocomplete="off" placeholder="Search incident" required>
-                    <input type="hidden" id="reliefIncidentIdInput">
-                    <div class="searchable-dropdown" id="reliefIncidentDropdown"></div>
+                <div class="form-group searchable-group full">
+                    <label>Evacuation Center (Optional)</label>
+                    <input type="text" id="reliefCenterInput" autocomplete="off" placeholder="Search evacuation center">
+                    <input type="hidden" id="reliefCenterIdInput">
+                    <div class="searchable-dropdown" id="reliefCenterDropdown"></div>
                 </div>
 
-                <div class="form-group searchable-group hidden" id="reliefCalamityGroup">
-                    <label>Calamity</label>
-                    <input type="text" id="reliefCalamityInput" autocomplete="off" placeholder="Search calamity">
-                    <input type="hidden" id="reliefCalamityIdInput">
-                    <div class="searchable-dropdown" id="reliefCalamityDropdown"></div>
-                </div>
-
-                <div class="form-group searchable-group hidden" id="reliefEvacuationGroup">
-                    <label>Evacuation Center</label>
-                    <input type="text" id="reliefEvacuationInput" autocomplete="off" placeholder="Search evacuation center">
-                    <input type="hidden" id="reliefEvacuationIdInput">
-                    <div class="searchable-dropdown" id="reliefEvacuationDropdown"></div>
-                </div>
-
-                <div class="form-group full">
-                    <div class="metric-card">
-                        <div class="metric-label">Estimated Distribution Value</div>
-                        <div class="metric-value" id="reliefDistributionValue">${renderMoneyOrNoCost(item.estimatedUnitCost)}</div>
+                ${
+                    !isElevated
+                        ? `
+                    <div class="form-group full">
+                        <div class="info-pill">
+                            <i class="fas fa-clipboard-check"></i>
+                            This distribution may require manager/admin approval before execution.
+                        </div>
                     </div>
-                </div>
+                `
+                        : ""
+                }
             </form>
         `,
         footerHtml: `
             <button class="btn btn-secondary" id="cancelReliefDistributionBtn">Cancel</button>
-            <button class="btn btn-primary" id="submitReliefDistributionBtn">Submit Distribution</button>
+            <button class="btn btn-primary" id="submitReliefDistributionBtn">${submitLabel}</button>
         `
     });
 
     bindSearchableDropdown({
-        inputId: "reliefIncidentInput",
-        dropdownId: "reliefIncidentDropdown",
-        hiddenInputId: "reliefIncidentIdInput",
-        options: incidentOptions,
+        inputId: "reliefOperationInput",
+        dropdownId: "reliefOperationDropdown",
+        options: operations,
         getLabel: option => option.label,
         getValue: option => option.value,
-        onSelect: async selected => {
-            await handleReliefOperationSelection("INCIDENT", selected);
+        onSelect: selected => {
+            const typeNode = document.getElementById("reliefOperationTypeInput");
+            const idNode = document.getElementById("reliefOperationIdInput");
+            if (typeNode) typeNode.value = selected.meta?.type || "";
+            if (idNode) idNode.value = selected.meta?.id || "";
         }
     });
 
     bindSearchableDropdown({
-        inputId: "reliefCalamityInput",
-        dropdownId: "reliefCalamityDropdown",
-        hiddenInputId: "reliefCalamityIdInput",
-        options: calamityOptions,
+        inputId: "reliefCenterInput",
+        dropdownId: "reliefCenterDropdown",
+        hiddenInputId: "reliefCenterIdInput",
+        options: centers,
         getLabel: option => option.label,
-        getValue: option => option.value,
-        onSelect: async selected => {
-            await handleReliefOperationSelection("CALAMITY", selected);
-        }
+        getValue: option => option.value
     });
-
-    bindReliefOperationToggle();
-    bindReliefDistributionValuePreview(item);
 
     document.getElementById("cancelReliefDistributionBtn")?.addEventListener("click", closeResourcesModal);
 
@@ -922,57 +874,61 @@ async function openReliefDistributionModal(item) {
         const form = document.getElementById("reliefDistributionForm");
         const formData = new FormData(form);
 
-        const operationType = document.getElementById("reliefOperationType")?.value;
-        const incidentIdRaw = document.getElementById("reliefIncidentIdInput")?.value?.trim();
-        const calamityIdRaw = document.getElementById("reliefCalamityIdInput")?.value?.trim();
-        const evacuationActivationIdRaw = document.getElementById("reliefEvacuationIdInput")?.value?.trim();
+        const operationType = document.getElementById("reliefOperationTypeInput")?.value?.trim();
+        const operationIdRaw = document.getElementById("reliefOperationIdInput")?.value?.trim();
+        const centerIdRaw = document.getElementById("reliefCenterIdInput")?.value?.trim();
 
-        if (operationType === "INCIDENT" && !incidentIdRaw) {
-            showToast("Please select an incident.", "error");
-            return;
-        }
-
-        if (operationType === "CALAMITY" && !calamityIdRaw) {
-            showToast("Please select a calamity.", "error");
+        if (!operationType || !operationIdRaw) {
+            showToast("Please select an incident or calamity.", "error");
             return;
         }
 
         const quantity = Number(formData.get("quantity") || 0);
-
         if (quantity <= 0) {
             showToast("Quantity must be greater than 0.", "error");
-            return;
-        }
-
-        if (quantity > Number(item.availableQuantity || 0)) {
-            showToast("Quantity exceeds available stock.", "error");
             return;
         }
 
         const payload = {
             inventoryId: Number(item.id),
             quantity,
-            evacuationActivationId: evacuationActivationIdRaw ? Number(evacuationActivationIdRaw) : null
+            evacuationActivationId: centerIdRaw ? Number(centerIdRaw) : null
         };
+
+        const endpoint =
+            operationType === "INCIDENT"
+                ? `/incidents/${Number(operationIdRaw)}/relief`
+                : `/calamities/${Number(operationIdRaw)}/relief`;
 
         try {
             button.disabled = true;
-            button.textContent = "Submitting...";
+            button.textContent = isElevated ? "Distributing..." : "Submitting...";
 
-            if (operationType === "INCIDENT") {
-                await apiSend(`/incidents/${incidentIdRaw}/relief`, "POST", payload);
-            } else {
-                await apiSend(`/calamities/${calamityIdRaw}/relief`, "POST", payload);
-            }
+            await apiSend(endpoint, "POST", payload);
 
             closeResourcesModal();
-            showToast("Relief distribution recorded successfully.", "success");
+            showToast(
+                isElevated
+                    ? "Relief distributed successfully."
+                    : "Relief distribution completed successfully.",
+                "success"
+            );
+
             await refreshResourcesHeader();
-            await window.loadReliefSection();
+            if (window.loadReliefSection) await window.loadReliefSection();
             await window.loadInventorySection();
         } catch (error) {
+            const parsed = await parseResourceError(error);
+
+            if (isApprovalSubmittedMessage(parsed.message)) {
+                closeResourcesModal();
+                showToast(parsed.message || "Relief distribution request submitted for approval.", "info");
+                await refreshGlobalAdminBadgesIfAvailable();
+                return;
+            }
+
             console.error("Failed to distribute relief", error);
-            showToast("Failed to distribute relief.", "error");
+            showToast(parsed.message || "Failed to distribute relief.", "error");
         } finally {
             button.disabled = false;
             button.textContent = originalText;
