@@ -1,16 +1,17 @@
 window.loadBudgetSection = async function () {
     try {
-        const [budgets, currentSummary, historyRows, forecast] = await Promise.all([
+        const [budgets, currentSummary, historyRows, forecast, breakdown] = await Promise.all([
             apiGet("/budgets"),
             apiGet("/budgets/current-summary"),
             apiGet("/budgets/history"),
-            apiGet("/budgets/forecast/next-year")
+            apiGet("/budgets/forecast/next-year"),
+            apiGet("/budgets/forecast/next-year/breakdown")
         ]);
 
         renderBudgetToolbar(budgets || [], currentSummary);
         renderCurrentBudgetSummary(currentSummary);
         renderBudgetHistory(historyRows || []);
-        renderNextYearForecast(forecast);
+        renderNextYearForecast(forecast, breakdown);
 
         const selectedYear = Number(
             document.getElementById("budgetYearAnalyticsSelect")?.value || currentSummary?.year
@@ -233,7 +234,7 @@ function renderBudgetHistory(historyRows) {
     `;
 }
 
-function renderNextYearForecast(forecast) {
+function renderNextYearForecast(forecast, breakdown) {
     const container = document.getElementById("nextYearForecastContainer");
     if (!container) return;
 
@@ -260,6 +261,46 @@ function renderNextYearForecast(forecast) {
                 <strong>Assumptions:</strong> ${escapeHtml(forecast.assumptions || "-")}
             </div>
         </div>
+
+        ${
+            breakdown ? `
+                <div class="panel-head" style="margin-top: 16px;">
+                    <div><h2>Operations Forecast Breakdown</h2></div>
+                </div>
+
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <div class="metric-label">Incident Forecast Chunk</div>
+                        <div class="metric-value">${formatPeso(breakdown.incidentForecastTotal)}</div>
+                        <div class="metric-meta">${formatPercent(breakdown.incidentSharePercent)} of total</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-label">Calamity Forecast Chunk</div>
+                        <div class="metric-value">${formatPeso(breakdown.calamityForecastTotal)}</div>
+                        <div class="metric-meta">${formatPercent(breakdown.calamitySharePercent)} of total</div>
+                    </div>
+                </div>
+
+                <div class="panel-head" style="margin-top: 16px;">
+                    <div><h2>Incident Type Forecasts</h2></div>
+                </div>
+
+                ${renderOperationTypeForecastTable(breakdown.incidentTypeForecasts, "No incident type forecasts available.")}
+
+                <div class="panel-head" style="margin-top: 16px;">
+                    <div><h2>Calamity Type Forecasts</h2></div>
+                </div>
+
+                ${renderOperationTypeForecastTable(breakdown.calamityTypeForecasts, "No calamity type forecasts available.")}
+
+                <div class="panel-head" style="margin-top: 16px;">
+                    <div><h2>Category Allocation Forecast</h2></div>
+                </div>
+
+                ${renderCategoryAllocationForecastTable(breakdown.categoryAllocationForecasts)}
+            ` : ""
+        }
 
         <div class="panel-head" style="margin-top: 16px;">
             <div><h2>Forecast Drivers</h2></div>
@@ -321,6 +362,89 @@ function renderNextYearForecast(forecast) {
             </table>
         </div>
     `;
+}
+
+function renderOperationTypeForecastTable(rows, emptyMessage) {
+    if (!rows || !rows.length) {
+        return `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
+    }
+
+    return `
+        <div class="table-scroll-x">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Historical Count</th>
+                        <th>Historical Cost</th>
+                        <th>Avg. Cost</th>
+                        <th>Forecast</th>
+                        <th>Share</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            <td>${escapeHtml(row.type)}</td>
+                            <td>${formatNumber(row.historicalCount)}</td>
+                            <td>${formatPeso(row.historicalCost)}</td>
+                            <td>${formatPeso(row.historicalAverageCost)}</td>
+                            <td><strong>${formatPeso(row.forecastAmount)}</strong></td>
+                            <td>${formatPercent(row.sharePercent)}</td>
+                            <td>${escapeHtml(row.note || "-")}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderCategoryAllocationForecastTable(rows) {
+    if (!rows || !rows.length) {
+        return `<div class="empty-state">No category allocation forecast available.</div>`;
+    }
+
+    return `
+        <div class="table-scroll-x">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Category</th>
+                        <th>Forecast Allocation</th>
+                        <th>5Y Baseline</th>
+                        <th>Trend Adj.</th>
+                        <th>Rule-Based</th>
+                        <th>Historical Adj.</th>
+                        <th>Price Adj.</th>
+                        <th>Contingency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            <td>${escapeHtml(row.section)}</td>
+                            <td>${escapeHtml(row.category)}</td>
+                            <td><strong>${formatPeso(row.forecastAllocation)}</strong></td>
+                            <td>${formatPeso(row.historicalBaseline)}</td>
+                            <td>${formatPeso(row.trendAdjustment)}</td>
+                            <td>${formatPeso(row.ruleBasedAmount)}</td>
+                            <td>${formatPeso(row.historicalAdjustment)}</td>
+                            <td>${formatPeso(row.priceAdjustment)}</td>
+                            <td>${formatPeso(row.contingencyAmount)}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function formatPercent(value) {
+    if (value == null || Number.isNaN(Number(value))) return "--";
+    return `${Number(value).toFixed(2)}%`;
 }
 
 function renderBudgetAnalytics(analytics) {
