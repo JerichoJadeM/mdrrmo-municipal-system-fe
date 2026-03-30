@@ -1,236 +1,307 @@
 /**
  * MDRRMO Forecasting System - Login Script
- * Handles user authentication with enhanced validation and notifications
+ * Current login flow with feature/login page behavior,
+ * aligned with navbar.js and loginUserInfo.js storage expectations.
  */
 
-const form = document.getElementById('loginForm');
-const messageElement = document.getElementById('message');
-const messageContainer = document.getElementById('messageContainer');
-const submitBtn = document.getElementById('submitBtn');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
+const LOGIN_API = "http://localhost:8080/api/auth/login";
+const USER_INFO_API = "http://localhost:8080/api/users/info";
 
-/**
- * Display notification message with different types
- * @param {string} message - The message text to display
- * @param {string} type - Message type: 'success', 'error', 'warning', 'info', 'loading'
- * @param {number} duration - Duration to show message in milliseconds (0 = persistent)
- */
-function showNotification(message, type = 'info', duration = 5000) {
-    // Clear any existing classes
-    messageElement.className = '';
-    
-    // Set the message content
+const form = document.getElementById("loginForm");
+const messageElement = document.getElementById("message");
+const messageContainer = document.getElementById("messageContainer");
+const submitBtn = document.getElementById("submitBtn");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const SUBMIT_DEFAULT_TEXT = submitBtn ? submitBtn.textContent : "Login";
+
+function showNotification(message, type = "info", duration = 5000) {
+    if (!messageElement || !messageContainer) return;
+
+    messageElement.className = "";
     messageElement.textContent = message;
-    
-    // Add the appropriate type class
     messageElement.classList.add(type);
-    
-    // Show the container
-    messageContainer.classList.add('show');
-    
-    // Auto-hide after duration (except for loading messages)
-    if (duration > 0 && type !== 'loading') {
-        setTimeout(() => {
+    messageContainer.classList.add("show");
+
+    if (duration > 0 && type !== "loading") {
+        window.clearTimeout(showNotification._timer);
+        showNotification._timer = window.setTimeout(() => {
             hideNotification();
         }, duration);
     }
 }
 
-/**
- * Hide the notification message
- */
 function hideNotification() {
-    messageContainer.classList.remove('show');
-    messageElement.className = '';
-    messageElement.textContent = '';
+    if (!messageElement || !messageContainer) return;
+
+    messageContainer.classList.remove("show");
+    messageElement.className = "";
+    messageElement.textContent = "";
+    window.clearTimeout(showNotification._timer);
 }
 
-/**
- * Validate email or username format
- * @param {string} input - The email or username input
- * @returns {boolean} - True if valid
- */
+function setInputInvalidState(input, isInvalid) {
+    if (!input) return;
+    input.classList.toggle("is-invalid", Boolean(isInvalid));
+}
+
+function clearValidationState() {
+    setInputInvalidState(emailInput, false);
+    setInputInvalidState(passwordInput, false);
+}
+
 function validateEmailOrUsername(input) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const usernameRegex = /^[a-zA-Z0-9_.-]{3,}$/;
-    
     return emailRegex.test(input) || usernameRegex.test(input);
 }
 
-/**
- * Validate password format
- * @param {string} password - The password input
- * @returns {boolean} - True if valid
- */
 function validatePassword(password) {
-    return password && password.length >= 6;
+    return Boolean(password && password.length >= 6);
 }
 
-/**
- * Perform client-side form validation
- * @returns {boolean} - True if form is valid
- */
 function validateForm() {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    
-    // Clear previous message
+
+    clearValidationState();
     hideNotification();
-    
-    // Validate email/username
+
     if (!email) {
-        showNotification('Please enter your email address or username', 'warning', 4000);
+        setInputInvalidState(emailInput, true);
+        showNotification("Please enter your email address or username", "warning", 4000);
         emailInput.focus();
         return false;
     }
-    
+
     if (!validateEmailOrUsername(email)) {
-        showNotification('Please enter a valid email address or username (minimum 3 characters)', 'warning', 4000);
+        setInputInvalidState(emailInput, true);
+        showNotification("Please enter a valid email address or username (minimum 3 characters)", "warning", 4000);
         emailInput.focus();
         return false;
     }
-    
-    // Validate password
+
     if (!password) {
-        showNotification('Please enter your password', 'warning', 4000);
+        setInputInvalidState(passwordInput, true);
+        showNotification("Please enter your password", "warning", 4000);
         passwordInput.focus();
         return false;
     }
-    
+
     if (!validatePassword(password)) {
-        showNotification('Password must be at least 6 characters long', 'warning', 4000);
+        setInputInvalidState(passwordInput, true);
+        showNotification("Password must be at least 6 characters long", "warning", 4000);
         passwordInput.focus();
         return false;
     }
-    
+
     return true;
 }
 
-/**
- * Handle form submission
- */
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Validate form before submission
+function setSubmitState(state) {
+    if (!submitBtn) return;
+
+    submitBtn.disabled = state !== "idle";
+    submitBtn.classList.remove("is-loading", "is-redirecting");
+
+    if (state === "loading") {
+        submitBtn.classList.add("is-loading");
+        submitBtn.setAttribute("aria-busy", "true");
+        submitBtn.setAttribute("aria-label", "Logging in");
+        return;
+    }
+
+    if (state === "redirecting") {
+        submitBtn.classList.add("is-redirecting");
+        submitBtn.setAttribute("aria-busy", "true");
+        submitBtn.setAttribute("aria-label", "Redirecting");
+        return;
+    }
+
+    submitBtn.removeAttribute("aria-busy");
+    submitBtn.setAttribute("aria-label", SUBMIT_DEFAULT_TEXT);
+}
+
+function clearStoredLoginState() {
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userNumber");
+    localStorage.removeItem("userAuthorities");
+    localStorage.removeItem("loginUserInfo");
+    localStorage.removeItem("mdrrmo_profile_photo");
+}
+
+async function fetchJsonSafe(response) {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+        return await response.json();
+    }
+
+    const text = await response.text();
+    return { message: text };
+}
+
+async function fetchUserInfo(token) {
+    const response = await fetch(USER_INFO_API, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to load user info after login.");
+    }
+
+    return await response.json();
+}
+
+function persistUserInfo(userInfo) {
+    const fullName = userInfo?.fullName || "";
+    const email = userInfo?.email || "";
+    const number = userInfo?.number || "";
+    const authorities = Array.isArray(userInfo?.authorities) ? userInfo.authorities : [];
+    const profileImageUrl = userInfo?.profileImageUrl || "";
+
+    localStorage.setItem("userName", fullName);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userNumber", number);
+    localStorage.setItem("userAuthorities", JSON.stringify(authorities));
+    localStorage.setItem("loginUserInfo", JSON.stringify(userInfo || {}));
+    localStorage.setItem("mdrrmo_profile_photo", profileImageUrl);
+}
+
+function applyImmediateGlobalHooks(userInfo) {
+    const fullName = userInfo?.fullName || "";
+    const profileImageUrl = userInfo?.profileImageUrl || "";
+
+    if (typeof window.updateUserName === "function") {
+        window.updateUserName(fullName);
+    }
+
+    if (typeof window.updateUserAvatar === "function") {
+        window.updateUserAvatar(profileImageUrl, fullName);
+    }
+
+    if (typeof window.applyFrontendRbac === "function") {
+        window.applyFrontendRbac();
+    }
+
+    if (typeof window.refreshGlobalAdminBadges === "function") {
+        window.refreshGlobalAdminBadges();
+    }
+}
+
+function goToDashboard() {
+    window.location.href = "index.html";
+}
+
+async function handleLoginSubmit(event) {
+    event.preventDefault();
+
     if (!validateForm()) {
         return;
     }
-    
+
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    
+
     try {
-        // Show loading state
-        submitBtn.disabled = true;
-        showNotification('Logging in... Please wait', 'loading', 0);
-        
-        const response = await fetch('http://localhost:8080/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        setSubmitState("loading");
+        showNotification("Logging in... Please wait", "loading", 0);
+
+        const response = await fetch(LOGIN_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
         });
-        
-        const data = await response.json();
-        
+
+        const data = await fetchJsonSafe(response);
+
         if (!response.ok) {
-            // Handle specific error responses
-            const errorMessage = data.message || data.error || 'Invalid credentials. Please try again.';
-            showNotification(errorMessage, 'error', 5000);
-            submitBtn.disabled = false;
+            const errorMessage = data?.message || data?.error || "Invalid credentials. Please try again.";
+            setSubmitState("idle");
+            showNotification(errorMessage, "error", 5000);
             return;
         }
-        
-        // Save JWT in localStorage or sessionStorage
-        if (data.token) {
-            localStorage.setItem('jwtToken', data.token);
 
-            try {
-                const userInfoResponse = await fetch('http://localhost:8080/api/users/info', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${data.token}`
-                    }
-                });
-
-                if (userInfoResponse.ok) {
-                    const userInfo = await userInfoResponse.json();
-
-                    localStorage.setItem('userName', userInfo.fullName || '');
-                    localStorage.setItem('userEmail', userInfo.email || '');
-                    localStorage.setItem('userNumber', userInfo.number || '');
-                    localStorage.setItem('userAuthorities', JSON.stringify(userInfo.authorities || []));
-                } else {
-                    localStorage.setItem('userAuthorities', JSON.stringify([]));
-                }
-            } catch (e) {
-                localStorage.setItem('userAuthorities', JSON.stringify([]));
-            }
-
-            showNotification('Login successful! Redirecting...', 'success', 2000);
-
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1500);
+        if (!data?.token) {
+            setSubmitState("idle");
+            showNotification("Login response invalid. Please contact support.", "error", 5000);
+            return;
         }
-         else {
-            showNotification('Login response invalid. Please contact support.', 'error', 5000);
-            submitBtn.disabled = false;
+
+        localStorage.setItem("jwtToken", data.token);
+
+        try {
+            const userInfo = await fetchUserInfo(data.token);
+            persistUserInfo(userInfo);
+            applyImmediateGlobalHooks(userInfo);
+        } catch (userInfoError) {
+            console.warn("User info fetch after login failed:", userInfoError);
+            localStorage.setItem("userAuthorities", JSON.stringify([]));
+            localStorage.setItem("loginUserInfo", JSON.stringify({}));
+            localStorage.setItem("mdrrmo_profile_photo", "");
         }
-        
-    } catch (err) {
-        // Handle network or other errors
-        let errorMessage = 'An error occurred. Please check your connection and try again.';
-        
-        if (err.name === 'TypeError' && err.message.includes('fetch')) {
-            errorMessage = 'Unable to connect to the server. Please check your internet connection.';
-        } else if (err.message) {
-            errorMessage = err.message;
+
+        setSubmitState("redirecting");
+        showNotification("Login successful!", "success", 900);
+
+        window.setTimeout(() => {
+            goToDashboard();
+        }, 700);
+    } catch (error) {
+        console.error("Login failed:", error);
+        clearStoredLoginState();
+        setSubmitState("idle");
+
+        let errorMessage = "An error occurred. Please check your connection and try again.";
+
+        if (error.name === "TypeError" && String(error.message || "").includes("fetch")) {
+            errorMessage = "Unable to connect to the server. Please check your connection.";
+        } else if (error.message) {
+            errorMessage = error.message;
         }
-        
-        showNotification(errorMessage, 'error', 5000);
-        submitBtn.disabled = false;
-    }
-});
 
-/**
- * Clear error messages when user starts typing
- */
-emailInput.addEventListener('input', () => {
-    if (messageElement.classList.contains('error') || messageElement.classList.contains('warning')) {
-        hideNotification();
+        showNotification(errorMessage, "error", 5000);
     }
-});
-
-passwordInput.addEventListener('input', () => {
-    if (messageElement.classList.contains('error') || messageElement.classList.contains('warning')) {
-        hideNotification();
-    }
-});
-
-/**
- * Generic API request helper function
- * @param {string} url - The API endpoint
- * @param {object} options - Fetch options
- * @returns {Promise<object>} - The JSON response
- */
-async function apiRequest(url, options = {}) {
-    const token = localStorage.getItem('jwtToken');
-    options.headers = {
-        ...options.headers,
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : undefined
-    };
-    
-    const response = await fetch(url, options);
-    
-    if (!response.ok) {
-        const error = new Error('API error');
-        error.status = response.status;
-        throw error;
-    }
-    
-    return response.json();
 }
+
+function attachInputBehavior(input) {
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+        setInputInvalidState(input, false);
+
+        if (
+            messageElement.classList.contains("error") ||
+            messageElement.classList.contains("warning")
+        ) {
+            hideNotification();
+        }
+    });
+}
+
+function bootstrapLoginPage() {
+    clearValidationState();
+    setSubmitState("idle");
+
+    if (form) {
+        form.addEventListener("submit", handleLoginSubmit);
+    }
+
+    attachInputBehavior(emailInput);
+    attachInputBehavior(passwordInput);
+
+    // Optional: if already logged in, avoid showing login page again.
+    const existingToken = localStorage.getItem("jwtToken");
+    if (existingToken) {
+        setSubmitState("redirecting");
+        goToDashboard();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", bootstrapLoginPage);
