@@ -15,26 +15,46 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadDashboardPage() {
-    setDashboardLoadingState();
-
     try {
-        const raw = await fetchDashboardData();
-        const viewModel = buildDashboardViewModel(raw);
+        const summary = await fetchJsonSafe(`${API_BASE}/dashboard/summary`, {});
+        const incidents = await fetchJsonSafe(`${API_BASE}/incidents`, []);
+        const calamities = await fetchJsonSafe(`${API_BASE}/calamities`, []);
+        const budgets = await fetchJsonSafe(`${API_BASE}/budgets`, []);
+        const inventory = await fetchJsonSafe(`${API_BASE}/inventory`, []);
+        const notifications = await fetchJsonSafe(`${API_BASE}/notifications`, []);
+        const evacuationCenters = await fetchJsonSafe(`${API_BASE}/evacuation-centers`, []);
+        const budgetCurrent = await fetchJsonSafe(`${API_BASE}/resources/summary`, {});
+
+        const viewModel = buildDashboardViewModel({
+            summary,
+            incidents,
+            calamities,
+            budgets,
+            inventory,
+            notifications,
+            evacuationCenters,
+            budgetCurrent
+        });
 
         renderDashboard(viewModel);
-
-        requestAnimationFrame(() => {
-            renderDashboardCharts(viewModel);
-        });
+        renderDashboardCharts(viewModel);
     } catch (error) {
         console.error("Failed to load dashboard page", error);
-        const fallback = buildDashboardViewModel(getMockDashboardOverview());
 
-        renderDashboard(fallback);
-
-        requestAnimationFrame(() => {
-            renderDashboardCharts(fallback);
+        const fallbackModel = buildDashboardViewModel({
+            summary: {},
+            incidents: [],
+            calamities: [],
+            budgets: [],
+            inventory: [],
+            notifications: [],
+            evacuationCenters: [],
+            budgetCurrent: {}
         });
+
+        renderDashboard(fallbackModel);
+        renderDashboardCharts(fallbackModel);
+        showDashboardToast(error.message || "Failed to load dashboard data.", "error");
     }
 }
 
@@ -47,7 +67,60 @@ function buildDashboardViewModel(raw) {
     const weather = raw.weather || getMockWeatherForecast();
     const readiness = raw.readiness || getMockReadinessSummary();
     const alerts = raw.alerts || getMockAlertsOverview();
-    const budgetCurrent = raw.budgetCurrent || getMockBudgetCurrentSummary();
+    const budgetCurrentSource = raw.budgetCurrent || {};
+    const budgetCurrent = {
+        year:
+            Number(budgetCurrentSource.year) ||
+            Number(raw.summary?.year) ||
+            new Date().getFullYear(),
+
+        totalAllotment:
+            Number(budgetCurrentSource.totalAllotment) ||
+            Number(budgetCurrentSource.totalBudget) ||
+            Number(budgetCurrentSource.budgetTotal) ||
+            0,
+
+        totalAllocated:
+            Number(budgetCurrentSource.totalAllocated) ||
+            Number(budgetCurrentSource.allocated) ||
+            0,
+
+        totalObligations:
+            Number(budgetCurrentSource.totalObligations) ||
+            Number(budgetCurrentSource.totalSpent) ||
+            Number(budgetCurrentSource.budgetUsed) ||
+            0,
+
+        totalRemaining:
+            Number(budgetCurrentSource.totalRemaining) ||
+            Number(budgetCurrentSource.remainingBalance) ||
+            Number(budgetCurrentSource.remainingBudget) ||
+            Number(budgetCurrentSource.budgetRemaining) ||
+            0,
+
+        allocationRate:
+            Number(budgetCurrentSource.allocationRate) || 0,
+
+        utilizationRate:
+            Number(budgetCurrentSource.utilizationRate) ||
+            (
+                (Number(budgetCurrentSource.totalAllotment) || Number(budgetCurrentSource.totalBudget) || 0) > 0
+                    ? (
+                        (
+                            Number(budgetCurrentSource.totalObligations) ||
+                            Number(budgetCurrentSource.totalSpent) ||
+                            Number(budgetCurrentSource.budgetUsed) ||
+                            0
+                        ) /
+                        (
+                            Number(budgetCurrentSource.totalAllotment) ||
+                            Number(budgetCurrentSource.totalBudget) ||
+                            1
+                        )
+                    ) * 100
+                    : 0
+            )
+    };
     const budgetHistory = Array.isArray(raw.budgetHistory) && raw.budgetHistory.length
         ? raw.budgetHistory
         : getMockBudgetHistory();
@@ -71,10 +144,44 @@ function buildDashboardViewModel(raw) {
         ["active", "open"].includes(normalizeText(center.status))
     );
 
-    const totalEvacuees = sum(evacuationCenters.map(center => Number(center.currentEvacuees) || 0));
-    const totalCapacity = sum(evacuationCenters.map(center => Number(center.capacity) || 0));
-    const availableSlots = sum(evacuationCenters.map(center => Number(center.availableSlots) || 0));
-    const occupancyRate = totalCapacity > 0 ? Math.round((totalEvacuees / totalCapacity) * 100) : 0;
+    const totalEvacuees = sum(evacuationCenters.map(center =>
+        Number(center.currentEvacuees) ||
+        Number(center.evacueeCount) ||
+        Number(center.occupants) ||
+        0
+    ));
+
+    const totalCapacity = sum(evacuationCenters.map(center =>
+        Number(center.capacity) ||
+        Number(center.maxCapacity) ||
+        Number(center.totalCapacity) ||
+        0
+    ));
+
+    const availableSlots = sum(evacuationCenters.map(center => {
+        const explicitSlots = Number(center.availableSlots);
+        if (Number.isFinite(explicitSlots) && explicitSlots >= 0) {
+            return explicitSlots;
+        }
+
+        const capacity =
+            Number(center.capacity) ||
+            Number(center.maxCapacity) ||
+            Number(center.totalCapacity) ||
+            0;
+
+        const evacuees =
+            Number(center.currentEvacuees) ||
+            Number(center.evacueeCount) ||
+            Number(center.occupants) ||
+            0;
+
+        return Math.max(capacity - evacuees, 0);
+    }));
+
+    const occupancyRate = totalCapacity > 0
+        ? Math.round((totalEvacuees / totalCapacity) * 100)
+        : 0;
 
     const activeIncidents = incidents.filter(incident =>
         ["ongoing", "in_progress", "on_site"].includes(normalizeText(incident.status))
@@ -994,16 +1101,40 @@ function buildEventTrendData(incidents, calamities) {
 }
 
 function buildEvacuationOccupancyChartData(centers) {
-    return centers
-        .slice()
-        .sort((a, b) => Number(b.occupancyRate || 0) - Number(a.occupancyRate || 0))
-        .slice(0, 8)
-        .map(center => ({
-            label: center.name || `Center ${center.id || ""}`.trim(),
-            occupancyRate: Number(center.occupancyRate) || 0,
-            evacuees: Number(center.currentEvacuees) || 0,
-            reliefDistributed: Number(center.reliefDistributed || 0)
-        }));
+    return (Array.isArray(centers) ? centers : [])
+        .map(center => {
+            const capacity =
+                Number(center.capacity) ||
+                Number(center.maxCapacity) ||
+                Number(center.totalCapacity) ||
+                0;
+
+            const evacuees =
+                Number(center.currentEvacuees) ||
+                Number(center.evacueeCount) ||
+                Number(center.occupants) ||
+                0;
+
+            const occupancyRate =
+                Number(center.occupancyRate) ||
+                (capacity > 0 ? Math.round((evacuees / capacity) * 100) : 0);
+
+            return {
+                label:
+                    center.name ||
+                    center.centerName ||
+                    center.evacuationCenterName ||
+                    center.center ||
+                    `Center ${center.id || ""}`.trim(),
+                occupancyRate,
+                evacuees,
+                reliefDistributed: Number(center.reliefDistributed || 0),
+                capacity
+            };
+        })
+        .filter(center => center.capacity > 0 || center.evacuees > 0)
+        .sort((a, b) => b.occupancyRate - a.occupancyRate)
+        .slice(0, 8);
 }
 
 function buildBudgetCategoryChartData(rows) {
@@ -1044,6 +1175,52 @@ function buildTopResourcesChartData(rows) {
         .filter(item => item.value > 0)
         .sort((a, b) => b.value - a.value)
         .slice(0, 8);
+}
+
+function formatIncidentStatus(status) {
+    const normalized = String(status || "").trim().toUpperCase();
+
+    switch (normalized) {
+        case "ONGOING":
+            return "Reported";
+        case "IN_PROGRESS":
+            return "Dispatched";
+        case "ON_SITE":
+            return "On-Site";
+        case "RESOLVED":
+            return "Resolved";
+        case "ACTIVE":
+            return "Active";
+        case "MONITORING":
+            return "Monitoring";
+        case "ENDED":
+            return "Ended";
+        default:
+            return normalized
+                .toLowerCase()
+                .replaceAll("_", " ")
+                .replace(/\b\w/g, char => char.toUpperCase()) || "Unknown";
+    }
+}
+
+function formatCalamityStatus(status) {
+    const normalized = String(status || "").trim().toUpperCase();
+
+    switch (normalized) {
+        case "ACTIVE":
+            return "Active";
+        case "MONITORING":
+            return "Monitoring";
+        case "RESOLVED":
+            return "Resolved";
+        case "ENDED":
+            return "Ended";
+        default:
+            return normalized
+                .toLowerCase()
+                .replaceAll("_", " ")
+                .replace(/\b\w/g, char => char.toUpperCase()) || "Unknown";
+    }
 }
 
 function buildFallbackRecentActivity(incidents, calamities) {
@@ -1168,12 +1345,52 @@ function setDashboardLoadingState() {
     }
 }
 
-async function fetchJson(url) {
-    const response = await fetchWithAuth(url);
+async function fetchJson(url, options = {}) {
+    const token = localStorage.getItem("jwtToken");
+
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+        }
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+
     if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
+        let message = `Request failed: ${response.status}`;
+
+        try {
+            if (contentType.includes("application/json")) {
+                const errorBody = await response.json();
+                message = errorBody.message || errorBody.error || message;
+            } else {
+                const text = await response.text();
+                if (text) message = text;
+            }
+        } catch (_) {
+            // keep default message
+        }
+
+        throw new Error(message);
     }
-    return response.json();
+
+    if (contentType.includes("application/json")) {
+        return response.json();
+    }
+
+    return null;
+}
+
+async function fetchJsonSafe(url, fallbackValue = null, options = {}) {
+    try {
+        return await fetchJson(url, options);
+    } catch (error) {
+        console.warn(`Dashboard request failed for ${url}:`, error);
+        return fallbackValue;
+    }
 }
 
 async function fetchWithAuth(url, options = {}) {
