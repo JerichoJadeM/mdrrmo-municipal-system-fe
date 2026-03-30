@@ -1,3 +1,5 @@
+let evacuationPagination = null;
+
 window.loadEvacuationCentersSection = async function () {
     try {
         const params = new URLSearchParams();
@@ -25,84 +27,144 @@ function renderEvacuationCenters(centers) {
 
     if (!centers || !centers.length) {
         container.innerHTML = `<div class="empty-state">No evacuation centers found.</div>`;
+        evacuationPagination = null;
         return;
     }
 
     container.innerHTML = `
-        <table class="data-table evacuation-table">
-            <thead>
-                <tr>
-                    <th>Center</th>
-                    <th>Barangay</th>
-                    <th>Capacity</th>
-                    <th>Current Evacuees</th>
-                    <th>Available Slots</th>
-                    <th>Occupancy</th>
-                    <th>Usage</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th>Coordinates</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${centers.map(center => `
+        <div class="table-scroll-x">
+            <table class="data-table evacuation-table">
+                <thead>
                     <tr>
-                        <td>${escapeHtml(center.name)}</td>
-                        <td>${escapeHtml(center.barangayName || "-")}</td>
-                        <td>${formatNumber(center.capacity)}</td>
-                        <td>${formatNumber(center.currentEvacuees)}</td>
-                        <td>${formatNumber(center.availableSlots)}</td>
-                        <td>${formatNumber(center.occupancyRate)}%</td>
-                        <td>
-                            <span class="status-badge ${stockBadgeClass(center.capacityStatus)}">
-                                ${escapeHtml(center.capacityStatus || "-")}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="status-badge ${stockBadgeClass(center.status)}">
-                                ${escapeHtml(center.status || "-")}
-                            </span>
-                        </td>
-                        <td>${escapeHtml(center.locationDetails || "-")}</td>
-                        <td>${center.latitude != null && center.longitude != null ? `${center.latitude}, ${center.longitude}` : "-"}</td>
-                        <td>
-                            <div class="card-actions">
-                                ${canManageCenters() ? `
-                                    <button class="btn btn-sm btn-secondary" data-center-edit-id="${center.id}">
-                                        Edit
-                                    </button>
-                                ` : ""}
-                                ${center.latitude != null && center.longitude != null ? `
-                                    <button class="btn btn-sm btn-primary" data-center-map-id="${center.id}">
-                                        Show on Map
-                                    </button>
-                                ` : ""}
-                            </div>
-                        </td>
+                        <th>Center</th>
+                        <th>Barangay</th>
+                        <th>Status</th>
+                        <th>Capacity</th>
+                        <th>Occupancy</th>
+                        <th>Usage</th>
+                        <th>Location Details</th>
+                        <th>Coordinates</th>
+                        <th>Actions</th>
                     </tr>
-                `).join("")}
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="evacuationCentersTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="app-pagination-bar" id="evacuationPaginationBar">
+            <div class="app-pagination-left">
+                <div class="app-pagination-info" id="evacuationPaginationInfo">
+                    Showing 0 to 0 of 0 evacuation centers
+                </div>
+
+                <div class="app-page-size-wrap">
+                    <label for="evacuationPageSize">Rows per page</label>
+                    <select id="evacuationPageSize">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="app-pagination-controls" id="evacuationPaginationControls"></div>
+        </div>
     `;
 
-    container.querySelectorAll("[data-center-edit-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const center = centers.find(row => String(row.id) === btn.dataset.centerEditId);
-            if (center) {
-                openEvacuationCenterEditModal(center);
-            }
-        });
-    });
+    const renderRows = (pageRows) => {
+        const body = document.getElementById("evacuationCentersTableBody");
+        if (!body) return;
 
-    container.querySelectorAll("[data-center-map-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const center = centers.find(row => String(row.id) === btn.dataset.centerMapId);
-            if (center?.latitude != null && center?.longitude != null) {
-                window.open(`https://www.google.com/maps?q=${center.latitude},${center.longitude}`, "_blank");
-            }
+        body.innerHTML = pageRows.map(center => {
+            const capacity = Number(center.capacity || 0);
+            const occupants = Number(
+                center.currentOccupancy ??
+                center.currentEvacuees ??
+                center.occupancyCount ??
+                0
+            );
+
+            const occupancyPercent = capacity > 0
+                ? Math.min(100, Math.round((occupants / capacity) * 100))
+                : 0;
+
+            const usageLabel = center.usageStatus || center.usage || "-";
+            const hasMap = center.latitude != null && center.longitude != null;
+
+            return `
+                <tr>
+                    <td>${escapeHtml(center.name || "-")}</td>
+                    <td>${escapeHtml(center.barangayName || "-")}</td>
+                    <td>
+                        <span class="status-badge ${stockBadgeClass(center.status)}">
+                            ${escapeHtml(center.status || "-")}
+                        </span>
+                    </td>
+                    <td>${formatNumber(capacity)}</td>
+                    <td>${formatNumber(occupants)} (${occupancyPercent}%)</td>
+                    <td>
+                        <span class="status-badge ${stockBadgeClass(usageLabel)}">
+                            ${escapeHtml(usageLabel)}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(center.locationDetails || "-")}</td>
+                    <td>
+                        ${hasMap
+                            ? `${Number(center.latitude).toFixed(5)}, ${Number(center.longitude).toFixed(5)}`
+                            : "-"}
+                    </td>
+                    <td>
+                        <div class="card-actions">
+                            ${canManageCenters() ? `
+                                <button class="btn btn-sm btn-secondary" data-center-edit-id="${center.id}">
+                                    Edit
+                                </button>
+                            ` : ""}
+
+                            ${hasMap ? `
+                                <button class="btn btn-sm btn-light" data-center-map-id="${center.id}">
+                                    Map
+                                </button>
+                            ` : ""}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        body.querySelectorAll("[data-center-edit-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const center = centers.find(row => String(row.id) === btn.dataset.centerEditId);
+                if (center) {
+                    openEvacuationCenterEditModal(center);
+                }
+            });
         });
-    });
+
+        body.querySelectorAll("[data-center-map-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const center = centers.find(row => String(row.id) === btn.dataset.centerMapId);
+                if (center?.latitude != null && center?.longitude != null) {
+                    window.open(`https://www.google.com/maps?q=${center.latitude},${center.longitude}`, "_blank");
+                }
+            });
+        });
+    };
+
+    if (!evacuationPagination) {
+        evacuationPagination = createPaginationController({
+            initialPage: 1,
+            initialPageSize: 5,
+            rows: centers,
+            infoId: "evacuationPaginationInfo",
+            controlsId: "evacuationPaginationControls",
+            pageSizeSelectId: "evacuationPageSize",
+            itemLabel: "evacuation centers",
+            onRenderRows: renderRows
+        });
+    }
+
+    evacuationPagination.setRows(centers);
 }
 
 window.openEvacuationCenterCreateModal = function () {

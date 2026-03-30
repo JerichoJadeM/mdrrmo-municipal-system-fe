@@ -28,6 +28,8 @@ const INVENTORY_ACTION_OPTIONS = [
     "ADJUSTMENT"
 ];
 
+let inventoryPagination = null;
+
 window.loadInventorySection = async function () {
     try {
         const params = new URLSearchParams();
@@ -55,80 +57,132 @@ function renderInventoryTable(items) {
 
     if (!items || !items.length) {
         container.innerHTML = `<div class="empty-state">No inventory records found.</div>`;
+        inventoryPagination = null;
         return;
     }
 
     container.innerHTML = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Category</th>
-                    <th>Unit</th>
-                    <th>Available</th>
-                    <th>Total</th>
-                    <th>Reorder Level</th>
-                    <th>Critical</th>
-                    <th>Estimated Unit Cost</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${items.map(item => `
+        <div class="table-scroll-x">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td>${escapeHtml(item.name)}</td>
-                        <td>${escapeHtml(item.category || "-")}</td>
-                        <td>${escapeHtml(item.unit || "-")}</td>
-                        <td>${formatNumber(item.availableQuantity)}</td>
-                        <td>${formatNumber(item.totalQuantity)}</td>
-                        <td>${formatNumber(item.reorderLevel ?? 0)}</td>
-                        <td>${item.criticalItem ? "Yes" : "No"}</td>
-                        <td>${item.estimatedUnitCost != null ? formatPeso(item.estimatedUnitCost) : "₱ --"}</td>
-                        <td><span class="status-badge ${stockBadgeClass(item.stockStatus)}">${escapeHtml(item.stockStatus || "-")}</span></td>
-                        <td>${escapeHtml(item.location || "-")}</td>
-                        <td>
-                            <div class="card-actions">
-                                ${canManageInventoryMasterData() ? `
-                                    <button class="btn btn-sm btn-secondary" data-edit-id="${item.id}">Edit</button>
-                                ` : ""}
-                                ${hasAnyRole("MANAGER", "ADMIN") ? `
-                                    <button class="btn btn-sm btn-primary" data-adjust-id="${item.id}">Adjust Stock</button>
-                                ` : ""}
-                                ${canOperateInventory() ? `
-                                    <button class="btn btn-sm btn-secondary" data-procure-id="${item.id}">
-                                        ${hasAnyRole("MANAGER", "ADMIN") ? "Save Procurement" : "Request Procurement"}
-                                    </button>
-                                ` : ""}
-                            </div>
-                        </td>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Available</th>
+                        <th>Total</th>
+                        <th>Unit</th>
+                        <th>Reorder Level</th>
+                        <th>Estimated Unit Cost</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Critical</th>
+                        <th>Actions</th>
                     </tr>
-                `).join("")}
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="inventoryTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="app-pagination-bar" id="inventoryPaginationBar">
+            <div class="app-pagination-left">
+                <div class="app-pagination-info" id="inventoryPaginationInfo">
+                    Showing 0 to 0 of 0 inventory items
+                </div>
+
+                <div class="app-page-size-wrap">
+                    <label for="inventoryPageSize">Rows per page</label>
+                    <select id="inventoryPageSize">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="app-pagination-controls" id="inventoryPaginationControls"></div>
+        </div>
     `;
 
-    container.querySelectorAll("[data-edit-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const item = items.find(row => String(row.id) === btn.dataset.editId);
-            if (item) openInventoryEditModal(item);
-        });
-    });
+    const renderRows = (pageRows) => {
+        const body = document.getElementById("inventoryTableBody");
+        if (!body) return;
 
-    container.querySelectorAll("[data-adjust-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const item = items.find(row => String(row.id) === btn.dataset.adjustId);
-            if (item) openInventoryAdjustModal(item);
-        });
-    });
+        body.innerHTML = pageRows.map(item => `
+            <tr>
+                <td>${escapeHtml(item.name || "-")}</td>
+                <td>${escapeHtml(item.category || "-")}</td>
+                <td>${formatNumber(item.availableQuantity)}</td>
+                <td>${formatNumber(item.totalQuantity)}</td>
+                <td>${escapeHtml(item.unit || "-")}</td>
+                <td>${formatNumber(item.reorderLevel)}</td>
+                <td>${item.estimatedUnitCost != null ? formatPeso(item.estimatedUnitCost) : "No cost data"}</td>
+                <td>
+                    <span class="status-badge ${stockBadgeClass(item.stockStatus)}">
+                        ${escapeHtml(item.stockStatus || "-")}
+                    </span>
+                </td>
+                <td>${escapeHtml(item.location || "-")}</td>
+                <td>${item.criticalItem ? "Yes" : "No"}</td>
+                <td>
+                    <div class="card-actions">
+                        ${canManageInventoryMasterData() ? `
+                            <button class="btn btn-sm btn-secondary" data-edit-id="${item.id}">
+                                Edit
+                            </button>
+                        ` : ""}
 
-    container.querySelectorAll("[data-procure-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const item = items.find(row => String(row.id) === btn.dataset.procureId);
-            if (item) openInventoryProcurementModal(item);
+                        ${canOperateInventory() ? `
+                            <button class="btn btn-sm btn-light" data-adjust-id="${item.id}">
+                                Adjust
+                            </button>
+                        ` : ""}
+
+                        ${canOperateInventory() ? `
+                            <button class="btn btn-sm btn-primary" data-procure-id="${item.id}">
+                                Procure
+                            </button>
+                        ` : ""}
+                    </div>
+                </td>
+            </tr>
+        `).join("");
+
+        body.querySelectorAll("[data-edit-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = items.find(row => String(row.id) === btn.dataset.editId);
+                if (item) openInventoryEditModal(item);
+            });
         });
-    });
+
+        body.querySelectorAll("[data-adjust-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = items.find(row => String(row.id) === btn.dataset.adjustId);
+                if (item) openInventoryAdjustModal(item);
+            });
+        });
+
+        body.querySelectorAll("[data-procure-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = items.find(row => String(row.id) === btn.dataset.procureId);
+                if (item) openInventoryProcurementModal(item);
+            });
+        });
+    };
+
+    if (!inventoryPagination) {
+        inventoryPagination = createPaginationController({
+            initialPage: 1,
+            initialPageSize: 5,
+            rows: items,
+            infoId: "inventoryPaginationInfo",
+            controlsId: "inventoryPaginationControls",
+            pageSizeSelectId: "inventoryPageSize",
+            itemLabel: "inventory items",
+            onRenderRows: renderRows
+        });
+    }
+
+    inventoryPagination.setRows(items);
 }
 
 window.openInventoryCreateModal = function () {

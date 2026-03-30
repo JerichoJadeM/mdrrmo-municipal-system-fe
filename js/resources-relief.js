@@ -1,3 +1,5 @@
+let reliefInventoryPagination = null;
+
 window.loadReliefSection = async function () {
     try {
         const params = new URLSearchParams();
@@ -100,52 +102,94 @@ function renderReliefTable(items) {
 
     if (!items || !items.length) {
         container.innerHTML = `<div class="empty-state">No relief goods found.</div>`;
+        reliefInventoryPagination = null;
         return;
     }
 
     container.innerHTML = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Category</th>
-                    <th>Available</th>
-                    <th>Total</th>
-                    <th>Unit</th>
-                    <th>Estimated Unit Cost</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${items.map(item => `
+        <div class="table-scroll-x">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td>${escapeHtml(item.name)}</td>
-                        <td>${escapeHtml(item.category || "-")}</td>
-                        <td>${formatNumber(item.availableQuantity)}</td>
-                        <td>${formatNumber(item.totalQuantity)}</td>
-                        <td>${escapeHtml(item.unit || "-")}</td>
-                        <td>${renderMoneyOrNoCost(item.estimatedUnitCost)}</td>
-                        <td><span class="status-badge ${stockBadgeClass(item.stockStatus)}">${escapeHtml(item.stockStatus || "-")}</span></td>
-                        <td>${escapeHtml(item.location || "-")}</td>
-                        <td>
-                            <div class="card-actions">
-                                <button class="btn btn-sm btn-primary" data-distribute-id="${item.id}">Distribute</button>
-                            </div>
-                        </td>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Available</th>
+                        <th>Total</th>
+                        <th>Unit</th>
+                        <th>Estimated Unit Cost</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Actions</th>
                     </tr>
-                `).join("")}
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="reliefInventoryTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="app-pagination-bar" id="reliefInventoryPaginationBar">
+            <div class="app-pagination-left">
+                <div class="app-pagination-info" id="reliefInventoryPaginationInfo">
+                    Showing 0 to 0 of 0 relief items
+                </div>
+
+                <div class="app-page-size-wrap">
+                    <label for="reliefInventoryPageSize">Rows per page</label>
+                    <select id="reliefInventoryPageSize">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="app-pagination-controls" id="reliefInventoryPaginationControls"></div>
+        </div>
     `;
 
-    container.querySelectorAll("[data-distribute-id]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const item = items.find(row => String(row.id) === btn.dataset.distributeId);
-            if (item) openReliefDistributionModal(item);
+    const renderRows = (pageRows) => {
+        const body = document.getElementById("reliefInventoryTableBody");
+        if (!body) return;
+
+        body.innerHTML = pageRows.map(item => `
+            <tr>
+                <td>${escapeHtml(item.name)}</td>
+                <td>${escapeHtml(item.category || "-")}</td>
+                <td>${formatNumber(item.availableQuantity)}</td>
+                <td>${formatNumber(item.totalQuantity)}</td>
+                <td>${escapeHtml(item.unit || "-")}</td>
+                <td>${renderMoneyOrNoCost(item.estimatedUnitCost)}</td>
+                <td><span class="status-badge ${stockBadgeClass(item.stockStatus)}">${escapeHtml(item.stockStatus || "-")}</span></td>
+                <td>${escapeHtml(item.location || "-")}</td>
+                <td>
+                    <div class="card-actions">
+                        <button class="btn btn-sm btn-primary" data-distribute-id="${item.id}">Distribute</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("");
+
+        body.querySelectorAll("[data-distribute-id]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = items.find(row => String(row.id) === btn.dataset.distributeId);
+                if (item) openReliefDistributionModal(item);
+            });
         });
-    });
+    };
+
+    if (!reliefInventoryPagination) {
+        reliefInventoryPagination = createPaginationController({
+            initialPage: 1,
+            initialPageSize: 5,
+            rows: items,
+            infoId: "reliefInventoryPaginationInfo",
+            controlsId: "reliefInventoryPaginationControls",
+            pageSizeSelectId: "reliefInventoryPageSize",
+            itemLabel: "relief items",
+            onRenderRows: renderRows
+        });
+    }
+
+    reliefInventoryPagination.setRows(items);
 }
 
 async function renderReliefPackReadiness(templates) {

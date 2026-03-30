@@ -44,7 +44,7 @@
             </div>
 
             <div class="navbar-title">
-                <h1>MDRRM Weather Forecasting & Emergency Response</h1>
+                <h1>MDRRM Weather Forecasting &amp; Emergency Response</h1>
             </div>
 
             <div class="navbar-notifications">
@@ -64,362 +64,444 @@
         </div>
     </nav>
 
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-header-actions">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="sidebar-close" id="sidebarClose">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <ul class="sidebar-menu">
-        <li class="menu-item">
-            <a href="index.html">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="weather-forecast.html">
-                <i class="fas fa-cloud"></i>
-                <span>Weather Forecast</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="alerts-and-warnings.html">
-                <i class="fas fa-bell"></i>
-                <span>Alerts &amp; Warnings</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="disaster-management.html">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>Disaster Management</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="operations.html">
-                <i class="fas fa-tasks"></i>
-                <span>Operations</span>
-            </a>
-        </li>
-        <li class="menu-item active">
-            <a href="resources.html">
-                <i class="fas fa-cube"></i>
-                <span>Resources</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="admin.html">
-                <i class="fas fa-users-cog"></i>
-                <span>Administration</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="reports.html">
-                <i class="fas fa-file-alt"></i>
-                <span>Reports</span>
-            </a>
-        </li>
-        <li class="menu-item">
-            <a href="#settings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-        </li>
-    </ul>
-</aside>
-
-<div class="overlay" id="overlay"></div>
-
-<main class="page-content main-content resources-page">
-    <section class="resources-header">
-        <div>
-            <p class="page-eyebrow">Operational Support</p>
-            <h1>Resources</h1>
-            <p class="page-subtitle">
-                Monitor inventory, budget, relief goods, evacuation centers, and operational readiness.
-            </p>
-        </div>
-
-        <div class="resources-header-actions">
-            <button class="btn btn-secondary" id="refreshResourcesBtn">
-                <i class="fas fa-rotate-right"></i>
-                Refresh
-            </button>
-        </div>
-    </section>
-
-    <section class="resources-summary-grid" id="resourcesSummaryGrid">
-        <article class="summary-card">
-            <span class="summary-label">Inventory Items</span>
-            <strong id="summaryInventoryCount">--</strong>
-            <small id="summaryLowStockCount">-- low stock</small>
-        </article>
-
-        <article class="summary-card">
-            <span class="summary-label">Budget Remaining</span>
-            <strong id="summaryBudgetRemaining">₱ --</strong>
-            <small id="summaryBudgetUsed">Used: ₱ --</small>
-        </article>
-
-        <article class="summary-card">
-            <span class="summary-label">Relief Goods Ready</span>
-            <strong id="summaryReliefReadyCount">--</strong>
-            <small id="summaryReliefLowCount">-- low stock</small>
-        </article>
-
-        <article class="summary-card">
-            <span class="summary-label">Active Centers</span>
-            <strong id="summaryActiveCenters">--</strong>
-            <small id="summaryCenterOccupancy">Occupancy: --%</small>
-        </article>
-    </section>
-
-    <section class="readiness-risk-section">
-        <div class="panel-head">
-            <div>
-                <h2>Readiness Risk Summary</h2>
-                <p>Current logistics and capacity signals that may raise operational risk.</p>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         </div>
 
-        <div class="readiness-grid" id="readinessGrid">
-            <div class="loading-state">Loading readiness summary...</div>
-        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="index.html">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="weather-forecast.html">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="alerts-and-warnings.html">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts &amp; Warnings</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="disaster-management.html">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Disaster Management</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="operations.html">
+                    <i class="fas fa-tasks"></i>
+                    <span>Operations</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="resources.html">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="admin.html">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="reports.html">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main class="page-content main-content resources-page">
+        <section class="resources-header card-section page-hero resources-hero">
+            <div class="resources-header-content">
+                <div class="page-eyebrow">
+                    <i class="fas fa-cube"></i>
+                    Operational Support
+                </div>
+                <h1>Resources</h1>
+                <p class="page-subtitle">
+                    Monitor inventory, budget, relief goods, evacuation centers, and operational readiness
+                    in one consistent command workspace.
+                </p>
+            </div>
+
+        </section>
 
         <div class="readiness-warnings" id="readinessWarnings"></div>
-    </section>
 
-    <section class="resources-tabs">
-        <button class="resources-tab active" data-tab="inventory">Inventory</button>
-        <button class="resources-tab" data-tab="budget">Budget</button>
-        <button class="resources-tab" data-tab="relief">Relief Goods</button>
-        <button class="resources-tab" data-tab="evacuation">Evacuation Centers</button>
-    </section>
-
-    <section class="resources-section active" id="tab-inventory">
-        <div class="section-toolbar">
-            <div class="toolbar-left">
-                <input type="text" id="inventorySearchInput" placeholder="Search inventory item...">
-                <input type="text" id="inventoryCategoryFilter" placeholder="Category">
-                <select id="inventoryStockFilter">
-                    <option value="">All Stock Status</option>
-                    <option value="OK">OK</option>
-                    <option value="LOW">Low Stock</option>
-                    <option value="OUT">Out of Stock</option>
-                </select>
-            </div>
-            <div class="toolbar-right">
-                <button class="btn btn-primary" id="addInventoryBtn">
-                    <i class="fas fa-plus"></i>
-                    Add Inventory
-                </button>
-            </div>
-        </div>
-
-        <div class="panel-card">
-            <div id="inventoryTableContainer"></div>
-        </div>
-    </section>
-
-    <section class="resources-section" id="tab-budget">
-        <div id="budgetToolbarContainer"></div>
-
-        <div class="budget-grid">
-            <div class="panel-card">
-                <div class="panel-head">
-                    <h2>Current Budget</h2>
+        <section class="resources-summary-grid" id="resourcesSummaryGrid">
+            <article class="summary-card resources-summary-card">
+                <div class="summary-icon blue">
+                    <i class="fas fa-boxes-stacked"></i>
                 </div>
-                <div id="currentBudgetSummary"></div>
-            </div>
-
-            <div class="panel-card">
-                <div class="panel-head">
-                    <h2>Next-Year Forecast</h2>
+                <div class="summary-content">
+                    <h3>Inventory Items</h3>
+                    <div class="summary-value" id="summaryInventoryCount">--</div>
+                    <span id="summaryLowStockCount">-- low stock</span>
                 </div>
-                <div id="nextYearForecastContainer"></div>
+            </article>
+
+            <article class="summary-card resources-summary-card">
+                <div class="summary-icon slate">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>Budget Remaining</h3>
+                    <div class="summary-value" id="summaryBudgetRemaining">₱ --</div>
+                    <span id="summaryBudgetUsed">Used: ₱ --</span>
+                </div>
+            </article>
+
+            <article class="summary-card resources-summary-card">
+                <div class="summary-icon orange">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>Relief Goods Ready</h3>
+                    <div class="summary-value" id="summaryReliefReadyCount">--</div>
+                    <span id="summaryReliefLowCount">-- low stock</span>
+                </div>
+            </article>
+
+            <article class="summary-card resources-summary-card">
+                <div class="summary-icon cyan">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>Active Centers</h3>
+                    <div class="summary-value" id="summaryActiveCenters">--</div>
+                    <span id="summaryCenterOccupancy">Occupancy: --%</span>
+                </div>
+            </article>
+        </section>
+
+        <section class="readiness-risk-section card-section">
+            <div class="section-header">
+                <div>
+                    <h3>Readiness Risk Summary</h3>
+                    <p>Current logistics and capacity signals that may raise operational risk.</p>
+                </div>
             </div>
-        </div>
 
-        <div class="panel-card">
-            <div class="panel-head">
-                <h2>Budget History</h2>
+            <div class="readiness-grid" id="readinessGrid">
+                <div class="loading-state">Loading readiness summary...</div>
             </div>
-            <div id="budgetHistoryContainer"></div>
-        </div>
 
-        <div class="panel-card">
-            <div id="budgetAnalyticsContainer"></div>
-        </div>
-    </section>
+        </section>
 
-    <section class="resources-section" id="tab-relief">
-        <div class="section-toolbar">
-            <div class="toolbar-left">
-                <input type="text" id="reliefSearchInput" placeholder="Search relief item...">
-                <input type="text" id="reliefCategoryFilter" placeholder="Category">
-                <select id="reliefStatusFilter">
-                    <option value="">All Status</option>
-                    <option value="OK">Ready / OK</option>
-                    <option value="LOW">Low Stock</option>
-                    <option value="OUT">Out of Stock</option>
-                </select>
+        <section class="resources-tab-shell card-section">
+            <div class="resources-tabs" role="tablist" aria-label="Resources sections">
+                <button class="resources-tab active" data-tab="inventory" type="button">Inventory</button>
+                <button class="resources-tab" data-tab="budget" type="button">Budget</button>
+                <button class="resources-tab" data-tab="relief" type="button">Relief Goods</button>
+                <button class="resources-tab" data-tab="evacuation" type="button">Evacuation Centers</button>
             </div>
-            <div class="toolbar-right">
-                <button class="btn btn-secondary" id="refreshReliefPacksBtn">
-                    <i class="fas fa-rotate-right"></i>
-                    Refresh Packs
-                </button>
-                <button class="btn btn-primary" id="addReliefPackTemplateBtn">
-                    <i class="fas fa-plus"></i>
-                    Add Pack Template
-                </button>
-            </div>
-        </div>
+        </section>
 
-        <div class="resources-tabs relief-subtabs">
-            <button class="resources-tab active" data-relief-subtab="inventory">Relief Inventory</button>
-            <button class="resources-tab" data-relief-subtab="packs">Pack Readiness</button>
-        </div>
-
-        <div class="relief-subsection active" id="relief-subtab-inventory">
-            <div class="panel-card">
-                <div class="panel-head">
+        <section class="resources-section active" id="tab-inventory">
+            <div class="card-section resources-panel-shell">
+                <div class="section-toolbar inventory-toolbar inventory-toolbar-inline">
                     <div>
-                        <h2>Relief Goods Inventory</h2>
-                        <p>Available items for direct distribution or pack assembly.</p>
+                        <h3>Inventory</h3>
+                        <p>Track stock condition, categories, and item availability.</p>
+                    </div>
+                    <div class="toolbar-left inventory-inline-controls">
+                        <input type="text" id="inventorySearchInput" placeholder="Search inventory item...">
+                        <input type="text" id="inventoryCategoryFilter" placeholder="Category">
+                        <select id="inventoryStockFilter">
+                            <option value="">All Stock Status</option>
+                            <option value="OK">OK</option>
+                            <option value="LOW">Low Stock</option>
+                            <option value="OUT">Out of Stock</option>
+                        </select>
+                        <button class="btn btn-primary" id="addInventoryBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Inventory
+                        </button>
                     </div>
                 </div>
-                <div id="reliefTableContainer"></div>
-            </div>
-        </div>
 
-        <div class="relief-subsection" id="relief-subtab-packs">
-            <div class="panel-card">
-                <div class="panel-head">
-                    <div>
-                        <h2>Relief Pack Readiness</h2>
-                        <p>See how many complete food packs can be assembled from current stock.</p>
+                <div class="panel-card table-fit-panel">
+                    <div class="table-fit-shell" id="inventoryTableShell">
+                        <div id="inventoryTableContainer"></div>
                     </div>
                 </div>
-                <div id="reliefPackReadinessContainer"></div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="resources-section" id="tab-evacuation">
-        <div class="section-toolbar">
-            <div class="toolbar-left">
-                <input type="text" id="centerSearchInput" placeholder="Search center or barangay...">
-                <select id="centerStatusFilter">
-                    <option value="">All Center Status</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                </select>
-                <select id="centerUsageFilter">
-                    <option value="">All Usage</option>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="NEAR_FULL">Near Full</option>
-                    <option value="FULL">Full</option>
-                </select>
+        <section class="resources-section" id="tab-budget">
+            <div class="card-section resources-panel-shell">
+                <div id="budgetToolbarContainer"></div>
+
+                <div class="budget-grid budget-top-grid">
+                    <div class="panel-card">
+                        <!-- <div class="section-header compact-head">
+                            <div>
+                                <h3>Current Budget</h3>
+                                <p>Present-year financial position and utilization.</p>
+                            </div>
+                        </div> -->
+                        <div id="currentBudgetSummary"></div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="section-header compact-head">
+                            <div>
+                                <h3>Next-Year Forecast</h3>
+                                <p>Official overall forecast summary and assumptions.</p>
+                            </div>
+                        </div>
+                        <div id="nextYearForecastSummaryContainer"></div>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-header compact-head">
+                        <div>
+                            <h3>Operations Forecast Breakdown</h3>
+                            <p>Incident and calamity chunks, forecast drivers, and planning slices.</p>
+                        </div>
+                    </div>
+                    <div id="nextYearForecastBreakdownContainer"></div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-header compact-head">
+                        <div>
+                            <h3>Forecast Drivers</h3>
+                            <p>Primary drivers used by the official next-year forecast.</p>
+                        </div>
+                    </div>
+                    <div id="nextYearForecastDriversContainer"></div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-header compact-head">
+                        <div>
+                            <h3>Forecast by Section and Category</h3>
+                            <p>Detailed category-level forecast amounts and adjustments.</p>
+                        </div>
+                    </div>
+                    <div id="nextYearForecastCategoriesContainer"></div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-header compact-head">
+                        <div>
+                            <h3>Budget History</h3>
+                            <p>Allotment, obligations, remaining balance, and utilization trend.</p>
+                        </div>
+                    </div>
+                    <div id="budgetHistoryContainer"></div>
+                </div>
+
+                <div class="panel-card">
+                    <div id="budgetAnalyticsContainer"></div>
+                </div>
             </div>
-            <div class="toolbar-right">
-                <button class="btn btn-primary" id="addCenterBtn">
-                    <i class="fas fa-plus"></i>
-                    Add Center
+        </section>
+
+        <section class="resources-section" id="tab-relief">
+            <div class="card-section resources-panel-shell">
+                <div class="section-toolbar">
+                    <div>
+                        <h3>Relief Goods</h3>
+                        <p>Monitor pack readiness and direct distribution stock.</p>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" id="addReliefPackTemplateBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Pack Template
+                        </button>
+                    </div>
+                    <div class="toolbar-left">
+                        <input type="text" id="reliefSearchInput" placeholder="Search relief item...">
+                        <input type="text" id="reliefCategoryFilter" placeholder="Category">
+                        <select id="reliefStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="OK">Ready / OK</option>
+                            <option value="LOW">Low Stock</option>
+                            <option value="OUT">Out of Stock</option>
+                        </select>
+                    </div> 
+                </div>
+
+                <div class="resources-tabs relief-subtabs" role="tablist" aria-label="Relief subsections">
+                    <button class="resources-tab active" data-relief-subtab="inventory" type="button">Relief Inventory</button>
+                    <button class="resources-tab" data-relief-subtab="packs" type="button">Pack Readiness</button>
+                </div>
+
+                <div class="relief-subsection active" id="relief-subtab-inventory">
+                    <div class="panel-card">
+                        <div class="section-header compact-head">
+                            <div>
+                                <h3>Relief Goods Inventory</h3>
+                                <p>Available items for direct distribution or pack assembly.</p>
+                            </div>
+                        </div>
+                        <div id="reliefTableContainer"></div>
+                    </div>
+                </div>
+
+                <div class="relief-subsection" id="relief-subtab-packs">
+                    <div class="panel-card">
+                        <div class="section-header compact-head">
+                            <div>
+                                <h3>Relief Pack Readiness</h3>
+                                <p>See how many complete food packs can be assembled from current stock.</p>
+                            </div>
+                        </div>
+                        <div id="reliefPackReadinessContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="resources-section" id="tab-evacuation">
+            <div class="card-section resources-panel-shell">
+                <div class="section-toolbar">
+                    <div>
+                        <h3>Evacuation Centers</h3>
+                        <p>Review center status, capacity, and usage pressure.</p>
+                    </div>
+                    <div class="toolbar-left">
+                        <input type="text" id="centerSearchInput" placeholder="Search center or barangay...">
+                        <select id="centerStatusFilter">
+                            <option value="">All Center Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="MAINTENANCE">Maintenance</option>
+                        </select>
+                        <select id="centerUsageFilter">
+                            <option value="">All Usage</option>
+                            <option value="AVAILABLE">Available</option>
+                            <option value="NEAR_FULL">Near Full</option>
+                            <option value="FULL">Full</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" id="addCenterBtn">
+                            <i class="fas fa-plus"></i>
+                            Add Center
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-card table-fit-panel">
+                    <div class="table-fit-shell" id="evacuationTableShell">
+                        <div id="evacuationCenterContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="resources-modal hidden" id="resourcesModal">
+        <div class="resources-modal-backdrop" id="resourcesModalBackdrop"></div>
+        <div class="resources-modal-dialog">
+            <div class="resources-modal-head">
+                <div class="resources-modal-title-wrap">
+                    <span class="resources-modal-kicker">Resources Workspace</span>
+                    <h3 id="resourcesModalTitle">Modal</h3>
+                </div>
+                <button class="icon-btn" id="closeResourcesModalBtn" type="button">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
+            <div class="resources-modal-body" id="resourcesModalBody"></div>
+            <div class="resources-modal-foot" id="resourcesModalFoot"></div>
         </div>
-
-        <div class="panel-card">
-            <div id="evacuationCenterContainer"></div>
-        </div>
-    </section>
-</main>
-
-<div class="resources-modal hidden" id="resourcesModal">
-    <div class="resources-modal-backdrop" id="resourcesModalBackdrop"></div>
-    <div class="resources-modal-dialog">
-        <div class="resources-modal-head">
-            <h3 id="resourcesModalTitle">Modal</h3>
-            <button class="icon-btn" id="closeResourcesModalBtn">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="resources-modal-body" id="resourcesModalBody"></div>
-        <div class="resources-modal-foot" id="resourcesModalFoot"></div>
     </div>
-</div>
 
-<footer class="footer">
-    <div class="footer-container">
-        <div class="footer-content">
-            <div class="footer-section footer-info">
-                <h3>MDRRM System</h3>
-                <p>Disaster Risk Reduction and Management Operations</p>
-                <div class="footer-socials">
-                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" title="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-link" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section footer-info">
+                    <h3>MDRRM System</h3>
+                    <p>Disaster Risk Reduction and Management Operations</p>
+                    <div class="footer-socials">
+                        <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-section footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#alerts">Alerts</a></li>
+                        <li><a href="#reports">Reports</a></li>
+                        <li><a href="#resources">Resources</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-support">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
+                    <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
                 </div>
             </div>
 
-            <div class="footer-section footer-links">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="#dashboard">Dashboard</a></li>
-                    <li><a href="#alerts">Alerts</a></li>
-                    <li><a href="#reports">Reports</a></li>
-                    <li><a href="#resources">Resources</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section footer-support">
-                <h4>Support</h4>
-                <ul>
-                    <li><a href="#help">Help Center</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                    <li><a href="#privacy">Privacy Policy</a></li>
-                    <li><a href="#terms">Terms of Service</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section footer-contact">
-                <h4>Contact</h4>
-                <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-                <p><i class="fas fa-envelope"></i> support@mdrrm.gov</p>
-                <p><i class="fas fa-map-marker-alt"></i> City Hall, Main Street</p>
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 MDRRM - Disaster Risk Reduction &amp; Management. All rights reserved.</p>
+                </div>
+                <div class="footer-bottom-links">
+                    <a href="#sitemap">Sitemap</a>
+                    <span class="divider">|</span>
+                    <a href="#accessibility">Accessibility</a>
+                    <span class="divider">|</span>
+                    <a href="#copyright">Copyright</a>
+                </div>
             </div>
         </div>
+    </footer>
 
-        <div class="footer-bottom">
-            <div class="footer-copyright">
-                <p>&copy; 2026 MDRRM - Disaster Risk Reduction &amp; Management. All rights reserved.</p>
-            </div>
-            <div class="footer-bottom-links">
-                <a href="#sitemap">Sitemap</a>
-                <span class="divider">|</span>
-                <a href="#accessibility">Accessibility</a>
-                <span class="divider">|</span>
-                <a href="#copyright">Copyright</a>
-            </div>
-        </div>
-    </div>
-</footer>
-
-<script src="/js/loginUserInfo.js"></script>
-<script src="/js/navbar.js"></script>
-<script src="/js/resources.js"></script>
-<script src="/js/resources-readiness.js"></script>
-<script src="/js/resources-inventory.js"></script>
-<script src="/js/resources-budget.js"></script>
-<script src="/js/resources-relief.js"></script>
-<script src="/js/resources-evacuation-centers.js"></script>
+    <script src="/js/loginUserInfo.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/resources.js"></script>
+    <script src="/js/resources-readiness.js"></script>
+    <script src="/assets/ui-js/ui-pagination.js"></script>
+    <script src="/js/resources-inventory.js"></script>
+    <script src="/js/resources-budget.js"></script>
+    <script src="/js/resources-relief.js"></script>
+    <script src="/js/resources-evacuation-centers.js"></script>
 </body>
 </html>

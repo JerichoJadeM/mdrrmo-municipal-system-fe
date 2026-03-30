@@ -20,16 +20,46 @@ window.isApprovalSubmittedMessage = isApprovalSubmittedMessage;
 window.refreshGlobalAdminBadgesIfAvailable = refreshGlobalAdminBadgesIfAvailable;
 window.loadReliefOperationOptions = loadReliefOperationOptions;
 window.loadEvacuationActivationOptions = loadEvacuationActivationOptions;
+window.renderDismissibleReadinessWarnings = renderDismissibleReadinessWarnings;
 
 document.addEventListener("DOMContentLoaded", async () => {
     bindResourcesTabs();
     bindResourcesGlobalActions();
     bindResourceSearchInputs();
+    bindResourceCategoryFilters();
+    bindResourcesSummaryShortcuts?.();
     applyResourcesRBAC();
     ensureToastContainer();
 
     await loadResourcesPage();
 });
+
+function bindResourcesSummaryShortcuts() {
+    const reliefSummaryValue = document.getElementById("summaryReliefReadyCount");
+    const reliefSummaryCard = reliefSummaryValue?.closest(".summary-card");
+
+    if (reliefSummaryCard && !reliefSummaryCard.dataset.bound) {
+        reliefSummaryCard.dataset.bound = "true";
+        reliefSummaryCard.style.cursor = "pointer";
+
+        reliefSummaryCard.addEventListener("click", async () => {
+            resourcesState.activeTab = "relief";
+
+            document.querySelectorAll(".resources-tab").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.tab === "relief");
+            });
+
+            document.querySelectorAll(".resources-section").forEach(section => {
+                section.classList.toggle("active", section.id === "tab-relief");
+            });
+
+            await loadActiveResourcesTab();
+
+            const packTab = document.querySelector('[data-relief-subtab="packs"]');
+            packTab?.click();
+        });
+    }
+}
 
 async function loadResourcesPage() {
     await Promise.all([
@@ -77,7 +107,7 @@ async function loadReliefOperationOptions() {
     return [...incidentOptions, ...calamityOptions];
 }
 
-async function parseResourceError(error) {
+function parseResourceError(error) {
     try {
         return JSON.parse(error.message);
     } catch {
@@ -560,7 +590,6 @@ function bindSearchableDropdown({
 }
 
 /* Toast */
-
 function ensureToastContainer() {
     if (document.getElementById("resourcesToastContainer")) return;
 
@@ -595,10 +624,101 @@ async function submitResourceApprovalRequest(payload) {
     return apiSend("/approval-requests", "POST", payload);
 }
 
-async function parseResourceError(error) {
-    try {
-        return JSON.parse(error.message);
-    } catch {
-        return { message: error.message || "Request failed." };
+function renderDismissibleReadinessWarnings(items) {
+    const container = document.getElementById("readinessWarnings");
+    if (!container) return;
+
+    if (!items || !items.length) {
+        container.innerHTML = "";
+        container.classList.remove("has-content");
+        return;
+    }
+
+    container.classList.add("has-content");
+    container.innerHTML = `
+        <div class="resources-warning-shell">
+            <div class="resources-warning-head">
+                <div class="resources-warning-title">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>Readiness Warnings</span>
+                </div>
+                <button type="button" class="resources-warning-close" id="closeReadinessWarningsBtn" aria-label="Close warnings">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="resources-warning-list">
+                ${items.map(item => `
+                    <div class="warning-item">
+                        ${escapeHtml(item.message || item.text || item.note || String(item))}
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+
+    document.getElementById("closeReadinessWarningsBtn")?.addEventListener("click", () => {
+        container.innerHTML = "";
+        container.classList.remove("has-content");
+    });
+}
+
+function bindResourceCategoryFilters() {
+    const inventoryCategories = [
+        "CONSUMABLE", "SUPPLY", "TOOL", "VEHICLE", "PPE",
+        "MEDICINE", "FOOD", "WATER", "SHELTER", "OTHER"
+    ];
+
+    const reliefCategories = [
+        "FOOD", "RELIEF", "WATER", "HYGIENE", "MEDICAL"
+    ];
+
+    bindSimpleCategoryDropdown("inventoryCategoryFilter", inventoryCategories);
+    bindSimpleCategoryDropdown("reliefCategoryFilter", reliefCategories);
+}
+
+function bindSimpleCategoryDropdown(inputId, options) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    let wrapper = input.closest(".resource-filter-inline-wrap");
+
+    if (!wrapper) {
+        wrapper = document.createElement("div");
+        wrapper.className = "resource-filter-inline-wrap searchable-group";
+
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+    } else {
+        wrapper.classList.add("searchable-group");
+    }
+
+    let dropdown = wrapper.querySelector(`#${inputId}Dropdown`);
+    if (!dropdown) {
+        dropdown = document.createElement("div");
+        dropdown.id = `${inputId}Dropdown`;
+        dropdown.className = "searchable-dropdown";
+        wrapper.appendChild(dropdown);
+    }
+
+    const normalizedOptions = options.map(option => ({
+        label: option,
+        value: option
+    }));
+
+    bindSearchableDropdown({
+        inputId,
+        dropdownId: `${inputId}Dropdown`,
+        options: normalizedOptions,
+        getLabel: option => option.label,
+        getValue: option => option.value,
+        onSelect: () => {
+            loadActiveResourcesTab();
+        }
+    });
+
+    if (!input.dataset.categoryBound) {
+        input.dataset.categoryBound = "true";
+        input.addEventListener("change", () => loadActiveResourcesTab());
     }
 }
