@@ -14,6 +14,17 @@
     display: none !important;
 }
 
+.operations-hero {
+    margin-bottom: 20px;
+}
+
+.operations-hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 /* Panels */
 .operations-toolbar-panel,
 .operations-board-section {
