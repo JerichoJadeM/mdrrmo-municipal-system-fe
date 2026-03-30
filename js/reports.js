@@ -14,16 +14,35 @@ const reportsState = {
     searchable: {
         years: [],
         actionTypes: [],
-        performedBy: []
+        performedBy: [],
+        modules: []
     },
     incidentReport: null,
     calamityReport: null,
     resourceReport: null,
 };
 
+function ensureReportsPageScroll() {
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+
+    const main = document.querySelector(".reports-main-content");
+    if (main) {
+        main.style.overflow = "visible";
+        main.style.height = "auto";
+        main.style.maxHeight = "none";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    ensureReportsPageScroll();
+
     if (!enforceManagementAccess()) return;
     initializeReportsPage();
+
+    window.addEventListener("load", ensureReportsPageScroll);
+    setTimeout(ensureReportsPageScroll, 0);
+    setTimeout(ensureReportsPageScroll, 300);
 });
 
 function getCurrentUserInfo() {
@@ -70,6 +89,8 @@ function enforceManagementAccess() {
 }
 
 function initializeReportsPage() {
+    ensureReportsPageScroll();
+
     applyFrontendRbac();
     bindReportTabs();
     bindGlobalFilters();
@@ -94,6 +115,7 @@ async function loadInitialReports() {
 
     reportsState.lastLoadedAt = new Date();
     updateLastRefreshed();
+    ensureReportsPageScroll();
 }
 
 function bindReportTabs() {
@@ -282,7 +304,8 @@ function resetGlobalFilters() {
 
 function resetAuditFilters() {
     const ids = [
-        "auditOperationType",
+        "auditModuleFilter",
+        "auditRecordType",
         "auditActionType",
         "auditPerformedBy",
         "auditOperationId"
@@ -399,21 +422,48 @@ async function loadFinancialReport(showSuccessMessage = false) {
 async function loadAuditTrail(showSuccessMessage = false) {
     try {
         const params = buildAuditTrailParams();
-        const url = `${REPORTS_API_BASE}/audit-trail${params ? `?${params}` : ""}`;
-        const data = await apiRequest(url);
 
-        reportsState.auditTrail = Array.isArray(data) ? data : [];
+        const auditRequests = [
+            { module: "OPERATIONS", url: `${REPORTS_API_BASE}/audit-trail${params ? `?${params}` : ""}` },
+            { module: "DISASTER_MANAGEMENT", url: `${REPORTS_API_BASE}/audit-trail/disaster-management${params ? `?${params}` : ""}` },
+            { module: "RESOURCES", url: `${REPORTS_API_BASE}/audit-trail/resources${params ? `?${params}` : ""}` },
+            { module: "BUDGET", url: `${REPORTS_API_BASE}/audit-trail/budget${params ? `?${params}` : ""}` },
+            { module: "ADMINISTRATION", url: `${REPORTS_API_BASE}/audit-trail/administration${params ? `?${params}` : ""}` }
+        ];
+
+        const results = await Promise.allSettled(
+            auditRequests.map(async request => {
+                const data = await apiRequest(request.url);
+                const rows = Array.isArray(data) ? data : [];
+                return rows.map(item => normalizeAuditItem(item, request.module));
+            })
+        );
+
+        const mergedAuditTrail = results
+            .filter(result => result.status === "fulfilled")
+            .flatMap(result => result.value);
+
+        reportsState.auditTrail = sortAuditTrailDescending(
+            deduplicateAuditTrail(mergedAuditTrail)
+        );
+
         renderAuditTrail(reportsState.auditTrail);
 
         reportsState.searchable.actionTypes = [...new Set(
-        reportsState.auditTrail
-            .map(item => readValue(item, ["actionType"]))
-            .filter(Boolean)
+            reportsState.auditTrail
+                .map(item => readValue(item, ["actionType"]))
+                .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
         reportsState.searchable.performedBy = [...new Set(
             reportsState.auditTrail
                 .map(item => readValue(item, ["performedBy"]))
+                .filter(Boolean)
+        )].sort((a, b) => String(a).localeCompare(String(b)));
+
+        reportsState.searchable.modules = [...new Set(
+            reportsState.auditTrail
+                .map(item => readValue(item, ["module"]))
                 .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
@@ -456,7 +506,8 @@ function buildAuditTrailParams() {
 
     const fromInput = document.getElementById("reportFromDate");
     const toInput = document.getElementById("reportToDate");
-    const operationType = document.getElementById("auditOperationType");
+    const moduleFilter = document.getElementById("auditModuleFilter");
+    const recordType = document.getElementById("auditRecordType");
     const actionType = document.getElementById("auditActionType");
     const performedBy = document.getElementById("auditPerformedBy");
     const operationId = document.getElementById("auditOperationId");
@@ -469,8 +520,12 @@ function buildAuditTrailParams() {
         params.append("to", toInput.value);
     }
 
-    if (operationType && operationType.value.trim()) {
-        params.append("operationType", operationType.value.trim());
+    if (moduleFilter && moduleFilter.value.trim()) {
+        params.append("module", moduleFilter.value.trim());
+    }
+
+    if (recordType && recordType.value.trim()) {
+        params.append("recordType", recordType.value.trim());
     }
 
     if (actionType && actionType.value.trim()) {
@@ -482,10 +537,84 @@ function buildAuditTrailParams() {
     }
 
     if (operationId && operationId.value.trim()) {
-        params.append("operationId", operationId.value.trim());
+        params.append("recordId", operationId.value.trim());
     }
 
     return params.toString();
+}
+
+function normalizeAuditModuleName(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "OPERATIONS";
+
+    const normalized = raw
+        .replaceAll("-", "_")
+        .replaceAll(" ", "_")
+        .toUpperCase();
+
+    const aliasMap = {
+        INCIDENT: "OPERATIONS",
+        CALAMITY: "OPERATIONS",
+        DISASTERMANAGEMENT: "DISASTER_MANAGEMENT",
+        DISASTER_MANAGEMENT: "DISASTER_MANAGEMENT",
+        RESOURCE: "RESOURCES",
+        RESOURCES: "RESOURCES",
+        INVENTORY: "RESOURCES",
+        BUDGETS: "BUDGET",
+        ADMIN: "ADMINISTRATION",
+        ADMINISTRATION: "ADMINISTRATION",
+        AUTHENTICATION: "AUTH",
+        WEATHER_FORECAST: "WEATHER"
+    };
+
+    return aliasMap[normalized] || normalized;
+}
+
+function normalizeAuditItem(item, moduleOverride = "") {
+    const normalizedModule = normalizeAuditModuleName(
+        moduleOverride || readValue(item, ["module", "moduleName", "sourceModule", "domain"])
+    );
+
+    return {
+        ...item,
+        module: normalizedModule,
+        recordType: readValue(item, ["recordType", "operationType", "entityType", "type"]) || "--",
+        recordId: readValue(item, ["recordId", "operationId", "entityId", "id"]) ?? "--",
+        actionType: readValue(item, ["actionType", "action", "activity", "eventType"]) || "--",
+        fromStatus: readValue(item, ["fromStatus", "previousStatus", "oldValue"]) || "--",
+        toStatus: readValue(item, ["toStatus", "newStatus", "newValue"]) || "--",
+        performedBy: readValue(item, ["performedBy", "actorName", "username", "userFullName"]) || "--",
+        performedAt: readValue(item, ["performedAt", "createdAt", "timestamp", "loggedAt", "updatedAt"]) || null,
+        description: readValue(item, ["description", "details", "message", "summary"]) || "--",
+        metadataJson: readValue(item, ["metadataJson", "metadata", "extraData"]) || null
+    };
+}
+
+function deduplicateAuditTrail(items) {
+    const seen = new Set();
+
+    return items.filter(item => {
+        const key = [
+            item.module,
+            item.recordType,
+            item.recordId,
+            item.actionType,
+            item.performedBy,
+            item.performedAt
+        ].join("|");
+
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function sortAuditTrailDescending(items) {
+    return [...items].sort((a, b) => {
+        const aTime = new Date(a.performedAt || 0).getTime();
+        const bTime = new Date(b.performedAt || 0).getTime();
+        return bTime - aTime;
+    });
 }
 
 function renderSummaryReport(data) {
@@ -641,7 +770,24 @@ function renderAuditTrail(data) {
     const tbody = document.getElementById("auditTrailTableBody");
     if (!tbody) return;
 
-    if (!Array.isArray(data) || data.length === 0) {
+    const moduleFilter = document.getElementById("auditModuleFilter")?.value?.trim().toUpperCase() || "";
+    const recordTypeFilter = document.getElementById("auditRecordType")?.value?.trim().toUpperCase() || "";
+
+    let rows = Array.isArray(data) ? [...data] : [];
+
+    if (moduleFilter) {
+        rows = rows.filter(item =>
+            normalizeAuditModuleName(readValue(item, ["module"])) === moduleFilter
+        );
+    }
+
+    if (recordTypeFilter) {
+        rows = rows.filter(item =>
+            String(readValue(item, ["recordType", "operationType"]) || "").trim().toUpperCase() === recordTypeFilter
+        );
+    }
+
+    if (!rows.length) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="9" class="empty-state-cell">No audit events found.</td>
@@ -650,9 +796,8 @@ function renderAuditTrail(data) {
         return;
     }
 
-    tbody.innerHTML = data.map((item, index) => {
-        const id = readValue(item, ["id"]);
-        const moduleValue = readValue(item, ["module"]);
+    tbody.innerHTML = rows.map((item, index) => {
+        const moduleValue = normalizeAuditModuleName(readValue(item, ["module"]));
         const recordType = readValue(item, ["recordType", "operationType"]);
         const recordId = readValue(item, ["recordId", "operationId"]);
         const actionType = readValue(item, ["actionType"]);
@@ -664,7 +809,7 @@ function renderAuditTrail(data) {
         return `
             <tr>
                 <td>${escapeHtml(formatDateTime(performedAt))}</td>
-                <td>${escapeHtml(moduleValue || "OPERATIONS")}</td>
+                <td>${escapeHtml(moduleValue || "--")}</td>
                 <td>${escapeHtml(recordType || "--")}</td>
                 <td>${escapeHtml(String(recordId ?? "--"))}</td>
                 <td>${escapeHtml(actionType || "--")}</td>
@@ -683,7 +828,8 @@ function renderAuditTrail(data) {
     tbody.querySelectorAll(".audit-view-btn").forEach(button => {
         button.addEventListener("click", () => {
             const index = Number(button.dataset.auditIndex);
-            const auditItem = reportsState.auditTrail[index];
+            const filteredRows = rows;
+            const auditItem = filteredRows[index];
             openAuditDetailsModal(auditItem);
         });
     });
@@ -703,7 +849,7 @@ function renderAuditTrailErrorState() {
 function openAuditDetailsModal(item) {
     if (!item) return;
 
-    setText("auditDetailModule", readValue(item, ["module"]) || "OPERATIONS");
+    setText("auditDetailModule", normalizeAuditModuleName(readValue(item, ["module"])) || "OPERATIONS");
     setText("auditDetailRecordType", readValue(item, ["recordType", "operationType"]) || "--");
     setText("auditDetailRecordId", readValue(item, ["recordId", "operationId"]) ?? "--");
     setText("auditDetailActionType", readValue(item, ["actionType"]) || "--");
@@ -726,8 +872,9 @@ function closeAuditDetailsModal() {
     const modal = document.getElementById("auditDetailsModal");
     if (modal) {
         modal.classList.remove("active");
-        document.body.style.overflow = "auto";
     }
+
+    ensureReportsPageScroll();
 }
 
 function updateCoveredPeriodLabels() {

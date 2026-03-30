@@ -145,16 +145,23 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="page-content main-content">
+    <main class="page-content main-content reports-main-content">
         <div class="container reports-page">
-            <!-- Page Header -->
-            <section class="reports-header">
-                <div class="reports-header-text">
+
+            <section class="page-hero card-section reports-hero">
+                <div class="page-hero-content">
+                    <div class="section-badge">
+                        <i class="fas fa-file-alt"></i>
+                        Municipal Reporting Center
+                    </div>
                     <h2>Reports</h2>
-                    <p class="subtitle">Operational summaries, financial reporting, and audit trail review</p>
+                    <p>
+                        Operational summaries, financial reporting, multi-module audit trail,
+                        and records review for MDRRMO Batad.
+                    </p>
                 </div>
 
-                <div class="reports-header-actions">
+                <div class="page-hero-actions reports-hero-actions">
                     <button class="btn-secondary" id="refreshReportsBtn">
                         <i class="fas fa-rotate-right"></i>
                         Refresh
@@ -476,17 +483,41 @@
             <section class="report-panel" id="auditTab">
                 <div class="report-section-header">
                     <h3>Audit Trail</h3>
-                    <p>Review recorded operational actions, transitions, and user-performed events.</p>
+                    <p>Review recorded actions across operations, disaster management, resources, budget, administration, and related modules.</p>
                 </div>
 
                 <section class="report-panel-card">
                     <div class="audit-filters-grid">
                         <div class="filter-group">
-                            <label for="auditOperationType">Operation Type</label>
-                            <select id="auditOperationType">
+                            <label for="auditModuleFilter">Module</label>
+                            <select id="auditModuleFilter">
+                                <option value="">All Modules</option>
+                                <option value="OPERATIONS">Operations</option>
+                                <option value="DISASTER_MANAGEMENT">Disaster Management</option>
+                                <option value="RESOURCES">Resources</option>
+                                <option value="BUDGET">Budget</option>
+                                <option value="ADMINISTRATION">Administration</option>
+                                <option value="AUTH">Authentication</option>
+                                <option value="WEATHER">Weather</option>
+                                <option value="FORECAST">Forecast</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="auditRecordType">Record Type</label>
+                            <select id="auditRecordType">
                                 <option value="">All</option>
                                 <option value="INCIDENT">Incident</option>
                                 <option value="CALAMITY">Calamity</option>
+                                <option value="BUDGET">Budget</option>
+                                <option value="EXPENSE">Expense</option>
+                                <option value="INVENTORY">Inventory</option>
+                                <option value="RELIEF_DISTRIBUTION">Relief Distribution</option>
+                                <option value="EVACUATION_CENTER">Evacuation Center</option>
+                                <option value="USER">User</option>
+                                <option value="ROLE">Role</option>
+                                <option value="NOTIFICATION">Notification</option>
+                                <option value="MESSAGE">Message</option>
                             </select>
                         </div>
 

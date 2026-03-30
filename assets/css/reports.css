@@ -4,13 +4,36 @@
    Reports Page Styles
    Uses global shell from style.css
    =================================== */
+.reports-main-content {
+    min-height: calc(100vh - 70px);
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.reports-page {
+    width: 100%;
+    overflow: visible;
+}
 
 .reports-page {
     padding-top: 24px;
     padding-bottom: 32px;
+    min-height: calc(100vh - 60px);
 }
 
-.reports-header {
+.reports-hero {
+    margin-bottom: 20px;
+}
+
+.reports-hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+} 
+
+/* .reports-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -34,7 +57,7 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-}
+} */
 
 .reports-filters-section {
     margin-bottom: 20px;
@@ -502,4 +525,23 @@
     padding: 10px 12px;
     color: #6b7280;
     font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .reports-hero-actions {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .reports-main-content {
+        overflow: visible;
+    }
+
+    .reports-hero-actions .btn-primary,
+    .reports-hero-actions .btn-secondary,
+    .reports-hero-actions .btn-light {
+        width: 100%;
+        justify-content: center;
+    }
 }
