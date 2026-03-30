@@ -9,29 +9,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<nav class="navbar">
+    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-container">
             <div class="navbar-user">
                 <div class="user-dropdown">
                     <button class="user-btn" id="userDropdownBtn">
-                        <span class="admin-navbar-avatar" id="navbarUserAvatar">U</span>
+                        <i class="fas fa-user-circle"></i>
                         <span class="user-name" id="userNameDisplay">User</span>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="admin.html#profile" class="dropdown-item">
+                        <a href="#profile" class="dropdown-item">
                             <i class="fas fa-user"></i>
                             <span>Profile</span>
                         </a>
-                        <a href="admin.html#notifications" class="dropdown-item">
+                        <a href="#notifications" class="dropdown-item">
                             <i class="fas fa-bell"></i>
-                            <span>Notifications</span>
+                            <span>Notification</span>
                         </a>
-                        <a href="admin.html#messages" class="dropdown-item">
+                        <a href="#messages" class="dropdown-item">
                             <i class="fas fa-message"></i>
                             <span>Messages</span>
                         </a>
-                        <a href="admin.html#password" class="dropdown-item">
+                        <a href="change-password.html" class="dropdown-item">
                             <i class="fas fa-key"></i>
                             <span>Change Password</span>
                         </a>
@@ -51,11 +51,11 @@
             <div class="navbar-notifications">
                 <button class="notification-btn" id="notificationBtn" title="Notifications">
                     <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
                 </button>
                 <button class="message-btn" id="messageBtn" title="Messages">
                     <i class="fas fa-envelope"></i>
-                    <span class="message-badge" id="messageBadge" style="display:none;">0</span>
+                    <span class="message-badge" id="messageBadge" style="display: none;">0</span>
                 </button>
             </div>
 
@@ -145,9 +145,9 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="page-content main-content reports-main-content">
+    <main class="page-content main-content">
         <div class="container reports-page">
-
+            <!-- Page Header -->
             <section class="page-hero card-section reports-hero">
                 <div class="page-hero-content">
                     <div class="section-badge">
@@ -156,20 +156,28 @@
                     </div>
                     <h2>Reports</h2>
                     <p>
-                        Operational summaries, financial reporting, multi-module audit trail,
-                        and records review for MDRRMO Batad.
+                        Operational summaries, financial reporting, and audit trail review
+                        for MDRRMO monitoring, analysis, and records validation.
                     </p>
                 </div>
 
                 <div class="page-hero-actions reports-hero-actions">
-                    <button class="btn-secondary" id="refreshReportsBtn">
-                        <i class="fas fa-rotate-right"></i>
-                        Refresh
-                    </button>
                     <button class="btn-primary" id="exportPdfBtn" disabled>
                         <i class="fas fa-file-pdf"></i>
                         Export PDF
                     </button>
+                </div>
+            </section>
+
+            <!-- Tabs -->
+            <section class="reports-tabs-section">
+                <div class="reports-tabs" role="tablist" aria-label="Reports tabs">
+                    <button class="report-tab active" data-tab="summaryTab" type="button">Summary</button>
+                    <button class="report-tab" data-tab="financialTab" type="button">Financial</button>
+                    <button class="report-tab" data-tab="auditTab" type="button">Audit Trail</button>
+                    <button class="report-tab" data-tab="incidentTab" type="button">Incidents</button>
+                    <button class="report-tab" data-tab="calamityTab" type="button">Calamities</button>
+                    <button class="report-tab" data-tab="resourcesTab" type="button">Resources</button>
                 </div>
             </section>
 
@@ -213,18 +221,6 @@
                             Reset
                         </button>
                     </div>
-                </div>
-            </section>
-
-            <!-- Tabs -->
-            <section class="reports-tabs-section">
-                <div class="reports-tabs" role="tablist" aria-label="Reports tabs">
-                    <button class="report-tab active" data-tab="summaryTab" type="button">Summary</button>
-                    <button class="report-tab" data-tab="financialTab" type="button">Financial</button>
-                    <button class="report-tab" data-tab="auditTab" type="button">Audit Trail</button>
-                    <button class="report-tab" data-tab="incidentTab" type="button">Incidents</button>
-                    <button class="report-tab" data-tab="calamityTab" type="button">Calamities</button>
-                    <button class="report-tab" data-tab="resourcesTab" type="button">Resources</button>
                 </div>
             </section>
 
@@ -483,41 +479,34 @@
             <section class="report-panel" id="auditTab">
                 <div class="report-section-header">
                     <h3>Audit Trail</h3>
-                    <p>Review recorded actions across operations, disaster management, resources, budget, administration, and related modules.</p>
+                    <p>Review recorded operational actions, transitions, and user-performed events.</p>
                 </div>
 
                 <section class="report-panel-card">
                     <div class="audit-filters-grid">
                         <div class="filter-group">
-                            <label for="auditModuleFilter">Module</label>
-                            <select id="auditModuleFilter">
+                            <label for="auditModule">Module</label>
+                            <select id="auditModule">
                                 <option value="">All Modules</option>
                                 <option value="OPERATIONS">Operations</option>
                                 <option value="DISASTER_MANAGEMENT">Disaster Management</option>
                                 <option value="RESOURCES">Resources</option>
+                                <option value="PROCUREMENT">Procurement</option>
                                 <option value="BUDGET">Budget</option>
                                 <option value="ADMINISTRATION">Administration</option>
-                                <option value="AUTH">Authentication</option>
-                                <option value="WEATHER">Weather</option>
-                                <option value="FORECAST">Forecast</option>
                             </select>
                         </div>
 
                         <div class="filter-group">
                             <label for="auditRecordType">Record Type</label>
                             <select id="auditRecordType">
-                                <option value="">All</option>
+                                <option value="">All Record Types</option>
                                 <option value="INCIDENT">Incident</option>
                                 <option value="CALAMITY">Calamity</option>
-                                <option value="BUDGET">Budget</option>
+                                <option value="INVENTORY_TRANSACTION">Inventory Transaction</option>
                                 <option value="EXPENSE">Expense</option>
-                                <option value="INVENTORY">Inventory</option>
-                                <option value="RELIEF_DISTRIBUTION">Relief Distribution</option>
-                                <option value="EVACUATION_CENTER">Evacuation Center</option>
+                                <option value="APPROVAL_REQUEST">Approval Request</option>
                                 <option value="USER">User</option>
-                                <option value="ROLE">Role</option>
-                                <option value="NOTIFICATION">Notification</option>
-                                <option value="MESSAGE">Message</option>
                             </select>
                         </div>
 
@@ -531,11 +520,6 @@
                             <label for="auditPerformedBy">Performed By</label>
                             <input type="text" id="auditPerformedBy" placeholder="Search user..." autocomplete="off">
                             <div class="searchable-dropdown" id="auditPerformedByDropdown"></div>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="auditOperationId">Record ID</label>
-                            <input type="number" id="auditOperationId" placeholder="Optional">
                         </div>
 
                         <div class="filter-actions audit-filter-actions">
@@ -576,6 +560,24 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="app-pagination-bar">
+                        <div class="app-pagination-left">
+                            <div class="app-pagination-info" id="auditPaginationInfo">
+                                Showing 0 to 0 of 0 audit events
+                            </div>
+
+                            <div class="app-page-size-wrap">
+                                <label for="auditPageSize">Rows per page</label>
+                                <select id="auditPageSize">
+                                    <option value="5" selected>5</option>
+                                    <option value="8">8</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="app-pagination-controls" id="auditPaginationControls"></div>
                     </div>
                 </section>
             </section>
@@ -653,6 +655,25 @@
                                 <tr><td colspan="6" class="empty-state-cell">No incident records found.</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="app-pagination-bar">
+                        <div class="app-pagination-left">
+                            <div class="app-pagination-info" id="incidentPaginationInfo">
+                                Showing 0 to 0 of 0 incident records
+                            </div>
+
+                            <div class="app-page-size-wrap">
+                                <label for="incidentPageSize">Rows per page</label>
+                                <select id="incidentPageSize">
+                                    <option value="5" selected>5</option>
+                                    <option value="8">8</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="app-pagination-controls" id="incidentPaginationControls"></div>
                     </div>
                 </section>
             </section>
@@ -738,6 +759,25 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="app-pagination-bar">
+                        <div class="app-pagination-left">
+                            <div class="app-pagination-info" id="calamityPaginationInfo">
+                                Showing 0 to 0 of 0 calamity records
+                            </div>
+
+                            <div class="app-page-size-wrap">
+                                <label for="calamityPageSize">Rows per page</label>
+                                <select id="calamityPageSize">
+                                    <option value="5" selected>5</option>
+                                    <option value="8">8</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="app-pagination-controls" id="calamityPaginationControls"></div>
+                    </div>
                 </section>
             </section>
 
@@ -807,49 +847,103 @@
                     </div>
                 </section>
 
+                <!--Inventory and Relief-->
                 <section class="report-panel-card">
-                    <div class="card-header"><h4>Inventory Transactions</h4></div>
-                    <div class="table-responsive">
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Inventory ID</th>
-                                    <th>Item</th>
-                                    <th>Action</th>
-                                    <th>Quantity</th>
-                                    <th>Performed By</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resourceTransactionsTableBody">
-                                <tr><td colspan="7" class="empty-state-cell">No inventory transactions found.</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="card-header">
+                        <h4>Resource Movement Records</h4>
+                    </div>
+
+                    <div class="reports-subtabs" role="tablist" aria-label="Resources subtabs">
+                        <button class="report-subtab active" type="button" data-resource-tab="inventoryTransactionsPanel">
+                            Inventory Transactions
+                        </button>
+                        <button class="report-subtab" type="button" data-resource-tab="reliefDistributionsPanel">
+                            Relief Distributions
+                        </button>
+                    </div>
+
+                    <div class="resource-subpanel active" id="inventoryTransactionsPanel">
+                        <div class="table-responsive">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Inventory ID</th>
+                                        <th>Item</th>
+                                        <th>Action</th>
+                                        <th>Quantity</th>
+                                        <th>Performed By</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resourceTransactionsTableBody">
+                                    <tr><td colspan="7" class="empty-state-cell">No inventory transactions found.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="app-pagination-bar">
+                            <div class="app-pagination-left">
+                                <div class="app-pagination-info" id="resourceTransactionsPaginationInfo">
+                                    Showing 0 to 0 of 0 inventory transactions
+                                </div>
+
+                                <div class="app-page-size-wrap">
+                                    <label for="resourceTransactionsPageSize">Rows per page</label>
+                                    <select id="resourceTransactionsPageSize">
+                                        <option value="5" selected>5</option>
+                                        <option value="8">8</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="app-pagination-controls" id="resourceTransactionsPaginationControls"></div>
+                        </div>
+                    </div>
+
+                    <div class="resource-subpanel" id="reliefDistributionsPanel">
+                        <div class="table-responsive">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Reference Type</th>
+                                        <th>Reference ID</th>
+                                        <th>Item</th>
+                                        <th>Quantity</th>
+                                        <th>Distributed By</th>
+                                        <th>Distributed At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resourceReliefDistributionTableBody">
+                                    <tr><td colspan="7" class="empty-state-cell">No relief distributions found.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="app-pagination-bar">
+                            <div class="app-pagination-left">
+                                <div class="app-pagination-info" id="resourceReliefPaginationInfo">
+                                    Showing 0 to 0 of 0 relief distributions
+                                </div>
+
+                                <div class="app-page-size-wrap">
+                                    <label for="resourceReliefPageSize">Rows per page</label>
+                                    <select id="resourceReliefPageSize">
+                                        <option value="5" selected>5</option>
+                                        <option value="8">8</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="app-pagination-controls" id="resourceReliefPaginationControls"></div>
+                        </div>
                     </div>
                 </section>
 
-                <section class="report-panel-card">
-                    <div class="card-header"><h4>Relief Distributions</h4></div>
-                    <div class="table-responsive">
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Reference Type</th>
-                                    <th>Reference ID</th>
-                                    <th>Item</th>
-                                    <th>Quantity</th>
-                                    <th>Distributed By</th>
-                                    <th>Distributed At</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resourceReliefDistributionTableBody">
-                                <tr><td colspan="7" class="empty-state-cell">No relief distributions found.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                
             </section>
         </div>
     </main>
@@ -989,6 +1083,7 @@
 
     <script src="/js/loginUserInfo.js"></script>
     <script src="/js/navbar.js"></script>
+    <script src="/assets/ui-js/ui-pagination.js"></script>
     <script src="/js/reports.js"></script>
 </body>
 </html>

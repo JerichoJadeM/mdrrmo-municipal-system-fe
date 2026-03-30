@@ -1,3 +1,4 @@
+// reports.js
 // ===================================
 // Reports Page Script
 // Uses shared apiRequest() from loginUserInfo.js
@@ -15,34 +16,25 @@ const reportsState = {
         years: [],
         actionTypes: [],
         performedBy: [],
-        modules: []
+        modules: [],
+        recordTypes: []
     },
     incidentReport: null,
     calamityReport: null,
     resourceReport: null,
 };
 
-function ensureReportsPageScroll() {
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
-
-    const main = document.querySelector(".reports-main-content");
-    if (main) {
-        main.style.overflow = "visible";
-        main.style.height = "auto";
-        main.style.maxHeight = "none";
-    }
-}
+const reportsPagination = {
+    audit: null,
+    incidents: null,
+    calamities: null,
+    resourceTransactions: null,
+    resourceRelief: null
+};
 
 document.addEventListener("DOMContentLoaded", () => {
-    ensureReportsPageScroll();
-
     if (!enforceManagementAccess()) return;
     initializeReportsPage();
-
-    window.addEventListener("load", ensureReportsPageScroll);
-    setTimeout(ensureReportsPageScroll, 0);
-    setTimeout(ensureReportsPageScroll, 300);
 });
 
 function getCurrentUserInfo() {
@@ -66,6 +58,7 @@ function getCurrentUserInfo() {
         return null;
     }
 }
+
 function hasAuthority(user, role) {
     return Array.isArray(user?.authorities) && user.authorities.includes(role);
 }
@@ -89,18 +82,18 @@ function enforceManagementAccess() {
 }
 
 function initializeReportsPage() {
-    ensureReportsPageScroll();
-
     applyFrontendRbac();
     bindReportTabs();
+    bindResourceSubtabs();
     bindGlobalFilters();
     bindAuditFilters();
     bindRefreshActions();
     bindAuditModal();
     populateYearSelect();
     applyDefaultDateRange();
-    loadInitialReports();
     initializeSearchableFilters();
+    initializePaginationControllers();
+    loadInitialReports();
 }
 
 async function loadInitialReports() {
@@ -115,7 +108,6 @@ async function loadInitialReports() {
 
     reportsState.lastLoadedAt = new Date();
     updateLastRefreshed();
-    ensureReportsPageScroll();
 }
 
 function bindReportTabs() {
@@ -144,6 +136,27 @@ function bindReportTabs() {
                 loadCalamityReport();
             } else if (targetTab === "resourcesTab" && !reportsState.resourceReport) {
                 loadResourceReport();
+            }
+        });
+    });
+}
+
+function bindResourceSubtabs() {
+    const buttons = document.querySelectorAll(".report-subtab");
+    const panels = document.querySelectorAll(".resource-subpanel");
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            const targetId = button.dataset.resourceTab;
+
+            buttons.forEach(btn => btn.classList.remove("active"));
+            panels.forEach(panel => panel.classList.remove("active"));
+
+            button.classList.add("active");
+
+            const panel = document.getElementById(targetId);
+            if (panel) {
+                panel.classList.add("active");
             }
         });
     });
@@ -246,6 +259,48 @@ function bindAuditModal() {
     });
 }
 
+function initializePaginationControllers() {
+    reportsPagination.audit = createPaginationController({
+        infoId: "auditPaginationInfo",
+        controlsId: "auditPaginationControls",
+        pageSizeSelectId: "auditPageSize",
+        itemLabel: "audit events",
+        onRenderRows: renderAuditTrailRows
+    });
+
+    reportsPagination.incidents = createPaginationController({
+        infoId: "incidentPaginationInfo",
+        controlsId: "incidentPaginationControls",
+        pageSizeSelectId: "incidentPageSize",
+        itemLabel: "incident records",
+        onRenderRows: renderIncidentRecordRows
+    });
+
+    reportsPagination.calamities = createPaginationController({
+        infoId: "calamityPaginationInfo",
+        controlsId: "calamityPaginationControls",
+        pageSizeSelectId: "calamityPageSize",
+        itemLabel: "calamity records",
+        onRenderRows: renderCalamityRecordRows
+    });
+
+    reportsPagination.resourceTransactions = createPaginationController({
+        infoId: "resourceTransactionsPaginationInfo",
+        controlsId: "resourceTransactionsPaginationControls",
+        pageSizeSelectId: "resourceTransactionsPageSize",
+        itemLabel: "inventory transactions",
+        onRenderRows: renderResourceTransactionRows
+    });
+
+    reportsPagination.resourceRelief = createPaginationController({
+        infoId: "resourceReliefPaginationInfo",
+        controlsId: "resourceReliefPaginationControls",
+        pageSizeSelectId: "resourceReliefPageSize",
+        itemLabel: "relief distributions",
+        onRenderRows: renderResourceReliefRows
+    });
+}
+
 async function reloadActiveData(forceAll = false) {
     if (forceAll) {
         await Promise.allSettled([
@@ -286,8 +341,6 @@ async function reloadActiveData(forceAll = false) {
 }
 
 function resetGlobalFilters() {
-    const fromInput = document.getElementById("reportFromDate");
-    const toInput = document.getElementById("reportToDate");
     const frequencySelect = document.getElementById("reportFrequency");
     const yearInput = document.getElementById("financialYearInput");
 
@@ -304,11 +357,11 @@ function resetGlobalFilters() {
 
 function resetAuditFilters() {
     const ids = [
-        "auditModuleFilter",
+        "auditModule",
         "auditRecordType",
         "auditActionType",
         "auditPerformedBy",
-        "auditOperationId"
+        "auditRecordId"
     ];
 
     ids.forEach(id => {
@@ -399,7 +452,6 @@ async function loadFinancialReport(showSuccessMessage = false) {
         const url = `${REPORTS_API_BASE}/financial${params.toString() ? `?${params.toString()}` : ""}`;
         const data = await apiRequest(url);
 
-        // handle APIs that return error JSON instead of throwing
         if (data && typeof data === "object" && data.message && data.status) {
             renderFinancialErrorState();
             showMessage(data.message, "error");
@@ -422,31 +474,10 @@ async function loadFinancialReport(showSuccessMessage = false) {
 async function loadAuditTrail(showSuccessMessage = false) {
     try {
         const params = buildAuditTrailParams();
+        const url = `${REPORTS_API_BASE}/audit-trail${params ? `?${params}` : ""}`;
+        const data = await apiRequest(url);
 
-        const auditRequests = [
-            { module: "OPERATIONS", url: `${REPORTS_API_BASE}/audit-trail${params ? `?${params}` : ""}` },
-            { module: "DISASTER_MANAGEMENT", url: `${REPORTS_API_BASE}/audit-trail/disaster-management${params ? `?${params}` : ""}` },
-            { module: "RESOURCES", url: `${REPORTS_API_BASE}/audit-trail/resources${params ? `?${params}` : ""}` },
-            { module: "BUDGET", url: `${REPORTS_API_BASE}/audit-trail/budget${params ? `?${params}` : ""}` },
-            { module: "ADMINISTRATION", url: `${REPORTS_API_BASE}/audit-trail/administration${params ? `?${params}` : ""}` }
-        ];
-
-        const results = await Promise.allSettled(
-            auditRequests.map(async request => {
-                const data = await apiRequest(request.url);
-                const rows = Array.isArray(data) ? data : [];
-                return rows.map(item => normalizeAuditItem(item, request.module));
-            })
-        );
-
-        const mergedAuditTrail = results
-            .filter(result => result.status === "fulfilled")
-            .flatMap(result => result.value);
-
-        reportsState.auditTrail = sortAuditTrailDescending(
-            deduplicateAuditTrail(mergedAuditTrail)
-        );
-
+        reportsState.auditTrail = Array.isArray(data) ? data : [];
         renderAuditTrail(reportsState.auditTrail);
 
         reportsState.searchable.actionTypes = [...new Set(
@@ -467,6 +498,12 @@ async function loadAuditTrail(showSuccessMessage = false) {
                 .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
+        reportsState.searchable.recordTypes = [...new Set(
+            reportsState.auditTrail
+                .map(item => readValue(item, ["recordType", "operationType"]))
+                .filter(Boolean)
+        )].sort((a, b) => String(a).localeCompare(String(b)));
+
         if (showSuccessMessage) {
             showMessage("Audit trail updated successfully.", "success");
         }
@@ -474,6 +511,63 @@ async function loadAuditTrail(showSuccessMessage = false) {
         console.error("Failed to load audit trail:", error);
         renderAuditTrailErrorState();
         showMessage(extractErrorMessage(error, "Unable to load audit trail."), "error");
+    }
+}
+
+async function loadIncidentReport(showSuccessMessage = false) {
+    try {
+        const params = buildGlobalDateParams();
+        const url = `${REPORTS_API_BASE}/incidents${params ? `?${params}` : ""}`;
+        const data = await apiRequest(url);
+
+        reportsState.incidentReport = data;
+        renderIncidentReport(data);
+
+        if (showSuccessMessage) {
+            showMessage("Incident report updated successfully.", "success");
+        }
+    } catch (error) {
+        console.error("Failed to load incident report:", error);
+        renderIncidentErrorState();
+        showMessage(extractErrorMessage(error, "Unable to load incident report."), "error");
+    }
+}
+
+async function loadCalamityReport(showSuccessMessage = false) {
+    try {
+        const params = buildGlobalDateParams();
+        const url = `${REPORTS_API_BASE}/calamities${params ? `?${params}` : ""}`;
+        const data = await apiRequest(url);
+
+        reportsState.calamityReport = data;
+        renderCalamityReport(data);
+
+        if (showSuccessMessage) {
+            showMessage("Calamity report updated successfully.", "success");
+        }
+    } catch (error) {
+        console.error("Failed to load calamity report:", error);
+        renderCalamityErrorState();
+        showMessage(extractErrorMessage(error, "Unable to load calamity report."), "error");
+    }
+}
+
+async function loadResourceReport(showSuccessMessage = false) {
+    try {
+        const params = buildGlobalDateParams();
+        const url = `${REPORTS_API_BASE}/resources${params ? `?${params}` : ""}`;
+        const data = await apiRequest(url);
+
+        reportsState.resourceReport = data;
+        renderResourceReport(data);
+
+        if (showSuccessMessage) {
+            showMessage("Resources report updated successfully.", "success");
+        }
+    } catch (error) {
+        console.error("Failed to load resources report:", error);
+        renderResourceErrorState();
+        showMessage(extractErrorMessage(error, "Unable to load resources report."), "error");
     }
 }
 
@@ -506,11 +600,11 @@ function buildAuditTrailParams() {
 
     const fromInput = document.getElementById("reportFromDate");
     const toInput = document.getElementById("reportToDate");
-    const moduleFilter = document.getElementById("auditModuleFilter");
+    const moduleFilter = document.getElementById("auditModule");
     const recordType = document.getElementById("auditRecordType");
     const actionType = document.getElementById("auditActionType");
     const performedBy = document.getElementById("auditPerformedBy");
-    const operationId = document.getElementById("auditOperationId");
+    const recordId = document.getElementById("auditRecordId");
 
     if (fromInput && fromInput.value) {
         params.append("from", fromInput.value);
@@ -536,85 +630,11 @@ function buildAuditTrailParams() {
         params.append("performedBy", performedBy.value.trim());
     }
 
-    if (operationId && operationId.value.trim()) {
-        params.append("recordId", operationId.value.trim());
+    if (recordId && recordId.value.trim()) {
+        params.append("recordId", recordId.value.trim());
     }
 
     return params.toString();
-}
-
-function normalizeAuditModuleName(value) {
-    const raw = String(value || "").trim();
-    if (!raw) return "OPERATIONS";
-
-    const normalized = raw
-        .replaceAll("-", "_")
-        .replaceAll(" ", "_")
-        .toUpperCase();
-
-    const aliasMap = {
-        INCIDENT: "OPERATIONS",
-        CALAMITY: "OPERATIONS",
-        DISASTERMANAGEMENT: "DISASTER_MANAGEMENT",
-        DISASTER_MANAGEMENT: "DISASTER_MANAGEMENT",
-        RESOURCE: "RESOURCES",
-        RESOURCES: "RESOURCES",
-        INVENTORY: "RESOURCES",
-        BUDGETS: "BUDGET",
-        ADMIN: "ADMINISTRATION",
-        ADMINISTRATION: "ADMINISTRATION",
-        AUTHENTICATION: "AUTH",
-        WEATHER_FORECAST: "WEATHER"
-    };
-
-    return aliasMap[normalized] || normalized;
-}
-
-function normalizeAuditItem(item, moduleOverride = "") {
-    const normalizedModule = normalizeAuditModuleName(
-        moduleOverride || readValue(item, ["module", "moduleName", "sourceModule", "domain"])
-    );
-
-    return {
-        ...item,
-        module: normalizedModule,
-        recordType: readValue(item, ["recordType", "operationType", "entityType", "type"]) || "--",
-        recordId: readValue(item, ["recordId", "operationId", "entityId", "id"]) ?? "--",
-        actionType: readValue(item, ["actionType", "action", "activity", "eventType"]) || "--",
-        fromStatus: readValue(item, ["fromStatus", "previousStatus", "oldValue"]) || "--",
-        toStatus: readValue(item, ["toStatus", "newStatus", "newValue"]) || "--",
-        performedBy: readValue(item, ["performedBy", "actorName", "username", "userFullName"]) || "--",
-        performedAt: readValue(item, ["performedAt", "createdAt", "timestamp", "loggedAt", "updatedAt"]) || null,
-        description: readValue(item, ["description", "details", "message", "summary"]) || "--",
-        metadataJson: readValue(item, ["metadataJson", "metadata", "extraData"]) || null
-    };
-}
-
-function deduplicateAuditTrail(items) {
-    const seen = new Set();
-
-    return items.filter(item => {
-        const key = [
-            item.module,
-            item.recordType,
-            item.recordId,
-            item.actionType,
-            item.performedBy,
-            item.performedAt
-        ].join("|");
-
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-}
-
-function sortAuditTrailDescending(items) {
-    return [...items].sort((a, b) => {
-        const aTime = new Date(a.performedAt || 0).getTime();
-        const bTime = new Date(b.performedAt || 0).getTime();
-        return bTime - aTime;
-    });
 }
 
 function renderSummaryReport(data) {
@@ -674,7 +694,6 @@ function renderFinancialReport(data) {
     const currentSummary = readValue(data, ["currentSummary"]) || {};
     const history = readValue(data, ["history"]) || [];
     const nextYearForecast = readValue(data, ["nextYearForecast"]) || {};
-    const analytics = readValue(data, ["analytics"]) || {};
 
     const summaryBudgetId = readValue(currentSummary, ["id"]);
     const summaryYear = readValue(currentSummary, ["year"]);
@@ -706,10 +725,10 @@ function renderFinancialReport(data) {
     setText("forecastProjectedBudget", formatCurrency(forecastProjectedBudget));
     setText("forecastNotes", forecastNotes || "--");
 
-    renderFinancialHistory(history, analytics);
+    renderFinancialHistory(history);
 }
 
-function renderFinancialHistory(history, analytics) {
+function renderFinancialHistory(history) {
     const tbody = document.getElementById("financialHistoryTableBody");
     if (!tbody) return;
 
@@ -767,25 +786,14 @@ function renderFinancialErrorState() {
 }
 
 function renderAuditTrail(data) {
+    const rows = Array.isArray(data) ? data : [];
+    if (!reportsPagination.audit) return;
+    reportsPagination.audit.setRows(rows);
+}
+
+function renderAuditTrailRows(rows) {
     const tbody = document.getElementById("auditTrailTableBody");
     if (!tbody) return;
-
-    const moduleFilter = document.getElementById("auditModuleFilter")?.value?.trim().toUpperCase() || "";
-    const recordTypeFilter = document.getElementById("auditRecordType")?.value?.trim().toUpperCase() || "";
-
-    let rows = Array.isArray(data) ? [...data] : [];
-
-    if (moduleFilter) {
-        rows = rows.filter(item =>
-            normalizeAuditModuleName(readValue(item, ["module"])) === moduleFilter
-        );
-    }
-
-    if (recordTypeFilter) {
-        rows = rows.filter(item =>
-            String(readValue(item, ["recordType", "operationType"]) || "").trim().toUpperCase() === recordTypeFilter
-        );
-    }
 
     if (!rows.length) {
         tbody.innerHTML = `
@@ -796,40 +804,30 @@ function renderAuditTrail(data) {
         return;
     }
 
-    tbody.innerHTML = rows.map((item, index) => {
-        const moduleValue = normalizeAuditModuleName(readValue(item, ["module"]));
-        const recordType = readValue(item, ["recordType", "operationType"]);
-        const recordId = readValue(item, ["recordId", "operationId"]);
-        const actionType = readValue(item, ["actionType"]);
-        const fromStatus = readValue(item, ["fromStatus"]);
-        const toStatus = readValue(item, ["toStatus"]);
-        const performedBy = readValue(item, ["performedBy"]);
-        const performedAt = readValue(item, ["performedAt"]);
-
-        return `
-            <tr>
-                <td>${escapeHtml(formatDateTime(performedAt))}</td>
-                <td>${escapeHtml(moduleValue || "--")}</td>
-                <td>${escapeHtml(recordType || "--")}</td>
-                <td>${escapeHtml(String(recordId ?? "--"))}</td>
-                <td>${escapeHtml(actionType || "--")}</td>
-                <td>${escapeHtml(fromStatus || "--")}</td>
-                <td>${escapeHtml(toStatus || "--")}</td>
-                <td>${escapeHtml(performedBy || "--")}</td>
-                <td>
-                    <button class="audit-view-btn" type="button" data-audit-index="${index}">
-                        View
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join("");
+    tbody.innerHTML = rows.map((item, index) => `
+        <tr>
+            <td>${escapeHtml(formatDateTime(readValue(item, ["performedAt"])))}</td>
+            <td>${escapeHtml(readValue(item, ["module"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["recordType", "operationType"]) || "--")}</td>
+            <td>${escapeHtml(String(readValue(item, ["recordId", "operationId"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(item, ["actionType"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["fromStatus"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["toStatus"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["performedBy"]) || "--")}</td>
+            <td>
+                <button class="audit-view-btn" type="button" data-page-index="${index}">
+                    View
+                </button>
+            </td>
+        </tr>
+    `).join("");
 
     tbody.querySelectorAll(".audit-view-btn").forEach(button => {
         button.addEventListener("click", () => {
-            const index = Number(button.dataset.auditIndex);
-            const filteredRows = rows;
-            const auditItem = filteredRows[index];
+            const pageIndex = Number(button.dataset.pageIndex);
+            const currentState = reportsPagination.audit.getState();
+            const absoluteIndex = ((currentState.page - 1) * currentState.pageSize) + pageIndex;
+            const auditItem = reportsState.auditTrail[absoluteIndex];
             openAuditDetailsModal(auditItem);
         });
     });
@@ -846,10 +844,234 @@ function renderAuditTrailErrorState() {
     `;
 }
 
+function renderCountByLabelTable(tbodyId, rows) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(row => `
+        <tr>
+            <td>${escapeHtml(readValue(row, ["label"]) || "--")}</td>
+            <td>${escapeHtml(formatWholeNumber(readValue(row, ["count"])))}</td>
+        </tr>
+    `).join("");
+}
+
+function renderIncidentReport(data) {
+    setText("incidentTotalCount", formatWholeNumber(readValue(data, ["totalIncidents"])));
+    setText("incidentActiveCount", formatWholeNumber(readValue(data, ["activeIncidents"])));
+    setText("incidentResolvedCount", formatWholeNumber(readValue(data, ["resolvedIncidents"])));
+
+    renderCountByLabelTable("incidentByTypeTableBody", readValue(data, ["byType"]) || []);
+    renderCountByLabelTable("incidentByBarangayTableBody", readValue(data, ["byBarangay"]) || []);
+
+    const incidentRows = readValue(data, ["incidents"]) || [];
+    if (reportsPagination.incidents) {
+        reportsPagination.incidents.setRows(incidentRows);
+    }
+}
+
+function renderIncidentRecordRows(rows) {
+    const tbody = document.getElementById("incidentRecordsTableBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state-cell">No incident records found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(row => `
+        <tr>
+            <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(row, ["calamityType", "type"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["affectedArea"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["barangayName", "barangay"]) || "--")}</td>
+            <td>${escapeHtml(formatDateLong(readValue(row, ["date", "reportedAt"])))}</td>
+        </tr>
+    `).join("");
+}
+
+function renderIncidentErrorState() {
+    setText("incidentTotalCount", "0");
+    setText("incidentActiveCount", "0");
+    setText("incidentResolvedCount", "0");
+
+    renderCountByLabelTable("incidentByTypeTableBody", []);
+    renderCountByLabelTable("incidentByBarangayTableBody", []);
+
+    if (reportsPagination.incidents) {
+        reportsPagination.incidents.setRows([]);
+    } else {
+        renderIncidentRecordRows([]);
+    }
+}
+
+function renderCalamityReport(data) {
+    setText("calamityTotalCount", formatWholeNumber(readValue(data, ["totalCalamities"])));
+    setText("calamityActiveCount", formatWholeNumber(readValue(data, ["activeCalamities"])));
+    setText("calamityMonitoringCount", formatWholeNumber(readValue(data, ["monitoringCalamities"])));
+
+    const resolved = Number(readValue(data, ["resolvedCalamities"]) ?? 0);
+    const ended = Number(readValue(data, ["endedCalamities"]) ?? 0);
+    setText("calamityResolvedEndedCount", formatWholeNumber(resolved + ended));
+
+    renderCountByLabelTable("calamityByTypeTableBody", readValue(data, ["byType"]) || []);
+    renderCountByLabelTable("calamityByBarangayTableBody", readValue(data, ["byBarangay"]) || []);
+
+    const calamityRows = readValue(data, ["calamities"]) || [];
+    if (reportsPagination.calamities) {
+        reportsPagination.calamities.setRows(calamityRows);
+    }
+}
+
+function renderCalamityRecordRows(rows) {
+    const tbody = document.getElementById("calamityRecordsTableBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state-cell">No calamity records found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(row => `
+        <tr>
+            <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(row, ["calamityType", "type"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["barangay"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["location", "affectedAreaTypes"]) || "--")}</td>
+            <td>${escapeHtml(formatDateLong(readValue(row, ["date"])))}</td>
+        </tr>
+    `).join("");
+}
+
+function renderCalamityErrorState() {
+    setText("calamityTotalCount", "0");
+    setText("calamityActiveCount", "0");
+    setText("calamityMonitoringCount", "0");
+    setText("calamityResolvedEndedCount", "0");
+
+    renderCountByLabelTable("calamityByTypeTableBody", []);
+    renderCountByLabelTable("calamityByBarangayTableBody", []);
+
+    if (reportsPagination.calamities) {
+        reportsPagination.calamities.setRows([]);
+    } else {
+        renderCalamityRecordRows([]);
+    }
+}
+
+function renderResourceReport(data) {
+    setText("resourceInventoryCount", formatWholeNumber(readValue(data, ["inventoryCount"])));
+    setText("resourceLowStockCount", formatWholeNumber(readValue(data, ["lowStockCount"])));
+    setText("resourceEvacuationCenterCount", formatWholeNumber(readValue(data, ["evacuationCenterCount"])));
+    setText("resourceOpenEvacuationCenters", formatWholeNumber(readValue(data, ["openEvacuationCenters"])));
+    setText("resourceReliefDistributionCount", formatWholeNumber(readValue(data, ["reliefDistributionCount"])));
+
+    const lowStockBody = document.getElementById("resourceLowStockTableBody");
+    const lowStockItems = readValue(data, ["lowStockItems"]) || [];
+    if (lowStockBody) {
+        lowStockBody.innerHTML = lowStockItems.length ? lowStockItems.map(item => `
+            <tr>
+                <td>${escapeHtml(String(readValue(item, ["id"]) ?? "--"))}</td>
+                <td>${escapeHtml(readValue(item, ["itemName", "name"]) || "--")}</td>
+                <td>${escapeHtml(readValue(item, ["category"]) || "--")}</td>
+                <td>${escapeHtml(String(readValue(item, ["availableQuantity"]) ?? "--"))}</td>
+                <td>${escapeHtml(String(readValue(item, ["reorderLevel"]) ?? "--"))}</td>
+                <td>${escapeHtml(readValue(item, ["stockStatus"]) || "--")}</td>
+            </tr>
+        `).join("") : `<tr><td colspan="6" class="empty-state-cell">No low-stock items found.</td></tr>`;
+    }
+
+    const transactions = readValue(data, ["inventoryTransactions"]) || [];
+    if (reportsPagination.resourceTransactions) {
+        reportsPagination.resourceTransactions.setRows(transactions);
+    }
+
+    const reliefRows = readValue(data, ["reliefDistributions"]) || [];
+    if (reportsPagination.resourceRelief) {
+        reportsPagination.resourceRelief.setRows(reliefRows);
+    }
+}
+
+function renderResourceTransactionRows(rows) {
+    const tbody = document.getElementById("resourceTransactionsTableBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state-cell">No inventory transactions found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(tx => `
+        <tr>
+            <td>${escapeHtml(String(readValue(tx, ["id"]) ?? "--"))}</td>
+            <td>${escapeHtml(String(readValue(tx, ["inventoryId"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(tx, ["itemName"]) || "--")}</td>
+            <td>${escapeHtml(readValue(tx, ["actionType"]) || "--")}</td>
+            <td>${escapeHtml(String(readValue(tx, ["quantity"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(tx, ["performedBy"]) || "--")}</td>
+            <td>${escapeHtml(formatDateTime(readValue(tx, ["timeStamp"])))}</td>
+        </tr>
+    `).join("");
+}
+
+function renderResourceReliefRows(rows) {
+    const tbody = document.getElementById("resourceReliefDistributionTableBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state-cell">No relief distributions found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(row => `
+        <tr>
+            <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(row, ["referenceType"]) || "--")}</td>
+            <td>${escapeHtml(String(readValue(row, ["referenceId"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(row, ["itemName"]) || "--")}</td>
+            <td>${escapeHtml(String(readValue(row, ["quantity"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(row, ["distributedBy"]) || "--")}</td>
+            <td>${escapeHtml(formatDateTime(readValue(row, ["distributedAt"])))}</td>
+        </tr>
+    `).join("");
+}
+
+function renderResourceErrorState() {
+    setText("resourceInventoryCount", "0");
+    setText("resourceLowStockCount", "0");
+    setText("resourceEvacuationCenterCount", "0");
+    setText("resourceOpenEvacuationCenters", "0");
+    setText("resourceReliefDistributionCount", "0");
+
+    const lowStockBody = document.getElementById("resourceLowStockTableBody");
+    if (lowStockBody) {
+        lowStockBody.innerHTML = `<tr><td colspan="6" class="empty-state-cell">No low-stock items found.</td></tr>`;
+    }
+
+    if (reportsPagination.resourceTransactions) {
+        reportsPagination.resourceTransactions.setRows([]);
+    } else {
+        renderResourceTransactionRows([]);
+    }
+
+    if (reportsPagination.resourceRelief) {
+        reportsPagination.resourceRelief.setRows([]);
+    } else {
+        renderResourceReliefRows([]);
+    }
+}
+
 function openAuditDetailsModal(item) {
     if (!item) return;
 
-    setText("auditDetailModule", normalizeAuditModuleName(readValue(item, ["module"])) || "OPERATIONS");
+    setText("auditDetailModule", readValue(item, ["module"]) || "OPERATIONS");
     setText("auditDetailRecordType", readValue(item, ["recordType", "operationType"]) || "--");
     setText("auditDetailRecordId", readValue(item, ["recordId", "operationId"]) ?? "--");
     setText("auditDetailActionType", readValue(item, ["actionType"]) || "--");
@@ -872,9 +1094,8 @@ function closeAuditDetailsModal() {
     const modal = document.getElementById("auditDetailsModal");
     if (modal) {
         modal.classList.remove("active");
+        document.body.style.overflow = "auto";
     }
-
-    ensureReportsPageScroll();
 }
 
 function updateCoveredPeriodLabels() {
@@ -1019,7 +1240,6 @@ function escapeHtml(value) {
 }
 
 function showToastLikeMessage(message) {
-    // Reuse error modal if available, otherwise fallback
     if (typeof showErrorModal === "function") {
         showErrorModal(message);
     } else {
@@ -1182,197 +1402,6 @@ function updateSummaryFinancialLabels() {
     setText("summaryCurrentBudgetLabel", `Budget (${selectedYear})`);
     setText("summaryCurrentSpentLabel", `Spent (${selectedYear})`);
     setText("summaryCurrentRemainingLabel", `Remaining Budget (${selectedYear})`);
-}
-
-async function loadIncidentReport(showSuccessMessage = false) {
-    try {
-        const params = buildGlobalDateParams();
-        const url = `${REPORTS_API_BASE}/incidents${params ? `?${params}` : ""}`;
-        const data = await apiRequest(url);
-
-        reportsState.incidentReport = data;
-        renderIncidentReport(data);
-
-        if (showSuccessMessage) {
-            showMessage("Incident report updated successfully.", "success");
-        }
-    } catch (error) {
-        console.error("Failed to load incident report:", error);
-        renderIncidentErrorState();
-        showMessage(extractErrorMessage(error, "Unable to load incident report."), "error");
-    }
-}
-
-async function loadCalamityReport(showSuccessMessage = false) {
-    try {
-        const params = buildGlobalDateParams();
-        const url = `${REPORTS_API_BASE}/calamities${params ? `?${params}` : ""}`;
-        const data = await apiRequest(url);
-
-        reportsState.calamityReport = data;
-        renderCalamityReport(data);
-
-        if (showSuccessMessage) {
-            showMessage("Calamity report updated successfully.", "success");
-        }
-    } catch (error) {
-        console.error("Failed to load calamity report:", error);
-        renderCalamityErrorState();
-        showMessage(extractErrorMessage(error, "Unable to load calamity report."), "error");
-    }
-}
-
-async function loadResourceReport(showSuccessMessage = false) {
-    try {
-        const params = buildGlobalDateParams();
-        const url = `${REPORTS_API_BASE}/resources${params ? `?${params}` : ""}`;
-        const data = await apiRequest(url);
-
-        reportsState.resourceReport = data;
-        renderResourceReport(data);
-
-        if (showSuccessMessage) {
-            showMessage("Resources report updated successfully.", "success");
-        }
-    } catch (error) {
-        console.error("Failed to load resources report:", error);
-        renderResourceErrorState();
-        showMessage(extractErrorMessage(error, "Unable to load resources report."), "error");
-    }
-}
-
-function renderCountByLabelTable(tbodyId, rows) {
-    const tbody = document.getElementById(tbodyId);
-    if (!tbody) return;
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" class="empty-state-cell">No data available.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = rows.map(row => `
-        <tr>
-            <td>${escapeHtml(readValue(row, ["label"]) || "--")}</td>
-            <td>${escapeHtml(formatWholeNumber(readValue(row, ["count"])))}</td>
-        </tr>
-    `).join("");
-}
-
-function renderIncidentReport(data) {
-    setText("incidentTotalCount", formatWholeNumber(readValue(data, ["totalIncidents"])));
-    setText("incidentActiveCount", formatWholeNumber(readValue(data, ["activeIncidents"])));
-    setText("incidentResolvedCount", formatWholeNumber(readValue(data, ["resolvedIncidents"])));
-
-    renderCountByLabelTable("incidentByTypeTableBody", readValue(data, ["byType"]) || []);
-    renderCountByLabelTable("incidentByBarangayTableBody", readValue(data, ["byBarangay"]) || []);
-
-    const tbody = document.getElementById("incidentRecordsTableBody");
-    const rows = readValue(data, ["incidents"]) || [];
-
-    if (!tbody) return;
-    if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state-cell">No incident records found.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = rows.map(row => `
-        <tr>
-            <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
-            <td>${escapeHtml(readValue(row, ["calamityType", "type"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["affectedArea"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["barangayName", "barangay"]) || "--")}</td>
-            <td>${escapeHtml(formatDateLong(readValue(row, ["date"])))}</td>
-        </tr>
-    `).join("");
-}
-
-function renderCalamityReport(data) {
-    setText("calamityTotalCount", formatWholeNumber(readValue(data, ["totalCalamities"])));
-    setText("calamityActiveCount", formatWholeNumber(readValue(data, ["activeCalamities"])));
-    setText("calamityMonitoringCount", formatWholeNumber(readValue(data, ["monitoringCalamities"])));
-
-    const resolved = Number(readValue(data, ["resolvedCalamities"]) ?? 0);
-    const ended = Number(readValue(data, ["endedCalamities"]) ?? 0);
-    setText("calamityResolvedEndedCount", formatWholeNumber(resolved + ended));
-
-    renderCountByLabelTable("calamityByTypeTableBody", readValue(data, ["byType"]) || []);
-    renderCountByLabelTable("calamityByBarangayTableBody", readValue(data, ["byBarangay"]) || []);
-
-    const tbody = document.getElementById("calamityRecordsTableBody");
-    const rows = readValue(data, ["calamities"]) || [];
-
-    if (!tbody) return;
-    if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state-cell">No calamity records found.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = rows.map(row => `
-        <tr>
-            <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
-            <td>${escapeHtml(readValue(row, ["calamityType"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["barangay"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["location"]) || "--")}</td>
-            <td>${escapeHtml(formatDateLong(readValue(row, ["date"])))}</td>
-        </tr>
-    `).join("");
-}
-
-function renderResourceReport(data) {
-    setText("resourceInventoryCount", formatWholeNumber(readValue(data, ["inventoryCount"])));
-    setText("resourceLowStockCount", formatWholeNumber(readValue(data, ["lowStockCount"])));
-    setText("resourceEvacuationCenterCount", formatWholeNumber(readValue(data, ["evacuationCenterCount"])));
-    setText("resourceOpenEvacuationCenters", formatWholeNumber(readValue(data, ["openEvacuationCenters"])));
-    setText("resourceReliefDistributionCount", formatWholeNumber(readValue(data, ["reliefDistributionCount"])));
-
-    const lowStockBody = document.getElementById("resourceLowStockTableBody");
-    const lowStockItems = readValue(data, ["lowStockItems"]) || [];
-    if (lowStockBody) {
-        lowStockBody.innerHTML = lowStockItems.length ? lowStockItems.map(item => `
-            <tr>
-                <td>${escapeHtml(String(readValue(item, ["id"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(item, ["itemName"]) || "--")}</td>
-                <td>${escapeHtml(readValue(item, ["category"]) || "--")}</td>
-                <td>${escapeHtml(String(readValue(item, ["availableQuantity"]) ?? "--"))}</td>
-                <td>${escapeHtml(String(readValue(item, ["reorderLevel"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(item, ["stockStatus"]) || "--")}</td>
-            </tr>
-        `).join("") : `<tr><td colspan="6" class="empty-state-cell">No low-stock items found.</td></tr>`;
-    }
-
-    const txBody = document.getElementById("resourceTransactionsTableBody");
-    const transactions = readValue(data, ["inventoryTransactions"]) || [];
-    if (txBody) {
-        txBody.innerHTML = transactions.length ? transactions.map(tx => `
-            <tr>
-                <td>${escapeHtml(String(readValue(tx, ["id"]) ?? "--"))}</td>
-                <td>${escapeHtml(String(readValue(tx, ["inventoryId"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(tx, ["itemName"]) || "--")}</td>
-                <td>${escapeHtml(readValue(tx, ["actionType"]) || "--")}</td>
-                <td>${escapeHtml(String(readValue(tx, ["quantity"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(tx, ["performedBy"]) || "--")}</td>
-                <td>${escapeHtml(formatDateTime(readValue(tx, ["timeStamp"])))}</td>
-            </tr>
-        `).join("") : `<tr><td colspan="7" class="empty-state-cell">No inventory transactions found.</td></tr>`;
-    }
-
-    const reliefBody = document.getElementById("resourceReliefDistributionTableBody");
-    const reliefRows = readValue(data, ["reliefDistributions"]) || [];
-    if (reliefBody) {
-        reliefBody.innerHTML = reliefRows.length ? reliefRows.map(row => `
-            <tr>
-                <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(row, ["referenceType"]) || "--")}</td>
-                <td>${escapeHtml(String(readValue(row, ["referenceId"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(row, ["itemName"]) || "--")}</td>
-                <td>${escapeHtml(String(readValue(row, ["quantity"]) ?? "--"))}</td>
-                <td>${escapeHtml(readValue(row, ["distributedBy"]) || "--")}</td>
-                <td>${escapeHtml(formatDateTime(readValue(row, ["distributedAt"])))}</td>
-            </tr>
-        `).join("") : `<tr><td colspan="7" class="empty-state-cell">No relief distributions found.</td></tr>`;
-    }
 }
 
 async function exportActiveReportPdf() {
