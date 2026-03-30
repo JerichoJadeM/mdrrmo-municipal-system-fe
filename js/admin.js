@@ -19,6 +19,7 @@ const state = {
 let notificationsPagination = null;
 let approvalsPagination = null;
 let conversationPagination = null;
+let usersPagination = null;
 let roleChangesPagination = null;
 let activeThreadMenuId = null;
 let currentThreadMessages = [];
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initNotificationsPagination();
     initApprovalsPagination();
     initConversationPagination();
+    initUsersPagination();
     initRoleChangesPagination();
 
     bindAdminNavigation();
@@ -1046,12 +1048,31 @@ function renderUserTable() {
         return matchesKeyword && matchesRole && matchesStatus;
     });
 
+    toggleSectionPaginationBar("usersPaginationBar", users.length, 5);
+
     if (!users.length) {
         tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No users found.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = users.map(user => {
+    if (!usersPagination) {
+        renderUserRows(users.slice(0, 5));
+        return;
+    }
+
+    usersPagination.setRows(users);
+}
+
+function renderUserRows(pageRows) {
+    const tbody = document.getElementById("userTableBody");
+    if (!tbody) return;
+
+    if (!pageRows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No users found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = pageRows.map(user => {
         const role = derivePrimaryRole(user.authorities || []);
         return `
             <tr>
@@ -2095,4 +2116,20 @@ function applyAdminTabVisibility() {
 
     if (rolesBtn) rolesBtn.style.display = canViewRolesTab() ? "" : "none";
     if (rolesPanel && !canViewRolesTab()) rolesPanel.classList.remove("active");
+}
+
+function initUsersPagination() {
+    if (typeof createPaginationController !== "function") return;
+
+    usersPagination = createPaginationController({
+        infoId: "usersPaginationInfo",
+        controlsId: "usersPaginationControls",
+        pageSizeSelectId: "usersPageSize",
+        itemLabel: "users",
+        initialPage: 1,
+        initialPageSize: 5,
+        buttonClass: "app-page-btn",
+        ellipsisClass: "app-page-btn app-page-btn-ellipsis",
+        onRenderRows: (pageRows) => renderUserRows(pageRows)
+    });
 }

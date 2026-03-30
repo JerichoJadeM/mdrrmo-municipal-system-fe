@@ -103,12 +103,6 @@
                 </p>
             </div>
 
-            <div class="page-hero-actions admin-hero-actions">
-                <a href="admin.html#profile" class="action-btn secondary-btn"><i class="fas fa-user"></i>Profile</a>
-                <a href="admin.html#notifications" class="action-btn secondary-btn"><i class="fas fa-bell"></i>Notifications</a>
-                <a href="admin.html#approvals" class="action-btn secondary-btn"><i class="fas fa-clipboard-check"></i>Approvals</a>
-                <a href="admin.html#messages" class="action-btn primary-btn"><i class="fas fa-envelope"></i>Messages</a>
-            </div>
         </section>
 
         <section class="admin-meta-panel card-section">
@@ -455,6 +449,25 @@
                                 </thead>
                                 <tbody id="userTableBody"></tbody>
                             </table>
+
+                            <div class="app-pagination-bar admin-section-pagination hidden" id="usersPaginationBar">
+                                <div class="app-pagination-left">
+                                    <div class="app-pagination-info" id="usersPaginationInfo">
+                                        Showing 0 to 0 of 0 users
+                                    </div>
+
+                                    <div class="app-page-size-wrap">
+                                        <label for="usersPageSize">Rows per page</label>
+                                        <select id="usersPageSize">
+                                            <option value="5" selected>5</option>
+                                            <option value="10">10</option>
+                                            <option value="15">15</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="app-pagination-controls" id="usersPaginationControls"></div>
+                            </div>
                         </div>
                     </div>
                 </section>
