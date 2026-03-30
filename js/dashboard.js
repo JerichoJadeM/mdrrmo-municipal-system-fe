@@ -16,68 +16,54 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadDashboardPage() {
     try {
-        const summary = await fetchJsonSafe(`${API_BASE}/dashboard/summary`, {});
-        const incidents = await fetchJsonSafe(`${API_BASE}/incidents`, []);
-        const calamities = await fetchJsonSafe(`${API_BASE}/calamities`, []);
-        const budgets = await fetchJsonSafe(`${API_BASE}/budgets`, []);
-        const inventory = await fetchJsonSafe(`${API_BASE}/inventory`, []);
-        const notifications = await fetchJsonSafe(`${API_BASE}/notifications`, []);
-        const evacuationCenters = await fetchJsonSafe(`${API_BASE}/evacuation-centers`, []);
-        const budgetCurrent = await fetchJsonSafe(`${API_BASE}/resources/summary`, {});
-
-        const viewModel = buildDashboardViewModel({
-            summary,
-            incidents,
-            calamities,
-            budgets,
-            inventory,
-            notifications,
-            evacuationCenters,
-            budgetCurrent
-        });
+        const overview = await fetchJsonSafe(`${API_BASE}/dashboard/overview`, {});
+        const viewModel = buildDashboardViewModel(overview);
 
         renderDashboard(viewModel);
         renderDashboardCharts(viewModel);
     } catch (error) {
         console.error("Failed to load dashboard page", error);
 
-        const fallbackModel = buildDashboardViewModel({
-            summary: {},
-            incidents: [],
-            calamities: [],
-            budgets: [],
-            inventory: [],
-            notifications: [],
-            evacuationCenters: [],
-            budgetCurrent: {}
-        });
-
+        const fallbackModel = buildDashboardViewModel({});
         renderDashboard(fallbackModel);
         renderDashboardCharts(fallbackModel);
-        showDashboardToast(error.message || "Failed to load dashboard data.", "error");
+
+        if (typeof showDashboardToast === "function") {
+            showDashboardToast(error.message || "Failed to load dashboard data.", "error");
+        }
     }
 }
 
-async function fetchDashboardData() {
-    return fetchJson(`${API_BASE}/dashboard/overview`);
-}
-
 function buildDashboardViewModel(raw) {
-    const dashboardSummary = raw.summary || getMockDashboardSummary();
-    const weather = raw.weather || getMockWeatherForecast();
-    const readiness = raw.readiness || getMockReadinessSummary();
-    const alerts = raw.alerts || getMockAlertsOverview();
+    const summary = raw.summary || {};
+    const weatherSource = raw.weather || {};
+    const readinessSource = raw.readiness || {};
+    const alertsSource = raw.alerts || {};
     const budgetCurrentSource = raw.budgetCurrent || {};
+    const budgetHistory = Array.isArray(raw.budgetHistory) ? raw.budgetHistory : [];
+    const incidents = Array.isArray(raw.incidents) ? raw.incidents : [];
+    const calamities = Array.isArray(raw.calamities) ? raw.calamities : [];
+    const evacuationCentersRaw = Array.isArray(raw.evacuationCenters) ? raw.evacuationCenters : [];
+    const responders = Array.isArray(raw.responders) ? raw.responders : [];
+    const recentActivity = Array.isArray(raw.recentActivity) ? raw.recentActivity : [];
+    const overallReadinessLabel =
+        raw.overallReadinessLabel ||
+        alertsSource.summary?.overallReadinessLabel ||
+        mapReadinessRiskToLabel(readinessSource.overallReadinessRiskLevel) ||
+        "Partially Ready";
+
+    const weather = normalizeWeather(weatherSource, raw.lastUpdated);
+
     const budgetCurrent = {
         year:
             Number(budgetCurrentSource.year) ||
-            Number(raw.summary?.year) ||
             new Date().getFullYear(),
 
         totalAllotment:
             Number(budgetCurrentSource.totalAllotment) ||
+            Number(budgetCurrentSource.allotment) ||
             Number(budgetCurrentSource.totalBudget) ||
-            Number(budgetCurrentSource.budgetTotal) ||
+            Number(summary.currentYearBudget) ||
             0,
 
         totalAllocated:
@@ -87,15 +73,16 @@ function buildDashboardViewModel(raw) {
 
         totalObligations:
             Number(budgetCurrentSource.totalObligations) ||
+            Number(budgetCurrentSource.obligations) ||
             Number(budgetCurrentSource.totalSpent) ||
-            Number(budgetCurrentSource.budgetUsed) ||
+            Number(summary.currentYearSpent) ||
             0,
 
         totalRemaining:
             Number(budgetCurrentSource.totalRemaining) ||
             Number(budgetCurrentSource.remainingBalance) ||
             Number(budgetCurrentSource.remainingBudget) ||
-            Number(budgetCurrentSource.budgetRemaining) ||
+            Number(summary.currentYearRemaining) ||
             0,
 
         allocationRate:
@@ -104,84 +91,71 @@ function buildDashboardViewModel(raw) {
         utilizationRate:
             Number(budgetCurrentSource.utilizationRate) ||
             (
-                (Number(budgetCurrentSource.totalAllotment) || Number(budgetCurrentSource.totalBudget) || 0) > 0
+                (Number(budgetCurrentSource.totalAllotment) ||
+                 Number(budgetCurrentSource.allotment) ||
+                 Number(budgetCurrentSource.totalBudget) || 0) > 0
                     ? (
                         (
                             Number(budgetCurrentSource.totalObligations) ||
-                            Number(budgetCurrentSource.totalSpent) ||
-                            Number(budgetCurrentSource.budgetUsed) ||
-                            0
+                            Number(budgetCurrentSource.obligations) ||
+                            Number(budgetCurrentSource.totalSpent) || 0
                         ) /
                         (
                             Number(budgetCurrentSource.totalAllotment) ||
-                            Number(budgetCurrentSource.totalBudget) ||
-                            1
+                            Number(budgetCurrentSource.allotment) ||
+                            Number(budgetCurrentSource.totalBudget) || 1
                         )
                     ) * 100
                     : 0
             )
     };
-    const budgetHistory = Array.isArray(raw.budgetHistory) && raw.budgetHistory.length
-        ? raw.budgetHistory
-        : getMockBudgetHistory();
-    const incidents = Array.isArray(raw.incidents) && raw.incidents.length
-        ? raw.incidents
-        : getMockIncidents();
-    const calamities = Array.isArray(raw.calamities) && raw.calamities.length
-        ? raw.calamities
-        : getMockCalamities();
-    const evacuationCenters = Array.isArray(raw.evacuationCenters) && raw.evacuationCenters.length
-        ? raw.evacuationCenters
-        : getMockEvacuationCenters();
-    const responders = Array.isArray(raw.responders) && raw.responders.length
-        ? raw.responders
-        : getMockResponders();
-    const recentActivity = Array.isArray(raw.recentActivity) && raw.recentActivity.length
-        ? raw.recentActivity
-        : buildFallbackRecentActivity(incidents, calamities);
+
+    const evacuationCenters = evacuationCentersRaw.map(center => {
+        const capacity =
+            Number(center.capacity) ||
+            Number(center.centerCapacity) ||
+            Number(center.maxCapacity) ||
+            Number(center.totalCapacity) ||
+            0;
+
+        const currentEvacuees =
+            Number(center.currentEvacuees) ||
+            0;
+
+        const availableSlots =
+            Number.isFinite(Number(center.availableSlots))
+                ? Number(center.availableSlots)
+                : Math.max(capacity - currentEvacuees, 0);
+
+        const occupancyRate =
+            Number(center.occupancyRate) ||
+            (capacity > 0 ? Math.round((currentEvacuees / capacity) * 100) : 0);
+
+        return {
+            ...center,
+            id: center.id ?? center.centerId ?? null,
+            name:
+                center.name ||
+                center.centerName ||
+                `Center ${center.id || center.centerId || ""}`.trim(),
+            barangayName: center.barangayName || center.centerBarangayName || "-",
+            capacity,
+            currentEvacuees,
+            availableSlots,
+            occupancyRate,
+            capacityStatus: center.capacityStatus || "AVAILABLE",
+            status: center.status || "ACTIVE"
+        };
+    });
 
     const openCenters = evacuationCenters.filter(center =>
         ["active", "open"].includes(normalizeText(center.status))
     );
 
-    const totalEvacuees = sum(evacuationCenters.map(center =>
-        Number(center.currentEvacuees) ||
-        Number(center.evacueeCount) ||
-        Number(center.occupants) ||
-        0
-    ));
-
-    const totalCapacity = sum(evacuationCenters.map(center =>
-        Number(center.capacity) ||
-        Number(center.maxCapacity) ||
-        Number(center.totalCapacity) ||
-        0
-    ));
-
-    const availableSlots = sum(evacuationCenters.map(center => {
-        const explicitSlots = Number(center.availableSlots);
-        if (Number.isFinite(explicitSlots) && explicitSlots >= 0) {
-            return explicitSlots;
-        }
-
-        const capacity =
-            Number(center.capacity) ||
-            Number(center.maxCapacity) ||
-            Number(center.totalCapacity) ||
-            0;
-
-        const evacuees =
-            Number(center.currentEvacuees) ||
-            Number(center.evacueeCount) ||
-            Number(center.occupants) ||
-            0;
-
-        return Math.max(capacity - evacuees, 0);
-    }));
-
-    const occupancyRate = totalCapacity > 0
-        ? Math.round((totalEvacuees / totalCapacity) * 100)
-        : 0;
+    const totalEvacuees = sum(evacuationCenters.map(center => Number(center.currentEvacuees) || 0));
+    const totalCapacity = sum(evacuationCenters.map(center => Number(center.capacity) || 0));
+    const availableSlots = sum(evacuationCenters.map(center => Number(center.availableSlots) || 0));
+    const occupancyRate = totalCapacity > 0 ? Math.round((totalEvacuees / totalCapacity) * 100) : 0;
 
     const activeIncidents = incidents.filter(incident =>
         ["ongoing", "in_progress", "on_site"].includes(normalizeText(incident.status))
@@ -197,22 +171,75 @@ function buildDashboardViewModel(raw) {
         normalizeText(calamity.status) === "monitoring"
     );
 
-    const readinessDomains = Array.isArray(alerts.readinessDomains) && alerts.readinessDomains.length
-        ? alerts.readinessDomains
-        : buildReadinessDomainsFromFallback(
-            weather,
-            readiness,
-            budgetCurrent,
-            responders,
-            evacuationCenters,
-            activeIncidents,
-            activeCalamities
-        );
+    const readiness = {
+        inventoryRiskLevel: readinessSource.inventoryRiskLevel || "MODERATE",
+        inventoryLowStockCount:
+            Number(readinessSource.inventoryLowStockCount) || 0,
+        inventoryOutOfStockCount:
+            Number(readinessSource.inventoryOutOfStockCount) || 0,
+        reliefRiskLevel: readinessSource.reliefRiskLevel || "MODERATE",
+        reliefLowStockCount:
+            Number(readinessSource.reliefLowStockCount) || 0,
+        estimatedFamilyCoverage:
+            Number(readinessSource.estimatedFamilyCoverage) || 0,
+        evacuationRiskLevel: readinessSource.evacuationRiskLevel || "LOW",
+        activeCentersCount:
+            Number(readinessSource.activeCentersCount) || openCenters.length,
+        nearFullCentersCount:
+            Number(readinessSource.nearFullCentersCount) ||
+            evacuationCenters.filter(center => center.occupancyRate >= 80 && center.occupancyRate < 95).length,
+        fullCentersCount:
+            Number(readinessSource.fullCentersCount) ||
+            evacuationCenters.filter(center => center.occupancyRate >= 95).length,
+        overallOccupancyRate:
+            Number(readinessSource.overallOccupancyRate) || occupancyRate,
+        budgetRiskLevel: readinessSource.budgetRiskLevel || "MODERATE",
+        budgetUtilizationRate:
+            Number(readinessSource.budgetUtilizationRate) ||
+            Number(budgetCurrent.utilizationRate) ||
+            0,
+        overallReadinessRiskLevel:
+            readinessSource.overallReadinessRiskLevel || "MODERATE",
+        overallReadinessScore:
+            Number(readinessSource.overallReadinessScore) || 0,
+        topConsumedResources:
+            Array.isArray(readinessSource.topConsumedResources)
+                ? readinessSource.topConsumedResources
+                : []
+    };
 
-    const latestAlerts = Array.isArray(alerts.activeAlerts) ? alerts.activeAlerts.slice(0, 5) : [];
-    const criticalAttention = Array.isArray(alerts.priorityActions) && alerts.priorityActions.length
-        ? alerts.priorityActions.slice(0, 5)
-        : buildFallbackAttentionList(readiness, weather, budgetCurrent);
+    const alerts = {
+        lastUpdated: raw.lastUpdated || weather.generatedAt || new Date().toISOString(),
+        summary: {
+            overallReadinessLabel,
+            activeWarningsCount:
+                Number(alertsSource.summary?.activeWarningsCount) ||
+                Number(alertsSource.activeWarningsCount) ||
+                0,
+            criticalGapsCount:
+                Number(alertsSource.summary?.criticalGapsCount) ||
+                Number(alertsSource.criticalGapsCount) ||
+                0,
+            responseCapacityLabel:
+                alertsSource.summary?.responseCapacityLabel ||
+                alertsSource.responseCapacityLabel ||
+                "Live"
+        },
+        readinessDomains: Array.isArray(alertsSource.readinessDomains) && alertsSource.readinessDomains.length
+            ? alertsSource.readinessDomains
+            : buildReadinessDomains(
+                weather,
+                readiness,
+                budgetCurrent,
+                evacuationCenters,
+                activeIncidents,
+                activeCalamities,
+                responders
+            ),
+        priorityActions: Array.isArray(alertsSource.priorityActions) && alertsSource.priorityActions.length
+            ? alertsSource.priorityActions.slice(0, 5)
+            : buildAttentionList(readiness, weather, budgetCurrent)
+    };
 
     const communityImpactNotes = buildCommunityImpactNotes(
         openCenters,
@@ -223,62 +250,49 @@ function buildDashboardViewModel(raw) {
 
     const eventTrend = buildEventTrendData(incidents, calamities);
     const evacuationOccupancyChart = buildEvacuationOccupancyChartData(evacuationCenters);
-    const currentYear =
-        Number(raw.budgetCurrent?.year)
-        || Number(raw.summary?.year)
-        || new Date().getFullYear();
-
+    const currentYear = Number(budgetCurrent.year) || new Date().getFullYear();
     const budgetTrend = buildBudgetTrendData(budgetHistory, currentYear);
     const budgetCategories = buildBudgetCategoryChartData(
-        raw.summary?.categoryBreakdown || dashboardSummary.categoryBreakdown || []
+        summary.categoryBreakdown || []
     );
     const topResources = buildTopResourcesChartData(
-        raw.readiness?.topConsumedResources || []
+        readiness.topConsumedResources || []
     );
-    const criticalItemsAtRisk = extractCriticalItemsAtRisk(readinessDomains);
+    const criticalItemsAtRisk = extractCriticalItemsAtRisk(alerts.readinessDomains);
 
     return {
         meta: {
-            lastUpdated: raw.lastUpdated || alerts.lastUpdated || weather.generatedAt || new Date().toISOString(),
-            readinessLabel: raw.overallReadinessLabel
-                || alerts.summary?.overallReadinessLabel
-                || mapReadinessRiskToLabel(readiness.overallReadinessRiskLevel)
-                || "Partially Ready"
+            lastUpdated: alerts.lastUpdated,
+            readinessLabel: overallReadinessLabel
         },
         summary: {
-            overallReadiness: raw.overallReadinessLabel
-                || alerts.summary?.overallReadinessLabel
-                || mapReadinessRiskToLabel(readiness.overallReadinessRiskLevel),
-            activeIncidents: activeIncidents.length || Number(dashboardSummary.activeIncidents) || 0,
-            activeCalamities: activeCalamities.length || Number(dashboardSummary.calamityCount) || 0,
+            overallReadiness: overallReadinessLabel,
+            activeIncidents: activeIncidents.length || Number(summary.activeIncidents) || 0,
+            activeCalamities: activeCalamities.length || Number(summary.calamityCount) || 0,
             openCenters: openCenters.length,
             currentEvacuees: totalEvacuees,
             remainingBudget: budgetCurrent.totalRemaining
         },
         situation: {
-            statusLabel: raw.overallReadinessLabel
-                || alerts.summary?.overallReadinessLabel
-                || mapReadinessRiskToLabel(readiness.overallReadinessRiskLevel),
+            statusLabel: overallReadinessLabel,
             availableResponders: responders.length,
-            activeWarnings: alerts.summary?.activeWarningsCount || latestAlerts.length,
-            criticalGaps: alerts.summary?.criticalGapsCount
-                || latestAlerts.filter(item => ["HIGH", "CRITICAL"].includes(String(item.severity || "").toUpperCase())).length,
-            nearFullCenters: Number(readiness.nearFullCentersCount)
-                || evacuationCenters.filter(center => normalizeText(center.capacityStatus) === "near_full").length,
+            activeWarnings: alerts.summary.activeWarningsCount,
+            criticalGaps: alerts.summary.criticalGapsCount,
+            nearFullCenters: Number(readiness.nearFullCentersCount) || 0,
             lowStockItems: Number(readiness.inventoryLowStockCount) || 0,
             budgetUtilization: formatPercent(budgetCurrent.utilizationRate)
         },
         weather: {
-            riskLevel: weather.summary?.overallRiskLevel || "--",
-            rainfallOutlook: weather.summary?.rainfallOutlook || "--",
-            recommendation: weather.summary?.recommendation || "--",
-            highRiskBarangays: weather.summary?.highRiskBarangays ?? 0,
-            monitoredBarangays: weather.summary?.totalBarangays ?? 0
+            riskLevel: weather.summary.overallRiskLevel || "--",
+            rainfallOutlook: weather.summary.rainfallOutlook || "--",
+            recommendation: weather.summary.recommendation || "--",
+            highRiskBarangays: weather.summary.highRiskBarangays ?? 0,
+            monitoredBarangays: weather.summary.totalBarangays ?? 0
         },
         readiness: {
-            domains: readinessDomains
+            domains: alerts.readinessDomains
         },
-        attention: criticalAttention,
+        attention: alerts.priorityActions,
         incidents: {
             reported: reportedIncidents.length,
             dispatched: dispatchedIncidents.length,
@@ -312,7 +326,7 @@ function buildDashboardViewModel(raw) {
             familyCoverage: Number(readiness.estimatedFamilyCoverage) || 0
         },
         charts: {
-            readinessDomains,
+            readinessDomains: alerts.readinessDomains,
             eventTrend,
             budgetTrend,
             budgetCategories,
@@ -320,6 +334,74 @@ function buildDashboardViewModel(raw) {
             topResources
         }
     };
+}
+
+function normalizeWeather(weatherSource, lastUpdated) {
+    const summary = weatherSource.summary || {};
+
+    return {
+        generatedAt: lastUpdated || weatherSource.generatedAt || new Date().toISOString(),
+        summary: {
+            overallRiskLevel:
+                summary.overallRiskLevel ||
+                weatherSource.overallRiskLevel ||
+                weatherSource.riskLevel ||
+                deriveWeatherRiskLevel(weatherSource) ||
+                "--",
+
+            rainfallOutlook:
+                summary.rainfallOutlook ||
+                weatherSource.rainfallOutlook ||
+                weatherSource.outlook ||
+                weatherSource.rainfallSummary ||
+                deriveRainfallOutlook(weatherSource) ||
+                "--",
+
+            recommendation:
+                summary.recommendation ||
+                weatherSource.recommendation ||
+                weatherSource.advisory ||
+                deriveWeatherRecommendation(weatherSource) ||
+                "--",
+
+            totalBarangays:
+                Number(
+                    summary.totalBarangays ??
+                    weatherSource.totalBarangays ??
+                    weatherSource.monitoredBarangays ??
+                    0
+                ),
+
+            highRiskBarangays:
+                Number(
+                    summary.highRiskBarangays ??
+                    weatherSource.highRiskBarangays ??
+                    weatherSource.barangaysAtHighRisk ??
+                    0
+                )
+        }
+    };
+}
+
+function deriveWeatherRiskLevel(weatherSource) {
+    const text = JSON.stringify(weatherSource || {}).toLowerCase();
+    if (text.includes("critical")) return "CRITICAL";
+    if (text.includes("high")) return "HIGH";
+    if (text.includes("moderate") || text.includes("medium")) return "MODERATE";
+    if (text.includes("low")) return "LOW";
+    return "";
+}
+
+function deriveRainfallOutlook(weatherSource) {
+    const daily = Array.isArray(weatherSource.dailyForecasts) ? weatherSource.dailyForecasts : [];
+    const first = daily[0] || {};
+    return first.rainfallOutlook || first.outlook || first.condition || weatherSource.condition || "";
+}
+
+function deriveWeatherRecommendation(weatherSource) {
+    const daily = Array.isArray(weatherSource.dailyForecasts) ? weatherSource.dailyForecasts : [];
+    const first = daily[0] || {};
+    return first.recommendation || "";
 }
 
 function renderDashboard(viewModel) {
@@ -861,10 +943,9 @@ function buildChartOptions(yLabel, extras = {}) {
     };
 }
 
-function buildReadinessDomainsFromFallback(weather, readiness, budgetCurrent, responders, evacuationCenters, activeIncidents, activeCalamities) {
+function buildReadinessDomains(weather, readiness, budgetCurrent, evacuationCenters, activeIncidents, activeCalamities, responders = []) {
     const weatherRisk = weather.summary?.overallRiskLevel || "MODERATE";
-    const openCenters = evacuationCenters.filter(center => ["active", "open"].includes(normalizeText(center.status)));
-    const availableSlots = sum(openCenters.map(center => Number(center.availableSlots) || 0));
+    const availableSlots = sum(evacuationCenters.map(center => Number(center.availableSlots) || 0));
 
     return [
         {
@@ -899,7 +980,7 @@ function buildReadinessDomainsFromFallback(weather, readiness, budgetCurrent, re
             metrics: [
                 { label: "Low Stock", value: String(readiness.inventoryLowStockCount ?? 0) },
                 { label: "Out of Stock", value: String(readiness.inventoryOutOfStockCount ?? 0) },
-                { label: "Critical Items At Risk", value: "2" }
+                { label: "Critical Items At Risk", value: String((readiness.inventoryLowStockCount || 0) + (readiness.inventoryOutOfStockCount || 0)) }
             ]
         },
         {
@@ -927,7 +1008,7 @@ function buildReadinessDomainsFromFallback(weather, readiness, budgetCurrent, re
     ];
 }
 
-function buildFallbackAttentionList(readiness, weather, budgetCurrent) {
+function buildAttentionList(readiness, weather, budgetCurrent) {
     const rows = [];
 
     if (Number(readiness.inventoryOutOfStockCount) > 0) {
@@ -1013,28 +1094,28 @@ function buildBudgetTrendData(history, currentYear = new Date().getFullYear()) {
         if (!year) return;
 
         const allotment =
-            Number(item.allotment)
-            || Number(item.totalAllotment)
-            || Number(item.totalBudget)
-            || Number(item.totalAmount)
-            || 0;
+            Number(item.allotment) ||
+            Number(item.totalAllotment) ||
+            Number(item.totalBudget) ||
+            Number(item.totalAmount) ||
+            0;
 
         const obligations =
-            Number(item.obligations)
-            || Number(item.totalObligations)
-            || Number(item.totalObligated)
-            || Number(item.totalSpent)
-            || 0;
+            Number(item.obligations) ||
+            Number(item.totalObligations) ||
+            Number(item.totalObligated) ||
+            Number(item.totalSpent) ||
+            0;
 
         const remainingBalance =
-            Number(item.remainingBalance)
-            || Number(item.totalRemaining)
-            || Number(item.remaining)
-            || Math.max(allotment - obligations, 0);
+            Number(item.remainingBalance) ||
+            Number(item.totalRemaining) ||
+            Number(item.remaining) ||
+            Math.max(allotment - obligations, 0);
 
         const utilizationRate =
-            Number(item.utilizationRate)
-            || (allotment > 0 ? (obligations / allotment) * 100 : 0);
+            Number(item.utilizationRate) ||
+            (allotment > 0 ? (obligations / allotment) * 100 : 0);
 
         historyMap.set(year, {
             year,
@@ -1105,14 +1186,13 @@ function buildEvacuationOccupancyChartData(centers) {
         .map(center => {
             const capacity =
                 Number(center.capacity) ||
+                Number(center.centerCapacity) ||
                 Number(center.maxCapacity) ||
                 Number(center.totalCapacity) ||
                 0;
 
             const evacuees =
                 Number(center.currentEvacuees) ||
-                Number(center.evacueeCount) ||
-                Number(center.occupants) ||
                 0;
 
             const occupancyRate =
@@ -1123,9 +1203,7 @@ function buildEvacuationOccupancyChartData(centers) {
                 label:
                     center.name ||
                     center.centerName ||
-                    center.evacuationCenterName ||
-                    center.center ||
-                    `Center ${center.id || ""}`.trim(),
+                    `Center ${center.id || center.centerId || ""}`.trim(),
                 occupancyRate,
                 evacuees,
                 reliefDistributed: Number(center.reliefDistributed || 0),
@@ -1145,36 +1223,20 @@ function buildBudgetCategoryChartData(rows) {
         })).filter(item => item.value > 0)
         : [];
 
-    if (mapped.length) return mapped;
-
-    return [
-        { label: "Response Ops", value: 300000 },
-        { label: "Relief Goods", value: 250000 },
-        { label: "Equipment", value: 180000 },
-        { label: "Evacuation Support", value: 140000 },
-        { label: "Medical Support", value: 120000 }
-    ];
+    return mapped;
 }
 
 function buildTopResourcesChartData(rows) {
-    if (!Array.isArray(rows) || !rows.length) {
-        return [
-            { label: "Food Packs", value: 120 },
-            { label: "Bottled Water", value: 98 },
-            { label: "Medical Kits", value: 64 },
-            { label: "Blankets", value: 52 },
-            { label: "Hygiene Kits", value: 41 }
-        ];
-    }
-
-    return rows
-        .map(item => ({
-            label: item.itemName || item.name || "Resource",
-            value: Number(item.usedQuantity || item.totalUsed || item.usageCount || 0)
-        }))
-        .filter(item => item.value > 0)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 8);
+    return Array.isArray(rows)
+        ? rows
+            .map(item => ({
+                label: item.itemName || item.name || "Resource",
+                value: Number(item.usedQuantity || item.totalUsed || item.usageCount || 0)
+            }))
+            .filter(item => item.value > 0)
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 8)
+        : [];
 }
 
 function formatIncidentStatus(status) {
@@ -1189,12 +1251,6 @@ function formatIncidentStatus(status) {
             return "On-Site";
         case "RESOLVED":
             return "Resolved";
-        case "ACTIVE":
-            return "Active";
-        case "MONITORING":
-            return "Monitoring";
-        case "ENDED":
-            return "Ended";
         default:
             return normalized
                 .toLowerCase()
@@ -1223,28 +1279,6 @@ function formatCalamityStatus(status) {
     }
 }
 
-function buildFallbackRecentActivity(incidents, calamities) {
-    const incidentRows = incidents.slice(0, 4).map(item => ({
-        recordType: "INCIDENT",
-        actionType: item.status || "UPDATED",
-        description: `${item.type || "Incident"} in ${item.barangayName || item.barangay || "Batad"} is ${formatIncidentStatus(item.status).toLowerCase()}.`,
-        performedBy: "Operations module",
-        performedAt: item.reportedAt
-    }));
-
-    const calamityRows = calamities.slice(0, 4).map(item => ({
-        recordType: "CALAMITY",
-        actionType: item.status || "UPDATED",
-        description: `${item.eventName || item.type || "Calamity"} is currently ${formatCalamityStatus(item.status).toLowerCase()}.`,
-        performedBy: "Disaster management module",
-        performedAt: item.date
-    }));
-
-    return [...incidentRows, ...calamityRows]
-        .sort((a, b) => toTime(b.performedAt) - toTime(a.performedAt))
-        .slice(0, 10);
-}
-
 function countResolvedToday(rows, recordType) {
     const today = formatDateKey(new Date());
 
@@ -1265,84 +1299,6 @@ function extractCriticalItemsAtRisk(domains) {
 
     const metric = resourceDomain.metrics.find(item => normalizeText(item.label) === "critical items at risk");
     return metric ? Number(metric.value) || 0 : 0;
-}
-
-// function setDashboardLoadingState() {
-//     const ids = [
-//         "dashboardOverallReadinessStat",
-//         "dashboardActiveIncidentsStat",
-//         "dashboardActiveCalamitiesStat",
-//         "dashboardOpenCentersStat",
-//         "dashboardCurrentEvacueesStat",
-//         "dashboardRemainingBudgetStat",
-//         "dashboardAvailableRespondersValue",
-//         "dashboardActiveWarningsValue",
-//         "dashboardCriticalGapsValue",
-//         "dashboardNearFullCentersValue",
-//         "dashboardLowStockItemsValue",
-//         "dashboardBudgetUtilizationValue",
-//         "dashboardRainfallOutlook",
-//         "dashboardHighRiskBarangays",
-//         "dashboardMonitoredBarangays",
-//         "dashboardWeatherRecommendation",
-//         "dashboardActiveIncidentsOverviewCount",
-//         "dashboardIncidentReportedCount",
-//         "dashboardIncidentDispatchedCount",
-//         "dashboardIncidentOnSiteCount",
-//         "dashboardIncidentResolvedTodayCount",
-//         "dashboardCalamityActiveCount",
-//         "dashboardCalamityMonitoringCount",
-//         "dashboardCalamityResolvedTodayCount",
-//         "dashboardCalamityEndedCount",
-//         "dashboardEvacuationOpenCenters",
-//         "dashboardEvacuationTotalCapacity",
-//         "dashboardEvacuationCurrentEvacuees",
-//         "dashboardEvacuationAvailableSlots",
-//         "dashboardOccupancyRateText",
-//         "dashboardBudgetTotal",
-//         "dashboardBudgetObligated",
-//         "dashboardBudgetRemaining",
-//         "dashboardBudgetUtilization",
-//         "dashboardResourceLowStock",
-//         "dashboardResourceOutOfStock",
-//         "dashboardResourceCriticalAtRisk",
-//         "dashboardResourceFamilyCoverage"
-//     ];
-
-//     ids.forEach(id => setText(id, "--"));
-//     setHTML("dashboardReadinessScoreList", `<div class="empty-state-card">Loading readiness snapshot...</div>`);
-//     setHTML("dashboardAttentionList", `<div class="empty-state-card">Loading critical attention areas...</div>`);
-//     setHTML("dashboardCommunityImpactNotes", `<div class="empty-state-card">Loading community impact notes...</div>`);
-
-//     const riskPill = document.getElementById("dashboardWeatherRiskPill");
-//     if (riskPill) {
-//         riskPill.className = "weather-risk-pill neutral";
-//         riskPill.textContent = "--";
-//     }
-
-//     const iconBadge = document.getElementById("dashboardWeatherIconBadge");
-//     if (iconBadge) {
-//         iconBadge.className = "weather-icon-badge cloudy";
-//         iconBadge.innerHTML = `<i class="fas fa-cloud"></i>`;
-//     }
-// }
-
-function setDashboardLoadingState() {
-    setHTML("dashboardReadinessScoreList", `<div class="empty-state-card">Loading readiness snapshot...</div>`);
-    setHTML("dashboardAttentionList", `<div class="empty-state-card">Loading critical attention areas...</div>`);
-    setHTML("dashboardCommunityImpactNotes", `<div class="empty-state-card">Loading community impact notes...</div>`);
-
-    const riskPill = document.getElementById("dashboardWeatherRiskPill");
-    if (riskPill) {
-        riskPill.className = "weather-risk-pill neutral";
-        riskPill.textContent = "--";
-    }
-
-    const iconBadge = document.getElementById("dashboardWeatherIconBadge");
-    if (iconBadge) {
-        iconBadge.className = "weather-icon-badge cloudy";
-        iconBadge.innerHTML = `<i class="fas fa-cloud"></i>`;
-    }
 }
 
 async function fetchJson(url, options = {}) {
@@ -1393,23 +1349,6 @@ async function fetchJsonSafe(url, fallbackValue = null, options = {}) {
     }
 }
 
-async function fetchWithAuth(url, options = {}) {
-    const token = localStorage.getItem("jwtToken");
-    const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-    };
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    return fetch(url, {
-        ...options,
-        headers
-    });
-}
-
 function bindLogout() {
     const logoutBtn = document.getElementById("logoutBtn");
     if (!logoutBtn) return;
@@ -1448,15 +1387,6 @@ function getWeatherVisualConfig(rainfallOutlook, riskLevel) {
     }
 
     return { className: "cloudy", icon: "fas fa-cloud" };
-}
-
-function getSeverityClass(value) {
-    const normalized = String(value || "").trim().toUpperCase();
-    if (normalized === "LOW") return "low";
-    if (normalized === "MEDIUM") return "medium";
-    if (normalized === "HIGH") return "high";
-    if (normalized === "CRITICAL") return "critical";
-    return "neutral";
 }
 
 function normalizeReadinessClass(value) {
@@ -1577,11 +1507,6 @@ function setText(id, value) {
     if (el) el.textContent = value ?? "--";
 }
 
-function setHTML(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = value;
-}
-
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -1589,212 +1514,4 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
-
-/* Mock fallback */
-
-function getMockDashboardOverview() {
-    return {
-        lastUpdated: new Date().toISOString(),
-        overallReadinessLabel: "Partially Ready",
-        summary: getMockDashboardSummary(),
-        weather: getMockWeatherForecast(),
-        readiness: getMockReadinessSummary(),
-        alerts: getMockAlertsOverview(),
-        budgetCurrent: getMockBudgetCurrentSummary(),
-        budgetHistory: getMockBudgetHistory(),
-        incidents: getMockIncidents(),
-        calamities: getMockCalamities(),
-        evacuationCenters: getMockEvacuationCenters(),
-        responders: getMockResponders()
-    };
-}
-
-function getMockDashboardSummary() {
-    return {
-        totalBudget: 1200000,
-        totalSpent: 772000,
-        remaining: 428000,
-        categoryCount: 12,
-        expenseCount: 35,
-        calamityCount: 2,
-        activeIncidents: 3,
-        categoryBreakdown: []
-    };
-}
-
-function getMockWeatherForecast() {
-    return {
-        generatedAt: new Date().toISOString(),
-        summary: {
-            overallRiskLevel: "HIGH",
-            rainfallOutlook: "Moderate to Heavy Rain",
-            recommendation: "Prepare flood-prone barangays and monitor rainfall escalation.",
-            totalBarangays: 24,
-            highRiskBarangays: 5,
-            mediumRiskBarangays: 9,
-            lowRiskBarangays: 10
-        }
-    };
-}
-
-function getMockReadinessSummary() {
-    return {
-        inventoryRiskLevel: "HIGH",
-        inventoryLowStockCount: 5,
-        inventoryOutOfStockCount: 2,
-        reliefRiskLevel: "MODERATE",
-        reliefLowStockCount: 3,
-        estimatedFamilyCoverage: 146,
-        evacuationRiskLevel: "LOW",
-        activeCentersCount: 2,
-        nearFullCentersCount: 1,
-        fullCentersCount: 0,
-        overallOccupancyRate: 54,
-        budgetRiskLevel: "MODERATE",
-        budgetUtilizationRate: 67,
-        overallReadinessRiskLevel: "HIGH",
-        overallReadinessScore: 72
-    };
-}
-
-function getMockAlertsOverview() {
-    return {
-        lastUpdated: new Date().toISOString(),
-        summary: {
-            overallReadinessLabel: "Partially Ready",
-            activeWarningsCount: 6,
-            criticalGapsCount: 2,
-            responseCapacityLabel: "8 Available"
-        },
-        readinessDomains: [
-            { type: "WEATHER", title: "Weather Readiness", score: 46, status: "LIMITED", metrics: [{ label: "Risk", value: "HIGH" }] },
-            { type: "PERSONNEL", title: "Personnel Readiness", score: 82, status: "READY", metrics: [{ label: "Available Responders", value: "8" }] },
-            { type: "RESOURCE", title: "Resource Readiness", score: 61, status: "LIMITED", metrics: [{ label: "Critical Items At Risk", value: "2" }] },
-            { type: "EVACUATION", title: "Evacuation Readiness", score: 86, status: "READY", metrics: [{ label: "Open Centers", value: "2" }] },
-            { type: "BUDGET", title: "Budget Readiness", score: 58, status: "LIMITED", metrics: [{ label: "Remaining", value: "₱ 428,000" }] }
-        ],
-        priorityActions: [
-            {
-                title: "Restock emergency medical kits",
-                message: "Critical shortage detected in medical response supplies."
-            },
-            {
-                title: "Prepare flood-prone barangays",
-                message: "Weather indicators suggest elevated flood monitoring."
-            }
-        ]
-    };
-}
-
-function getMockBudgetCurrentSummary() {
-    return {
-        year: 2026,
-        totalAllotment: 1200000,
-        totalAllocated: 1050000,
-        totalObligations: 772000,
-        totalRemaining: 428000,
-        allocationRate: 88,
-        utilizationRate: 67
-    };
-}
-
-function getMockBudgetHistory() {
-    return [
-        { year: 2022, totalBudget: 850000, totalObligated: 460000, totalRemaining: 390000 },
-        { year: 2023, totalBudget: 920000, totalObligated: 560000, totalRemaining: 360000 },
-        { year: 2024, totalBudget: 980000, totalObligated: 650000, totalRemaining: 330000 },
-        { year: 2025, totalBudget: 1100000, totalObligated: 760000, totalRemaining: 340000 },
-        { year: 2026, totalBudget: 1200000, totalObligated: 772000, totalRemaining: 428000 }
-    ];
-}
-
-function getMockIncidents() {
-    return [
-        {
-            id: 1,
-            type: "Fallen Tree",
-            status: "ONGOING",
-            severity: "MEDIUM",
-            reportedAt: new Date().toISOString(),
-            barangayName: "Alapasco"
-        },
-        {
-            id: 2,
-            type: "Fire Incident",
-            status: "IN_PROGRESS",
-            severity: "HIGH",
-            reportedAt: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
-            barangayName: "Bulak"
-        },
-        {
-            id: 3,
-            type: "Vehicular Accident",
-            status: "ON_SITE",
-            severity: "MEDIUM",
-            reportedAt: new Date(Date.now() - 3600 * 1000 * 10).toISOString(),
-            barangayName: "Tanao"
-        }
-    ];
-}
-
-function getMockCalamities() {
-    return [
-        {
-            id: 10,
-            type: "Flood",
-            eventName: "River Overflow Monitoring",
-            status: "ACTIVE",
-            severity: "HIGH",
-            date: new Date().toISOString(),
-            affectedBarangayNames: ["Alapasco", "Bulak"]
-        },
-        {
-            id: 11,
-            type: "Typhoon",
-            eventName: "Typhoon Preparedness Watch",
-            status: "MONITORING",
-            severity: "MEDIUM",
-            date: new Date(Date.now() - 86400 * 1000).toISOString(),
-            affectedBarangayNames: ["Banban", "Bulak", "Tanao"]
-        }
-    ];
-}
-
-function getMockEvacuationCenters() {
-    return [
-        {
-            id: 1,
-            name: "Evacuation Center 1",
-            status: "ACTIVE",
-            capacity: 250,
-            currentEvacuees: 110,
-            availableSlots: 140,
-            occupancyRate: 44,
-            capacityStatus: "AVAILABLE"
-        },
-        {
-            id: 2,
-            name: "Evacuation Center 2",
-            status: "ACTIVE",
-            capacity: 200,
-            currentEvacuees: 134,
-            availableSlots: 66,
-            occupancyRate: 67,
-            capacityStatus: "NEAR_FULL"
-        }
-    ];
-}
-
-function getMockResponders() {
-    return [
-        { id: 1, fullName: "Responder 1" },
-        { id: 2, fullName: "Responder 2" },
-        { id: 3, fullName: "Responder 3" },
-        { id: 4, fullName: "Responder 4" },
-        { id: 5, fullName: "Responder 5" },
-        { id: 6, fullName: "Responder 6" },
-        { id: 7, fullName: "Responder 7" },
-        { id: 8, fullName: "Responder 8" }
-    ];
 }
