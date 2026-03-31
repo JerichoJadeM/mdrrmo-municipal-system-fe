@@ -1,3 +1,4 @@
+const API_BASE = window.APP_CONFIG.API_BASE;
 // Reuse your apiRequest function
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem('jwtToken');
@@ -84,7 +85,7 @@ if (!token) {
 // Fetch user info
 async function loadUserInfo() {
     try {
-        const user = await apiRequest('http://localhost:8080/api/users/info');
+        const user = await apiRequest(API_BASE+'/users/info');
         console.log(user);
 
         // Store user info in localStorage for navbar to use

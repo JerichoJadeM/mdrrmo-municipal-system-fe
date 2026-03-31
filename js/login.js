@@ -3,9 +3,9 @@
  * Current login flow with feature/login page behavior,
  * aligned with navbar.js and loginUserInfo.js storage expectations.
  */
-
-const LOGIN_API = "http://localhost:8080/api/auth/login";
-const USER_INFO_API = "http://localhost:8080/api/users/info";
+const API_BASE = window.APP_CONFIG.API_BASE;
+const LOGIN_API = API_BASE+"/auth/login";
+const USER_INFO_API = API_BASE+"/users/info";
 
 const form = document.getElementById("loginForm");
 const messageElement = document.getElementById("message");

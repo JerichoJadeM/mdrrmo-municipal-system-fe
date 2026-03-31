@@ -4,6 +4,8 @@
 // ===================================
 
 // Make functions global so they can be called from other scripts
+
+const API_BASE = window.APP_CONFIG.API_BASE;
 window.updateUserName = updateUserName;
 window.updateUserAvatar = updateUserAvatar;
 window.initializeUserInfo = initializeUserInfo;
@@ -367,8 +369,8 @@ async function refreshGlobalAdminBadges() {
 
     try {
         const [notificationsRes, conversationsRes] = await Promise.all([
-            fetch("http://localhost:8080/api/notifications", { headers }),
-            fetch("http://localhost:8080/api/messages/conversations", { headers })
+            fetch(API_BASE+"/notifications", { headers }),
+            fetch(API_BASE+"/messages/conversations", { headers })
         ]);
 
         let unreadNotifications = 0;

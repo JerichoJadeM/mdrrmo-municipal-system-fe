@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = window.APP_CONFIG.API_BASE;
 
 let barangayPagination = null;
 const weatherState = {

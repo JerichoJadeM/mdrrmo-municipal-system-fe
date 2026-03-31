@@ -1,3 +1,5 @@
+const API_BASE = window.APP_CONFIG.API_BASE;
+
 document.getElementById("passwordForm")?.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -30,7 +32,7 @@ document.getElementById("passwordForm")?.addEventListener("submit", async functi
     }
 
     try {
-        const response = await fetch("http://localhost:8080/api/users/password", {
+        const response = await fetch(API_BASE+"/users/password", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

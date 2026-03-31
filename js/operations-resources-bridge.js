@@ -1,8 +1,9 @@
 // operations-resources-bridge.js
 // Load this AFTER the existing operations scripts.
+const API_BASE = window.APP_CONFIG.API_BASE;
 
 (function () {
-    const API_BASE_FALLBACK = "http://localhost:8080/api";
+    const API_BASE_FALLBACK = API_BASE;
 
     function getApiBase() {
         return typeof API_BASE === "string" && API_BASE.trim()

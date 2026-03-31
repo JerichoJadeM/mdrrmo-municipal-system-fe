@@ -3,8 +3,8 @@
 // Reports Page Script
 // Uses shared apiRequest() from loginUserInfo.js
 // ===================================
-
-const REPORTS_API_BASE = "http://localhost:8080/api/reports";
+const API_BASE = window.APP_CONFIG.API_BASE;
+const REPORTS_API_BASE = API_BASE+"/reports";
 
 const reportsState = {
     activeTab: "summaryTab",

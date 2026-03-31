@@ -1,3 +1,4 @@
+const API_BASE = window.APP_CONFIG.API_BASE;
 // Protect page
 const token = localStorage.getItem('jwtToken');
 
@@ -17,7 +18,7 @@ document.getElementById("registerForm").addEventListener("submit", function(e) {
         password:document.getElementById("password").value
     };
 
-    fetch("http://localhost:8080/api/auth/register", {
+    fetch(API_BASE+"/auth/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

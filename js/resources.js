@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = window.APP_CONFIG.API_BASE;
 const USERS_LOOKUP_PATH = "/users";
 const INCIDENTS_LOOKUP_PATH = "/incidents";
 const CALAMITIES_LOOKUP_PATH = "/calamities";

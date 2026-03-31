@@ -1,4 +1,5 @@
-const RESPONDER_API = "http://localhost:8080/api/responders";
+const API_BASE = window.APP_CONFIG.API_BASE;
+const RESPONDER_API = API_BASE+"/responders";
 
 function renderDispatchModalIncidentSummary(incident) {
     const summaryBox = document.getElementById("dispatchModalIncidentSummary");
