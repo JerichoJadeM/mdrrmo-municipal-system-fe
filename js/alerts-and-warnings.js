@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8080/api";
+window.APP_CONFIG.API_BASE
 
 const alertsState = {
     overview: null,

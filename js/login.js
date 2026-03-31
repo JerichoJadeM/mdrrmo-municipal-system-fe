@@ -3,9 +3,8 @@
  * Current login flow with feature/login page behavior,
  * aligned with navbar.js and loginUserInfo.js storage expectations.
  */
-const API_BASE = window.APP_CONFIG.API_BASE;
-const LOGIN_API = API_BASE+"/auth/login";
-const USER_INFO_API = API_BASE+"/users/info";
+const LOGIN_API = window.APP_CONFIG.API_BASE+"/auth/login";
+const USER_INFO_API = window.APP_CONFIG.API_BASE+"/users/info";
 
 const form = document.getElementById("loginForm");
 const messageElement = document.getElementById("message");

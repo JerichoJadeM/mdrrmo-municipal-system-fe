@@ -3,7 +3,7 @@
 // Reports Page Script
 // Uses shared apiRequest() from loginUserInfo.js
 // ===================================
-const API_BASE = window.APP_CONFIG.API_BASE;
+window.APP_CONFIG.API_BASE;
 const REPORTS_API_BASE = API_BASE+"/reports";
 
 const reportsState = {

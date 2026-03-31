@@ -1,4 +1,4 @@
-const API_BASE = window.APP_CONFIG.API_BASE;
+window.APP_CONFIG.API_BASE
 
 document.getElementById("passwordForm")?.addEventListener("submit", async function (e) {
     e.preventDefault();

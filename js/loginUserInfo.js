@@ -1,4 +1,4 @@
-const API_BASE = window.APP_CONFIG.API_BASE;
+window.APP_CONFIG.API_BASE
 // Reuse your apiRequest function
 async function apiRequest(url, options = {}) {
     const token = localStorage.getItem('jwtToken');
