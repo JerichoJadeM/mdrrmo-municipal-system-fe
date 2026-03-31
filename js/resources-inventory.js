@@ -244,7 +244,7 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
 
                 <div class="form-group">
                     <label>Estimated Unit Cost</label>
-                    <input type="number" name="estimatedUnitCost" min="0" step="0.01" value="${item?.estimatedUnitCost ?? ""}">
+                    <input type="number" name="estimatedUnitCost" min="0" step="0.01" value="${item?.estimatedUnitCost ?? 0}" required>
                 </div>
 
                 <div class="form-group full">
@@ -296,7 +296,7 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
             location: document.getElementById("inventoryLocationInput")?.value?.trim(),
             reorderLevel: Number(formData.get("reorderLevel") || 0),
             criticalItem: form.querySelector('[name="criticalItem"]').checked,
-            estimatedUnitCost: formData.get("estimatedUnitCost") ? Number(formData.get("estimatedUnitCost")) : null
+            estimatedUnitCost: Number(formData.get("estimatedUnitCost") || 0)
         };
 
         try {
