@@ -1331,3 +1331,23 @@
         align-items: flex-start;
     }
 }
+
+.inventory-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.inventory-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: auto;
+    margin: 0;
+    text-align: left;
+}
+
+.inventory-checkbox-label input[type="checkbox"] {
+    margin: 0;
+}

@@ -244,13 +244,13 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
 
                 <div class="form-group">
                     <label>Estimated Unit Cost</label>
-                    <input type="number" name="estimatedUnitCost" min="0" step="0.01" value="${item?.estimatedUnitCost ?? 0}" required>
+                    <input type="number" id="inventoryEstimatedUnitCostInput" name="estimatedUnitCost" min="0" step="0.01" value="${item?.estimatedUnitCost ?? 0}" required>
                 </div>
 
-                <div class="form-group full">
-                    <label>
+                <div class="form-group full inventory-checkbox-row">
+                    <label class="inventory-checkbox-label">
                         <input type="checkbox" name="criticalItem" ${item?.criticalItem ? "checked" : ""}>
-                        Critical item
+                        <span>Critical item</span>
                     </label>
                 </div>
             </form>
@@ -288,6 +288,16 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
         const form = document.getElementById("inventoryForm");
         const formData = new FormData(form);
 
+        const estimatedUnitCostValue =
+            document.getElementById("inventoryEstimatedUnitCostInput")?.value?.trim() || "";
+
+        console.log("estimatedUnitCost input value:", estimatedUnitCostValue);
+
+        if (estimatedUnitCostValue === "") {
+            showToast("Estimated Unit Cost is required.", "error");
+            return;
+        }
+
         const payload = {
             name: formData.get("name")?.toString().trim(),
             category: document.getElementById("inventoryCategoryInput")?.value?.trim(),
@@ -296,8 +306,10 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
             location: document.getElementById("inventoryLocationInput")?.value?.trim(),
             reorderLevel: Number(formData.get("reorderLevel") || 0),
             criticalItem: form.querySelector('[name="criticalItem"]').checked,
-            estimatedUnitCost: Number(formData.get("estimatedUnitCost") || 0)
+            estimatedUnitCost: Number(estimatedUnitCostValue || 0)
         };
+
+        console.log("inventory payload:", payload);
 
         try {
             if (mode === "create") {
