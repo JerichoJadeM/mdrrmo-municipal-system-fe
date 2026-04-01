@@ -1334,15 +1334,15 @@
 
 .inventory-checkbox-row {
     display: flex;
-    align-items: flex-start;
     justify-content: flex-start;
+    align-items: flex-start;
 }
 
 .inventory-checkbox-label {
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.5rem;
+    gap: 8px;
     width: auto;
     margin: 0;
     text-align: left;

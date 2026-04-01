@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadDashboardPage() {
     try {
-        const overview = await fetchJsonSafe(`${window.APP_CONFIG.API_BASE}/dashboard/overview`, {});
+        const overview = await fetchJsonSafe(`${API_BASE}/dashboard/overview`, {});
         const viewModel = buildDashboardViewModel(overview);
 
         renderDashboard(viewModel);

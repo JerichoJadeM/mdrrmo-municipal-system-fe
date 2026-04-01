@@ -368,7 +368,7 @@ async function refreshGlobalAdminBadges() {
 
     try {
         const [notificationsRes, conversationsRes] = await Promise.all([
-            fetch(Awindow.APP_CONFIG.API_BASE+"/notifications", { headers }),
+            fetch(window.APP_CONFIG.API_BASE+"/notifications", { headers }),
             fetch(window.APP_CONFIG.API_BASE+"/messages/conversations", { headers })
         ]);
 
