@@ -1,4 +1,3 @@
-const API_BASE = window.APP_CONFIG.API_BASE;
 
 let dashboardCharts = {
     readiness: null,
