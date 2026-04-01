@@ -373,8 +373,9 @@
 /* Community impact notes */
 #dashboardCommunityImpactNotes {
     display: grid;
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
+    align-items: stretch;
 }
 
 .note-card {
@@ -387,6 +388,9 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .note-card h4 {
@@ -395,6 +399,9 @@
     color: var(--text-dark);
     font-weight: 700;
     line-height: 1.4;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .note-card p {
@@ -403,6 +410,9 @@
     font-size: 14px;
     line-height: 1.6;
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .note-card small {
@@ -410,6 +420,9 @@
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* Compact list */
@@ -793,4 +806,119 @@
         height: 280px !important;
         min-height: 280px;
     }
+}
+
+/* ===================================
+   Bootstrap layout bridge for Dashboard
+   Keep JS behavior unchanged
+   =================================== */
+
+.dashboard-summary-grid,
+.dashboard-main-grid,
+.dashboard-split-grid,
+.dashboard-chart-grid,
+.dashboard-drilldown-grid {
+    display: block;
+}
+
+.dashboard-summary-grid > .row,
+.dashboard-main-grid > .row,
+.dashboard-split-grid > .row,
+.dashboard-chart-grid > .row,
+.dashboard-drilldown-grid > .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.dashboard-summary-grid .summary-card,
+.dashboard-main-grid .card-section,
+.dashboard-split-grid .card-section,
+.dashboard-chart-grid .card-section,
+.dashboard-drilldown-grid .drilldown-tile {
+    min-width: 0;
+}
+
+.dashboard-page .row {
+    --bs-gutter-x: 16px;
+    --bs-gutter-y: 16px;
+}
+
+.dashboard-page .card-section,
+.dashboard-page .summary-card,
+.dashboard-page .drilldown-tile {
+    width: 100%;
+}
+
+.dashboard-drilldown-grid .drilldown-tile {
+    display: flex;
+}
+
+.dashboard-drilldown-grid .col-12,
+.dashboard-chart-grid .col-12,
+.dashboard-main-grid .col-12,
+.dashboard-split-grid .col-12,
+.dashboard-summary-grid .col-12 {
+    min-width: 0;
+}
+
+/* dashboard section spacing after Bootstrap layout */
+.dashboard-page > section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-page > section:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ===================================
+   Dashboard vertical spacing fix
+   Restores gap between all major sections
+   =================================== */
+
+.dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0 !important;
+}
+
+.dashboard-page > section {
+    margin: 0 !important;
+}
+
+.dashboard-page > section + section {
+    margin-top: var(--spacing-lg) !important;
+}
+
+/* keep bootstrap rows from adding strange outer collapse behavior */
+.dashboard-page .row {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* optional: keep cards stretching cleanly inside bootstrap cols */
+.dashboard-page [class*="col-"] > .card-section,
+.dashboard-page [class*="col-"] > .summary-card,
+.dashboard-page [class*="col-"] > .drilldown-tile {
+    height: 100%;
+}
+
+/* community impact notes overflow safety */
+#dashboardCommunityImpactNotes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+.note-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* targeted vertical spacing fixes */
+.dashboard-split-grid + .card-section,
+.dashboard-chart-grid + .card-section {
+    margin-top: var(--spacing-lg) !important;
 }

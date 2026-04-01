@@ -2625,3 +2625,87 @@ body.page-loading {
         transform: rotate(360deg);
     }
 }
+
+/* ===================================
+   Bootstrap conflict shield
+   Keep existing MDRRMO JS behavior
+   =================================== */
+
+body > .navbar {
+    display: block;
+    flex-wrap: unset;
+    justify-content: unset;
+    padding: 0;
+}
+
+body > .navbar .navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+body > .navbar .navbar-title {
+    flex: 1;
+    text-align: center;
+}
+
+body > .navbar .navbar-notifications,
+body > .navbar .navbar-user {
+    display: flex;
+    align-items: center;
+}
+
+body > .navbar .user-dropdown {
+    position: relative;
+}
+
+body > .navbar .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    display: block;
+    min-width: 220px;
+    margin-top: var(--spacing-sm);
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    pointer-events: none;
+    z-index: 1002;
+}
+
+body > .navbar .user-dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+body > .navbar .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    width: 100%;
+    padding: var(--spacing-md);
+    background: none;
+    border: none;
+    text-align: left;
+    text-decoration: none;
+    color: var(--text-dark);
+}
+
+body > .navbar .dropdown-item:hover {
+    background: var(--bg-light);
+}
+
+body > .navbar .user-btn,
+body > .navbar .notification-btn,
+body > .navbar .message-btn,
+body > .navbar .menu-toggle {
+    box-shadow: none;
+}

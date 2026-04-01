@@ -18,12 +18,16 @@ async function loadDashboardPage() {
         const overview = await fetchJsonSafe(`${API_BASE}/dashboard/overview`, {});
         const viewModel = buildDashboardViewModel(overview);
 
+        console.log("Top resources raw:", viewModel.charts.topResources);
+
         renderDashboard(viewModel);
         renderDashboardCharts(viewModel);
     } catch (error) {
         console.error("Failed to load dashboard page", error);
 
         const fallbackModel = buildDashboardViewModel({});
+        console.log("Top resources raw (fallback):", fallbackModel.charts.topResources);
+
         renderDashboard(fallbackModel);
         renderDashboardCharts(fallbackModel);
 
@@ -888,9 +892,15 @@ function renderEvacuationTrendChart(rows) {
     });
 }
 
+
 function renderTopResourcesChart(rows) {
     const canvas = document.getElementById("dashboardTopResourcesChart");
-    if (!canvas || !Array.isArray(rows) || !rows.length) return;
+    if (!canvas) return;
+
+    if (!Array.isArray(rows) || !rows.length) {
+        console.warn("Top Consumed Resources chart has no usable data.", rows);
+        return;
+    }
 
     const palette = [
         "rgba(37, 99, 235, 0.85)",
@@ -916,7 +926,25 @@ function renderTopResourcesChart(rows) {
                 borderRadius: 8
             }]
         },
-        options: buildChartOptions("Usage Count")
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: "y",
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "Usage Count"
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -1228,11 +1256,32 @@ function buildBudgetCategoryChartData(rows) {
 function buildTopResourcesChartData(rows) {
     return Array.isArray(rows)
         ? rows
-            .map(item => ({
-                label: item.itemName || item.name || "Resource",
-                value: Number(item.usedQuantity || item.totalUsed || item.usageCount || 0)
-            }))
-            .filter(item => item.value > 0)
+            .map(item => {
+                const label =
+                    item.itemName ||
+                    item.name ||
+                    item.resourceName ||
+                    item.inventoryName ||
+                    item.item ||
+                    item.label ||
+                    "Resource";
+
+                const value = Number(
+                    item.value ??
+                    item.usedQuantity ??
+                    item.totalUsed ??
+                    item.usageCount ??
+                    item.consumedQuantity ??
+                    item.totalConsumed ??
+                    item.quantityUsed ??
+                    item.quantity ??
+                    item.count ??
+                    0
+                );
+
+                return { label, value };
+            })
+            .filter(item => item.label && Number.isFinite(item.value) && item.value > 0)
             .sort((a, b) => b.value - a.value)
             .slice(0, 8)
         : [];

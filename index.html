@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - MDRRMO</title>
+
+    <!-- Bootstrap local -->
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+
+    <!-- Existing styles -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -64,675 +69,743 @@
         </div>
     </nav>
 
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-header-actions">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="sidebar-close" id="sidebarClose">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <ul class="sidebar-menu">
-        <li class="menu-item active">
-            <a href="index.html">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="weather-forecast.html">
-                <i class="fas fa-cloud"></i>
-                <span>Weather Forecast</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="alerts-and-warnings.html">
-                <i class="fas fa-bell"></i>
-                <span>Alerts & Warnings</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="disaster-management.html">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>Disaster Management</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="operations.html">
-                <i class="fas fa-tasks"></i>
-                <span>Operations</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="resources.html">
-                <i class="fas fa-cube"></i>
-                <span>Resources</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="admin.html">
-                <i class="fas fa-users-cog"></i>
-                <span>Administration</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="reports.html">
-                <i class="fas fa-file-alt"></i>
-                <span>Reports</span>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="#settings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-        </li>
-    </ul>
-</aside>
-
-<main class="page-content main-content dashboard-page">
-
-    <section class="dashboard-hero card-section">
-        <div class="dashboard-hero-content">
-            <div class="section-badge">Municipal Command Overview</div>
-            <h2>Dashboard</h2>
-            <p>
-                High-level operational overview for MDRRMO Batad across weather,
-                readiness, incidents, calamities, evacuation, resources, and budget.
-            </p>
-        </div>
-    </section>
-
-    <section class="dashboard-summary-grid">
-        <div class="summary-card">
-            <div class="summary-icon blue">
-                <i class="fas fa-shield-halved"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Overall Readiness</h3>
-                <div class="summary-value" id="dashboardOverallReadinessStat">--</div>
-                <span>Current municipal operational posture</span>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-actions">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         </div>
 
-        <div class="summary-card">
-            <div class="summary-icon red">
-                <i class="fas fa-triangle-exclamation"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Active Incidents</h3>
-                <div class="summary-value" id="dashboardActiveIncidentsStat">--</div>
-                <span>Ongoing field incidents requiring response</span>
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-icon orange">
-                <i class="fas fa-house-flood-water"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Active Calamities</h3>
-                <div class="summary-value" id="dashboardActiveCalamitiesStat">--</div>
-                <span>Current monitored calamity events</span>
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-icon cyan">
-                <i class="fas fa-house-user"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Open Evacuation Centers</h3>
-                <div class="summary-value" id="dashboardOpenCentersStat">--</div>
-                <span>Currently active evacuation sites</span>
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-icon teal">
-                <i class="fas fa-people-group"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Current Evacuees</h3>
-                <div class="summary-value" id="dashboardCurrentEvacueesStat">--</div>
-                <span>Total evacuees across open centers</span>
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-icon slate">
-                <i class="fas fa-wallet"></i>
-            </div>
-            <div class="summary-content">
-                <h3>Remaining Budget</h3>
-                <div class="summary-value" id="dashboardRemainingBudgetStat">--</div>
-                <span>Available budget for operational support</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="dashboard-main-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Situation Overview</h3>
-                    <p>Current municipal operational snapshot across key command indicators</p>
-                </div>
-                <span class="status-badge neutral" id="dashboardSituationStatusBadge">--</span>
-            </div>
-
-            <div class="overview-stat-grid" id="overviewStatGrid">
-                <div class="overview-stat-card">
-                    <span>Available Responders</span>
-                    <strong id="dashboardAvailableRespondersValue">--</strong>
-                </div>
-                <div class="overview-stat-card">
-                    <span>Active Warnings</span>
-                    <strong id="dashboardActiveWarningsValue">--</strong>
-                </div>
-                <div class="overview-stat-card">
-                    <span>Critical Gaps</span>
-                    <strong id="dashboardCriticalGapsValue">--</strong>
-                </div>
-                <div class="overview-stat-card">
-                    <span>Near Full Centers</span>
-                    <strong id="dashboardNearFullCentersValue">--</strong>
-                </div>
-                <div class="overview-stat-card">
-                    <span>Low Stock Items</span>
-                    <strong id="dashboardLowStockItemsValue">--</strong>
-                </div>
-                <div class="overview-stat-card">
-                    <span>Budget Utilization</span>
-                    <strong id="dashboardBudgetUtilizationValue">--</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Weather Snapshot</h3>
-                    <p>Latest forecast-driven conditions and municipal weather risk posture</p>
-                </div>
-            </div>
-
-            <div class="weather-snapshot-card" id="weatherSnapshotCard">
-                <div class="weather-snapshot-top">
-                    <div class="weather-visual">
-                        <div class="weather-icon-badge" id="dashboardWeatherIconBadge">
-                            <i class="fas fa-cloud"></i>
-                        </div>
-                        <div class="weather-visual-text">
-                            <span class="snapshot-label">Rainfall Outlook</span>
-                            <strong id="dashboardRainfallOutlook">--</strong>
-                        </div>
-                    </div>
-
-                    <div class="weather-risk-block">
-                        <span class="snapshot-label">Risk Level</span>
-                        <span class="weather-risk-pill neutral" id="dashboardWeatherRiskPill">--</span>
-                    </div>
-                </div>
-
-                <div class="snapshot-secondary-list">
-                    <div class="snapshot-row">
-                        <span>High Risk Barangays</span>
-                        <strong id="dashboardHighRiskBarangays">--</strong>
-                    </div>
-                    <div class="snapshot-row">
-                        <span>Monitored Barangays</span>
-                        <strong id="dashboardMonitoredBarangays">--</strong>
-                    </div>
-                    <div class="snapshot-row">
-                        <span>Recommendation</span>
-                        <strong id="dashboardWeatherRecommendation">--</strong>
-                    </div>
-                </div>
-
-                <div class="drilldown-actions">
-                    <a href="weather-forecast.html" class="drilldown-btn">
-                        <i class="fas fa-arrow-up-right-from-square"></i>
-                        Open Weather Forecast
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="dashboard-split-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Readiness Snapshot</h3>
-                    <p>Current readiness posture across core support domains</p>
-                </div>
-            </div>
-
-            <div class="readiness-score-list" id="dashboardReadinessScoreList">
-                <div class="empty-state-card">Loading readiness snapshot...</div>
-            </div>
-
-            <div class="drilldown-actions">
-                <a href="alerts-and-warnings.html" class="drilldown-btn">
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                    Open Alerts & Warnings
+        <ul class="sidebar-menu">
+            <li class="menu-item active">
+                <a href="index.html">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
                 </a>
-            </div>
-        </div>
+            </li>
 
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Critical Attention Areas</h3>
-                    <p>Most urgent operational gaps and immediate concerns</p>
-                </div>
-            </div>
-
-            <div class="attention-list" id="dashboardAttentionList">
-                <div class="empty-state-card">Loading critical attention areas...</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="card-section">
-        <div class="section-header">
-            <div>
-                <h3>Event Overview</h3>
-                <p>Combined incident and calamity posture for current municipal operations</p>
-            </div>
-        </div>
-
-        <div class="event-overview-grid">
-            <div class="event-overview-block">
-                <h4>Incidents</h4>
-                <div class="mini-stat-grid">
-                    <div class="mini-stat-card">
-                        <span>Active Incidents</span>
-                        <strong id="dashboardActiveIncidentsOverviewCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Reported</span>
-                        <strong id="dashboardIncidentReportedCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Dispatched</span>
-                        <strong id="dashboardIncidentDispatchedCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>On Site</span>
-                        <strong id="dashboardIncidentOnSiteCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Resolved Today</span>
-                        <strong id="dashboardIncidentResolvedTodayCount">--</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="event-overview-block">
-                <h4>Calamities</h4>
-                <div class="mini-stat-grid">
-                    <div class="mini-stat-card">
-                        <span>Active Calamities</span>
-                        <strong id="dashboardCalamityActiveCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Monitoring</span>
-                        <strong id="dashboardCalamityMonitoringCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Resolved Today</span>
-                        <strong id="dashboardCalamityResolvedTodayCount">--</strong>
-                    </div>
-                    <div class="mini-stat-card">
-                        <span>Ended</span>
-                        <strong id="dashboardCalamityEndedCount">--</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="event-overview-footer">
-            <div class="event-summary-note" id="dashboardEventOverviewNote">
-                Current event conditions are being monitored across incidents and calamities.
-            </div>
-
-            <div class="drilldown-actions">
-                <a href="operations.html" class="drilldown-btn">
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                    Open Operations
+            <li class="menu-item">
+                <a href="weather-forecast.html">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather Forecast</span>
                 </a>
-                <a href="disaster-management.html" class="drilldown-btn">
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                    Open Disaster Management
-                </a>
-            </div>
-        </div>
-    </section>
+            </li>
 
-    <section class="dashboard-split-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Evacuation & Community Impact</h3>
-                    <p>Current displacement support and center capacity overview</p>
-                </div>
-            </div>
-
-            <div class="impact-stat-grid">
-                <div class="impact-stat-card">
-                    <span>Open Centers</span>
-                    <strong id="dashboardEvacuationOpenCenters">--</strong>
-                </div>
-                <div class="impact-stat-card">
-                    <span>Total Capacity</span>
-                    <strong id="dashboardEvacuationTotalCapacity">--</strong>
-                </div>
-                <div class="impact-stat-card">
-                    <span>Current Evacuees</span>
-                    <strong id="dashboardEvacuationCurrentEvacuees">--</strong>
-                </div>
-                <div class="impact-stat-card">
-                    <span>Available Slots</span>
-                    <strong id="dashboardEvacuationAvailableSlots">--</strong>
-                </div>
-            </div>
-
-            <div class="capacity-progress-block">
-                <div class="capacity-progress-meta">
-                    <span>Occupancy Rate</span>
-                    <strong id="dashboardOccupancyRateText">--</strong>
-                </div>
-                <div class="readiness-score-bar">
-                    <div class="readiness-score-fill fill-limited" id="dashboardOccupancyRateBar" style="width: 0%;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Community Impact Notes</h3>
-                    <p>Short operational observations on displacement and support load</p>
-                </div>
-            </div>
-
-            <div class="notes-grid" id="dashboardCommunityImpactNotes">
-                <div class="empty-state-card">Loading community impact notes...</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="dashboard-split-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Budget Snapshot</h3>
-                    <p>Current year budget position and operational spending posture</p>
-                </div>
-            </div>
-
-            <div class="budget-stat-grid">
-                <div class="mini-stat-card">
-                    <span>Total Budget</span>
-                    <strong id="dashboardBudgetTotal">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Total Obligated</span>
-                    <strong id="dashboardBudgetObligated">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Remaining</span>
-                    <strong id="dashboardBudgetRemaining">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Utilization</span>
-                    <strong id="dashboardBudgetUtilization">--</strong>
-                </div>
-            </div>
-
-            <div class="drilldown-actions">
-                <a href="resources.html" class="drilldown-btn">
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                    Open Resources
-                </a>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Resource Snapshot</h3>
-                    <p>Inventory and relief readiness summary for command-level review</p>
-                </div>
-            </div>
-
-            <div class="budget-stat-grid">
-                <div class="mini-stat-card">
-                    <span>Low Stock Items</span>
-                    <strong id="dashboardResourceLowStock">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Out of Stock</span>
-                    <strong id="dashboardResourceOutOfStock">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Critical Items At Risk</span>
-                    <strong id="dashboardResourceCriticalAtRisk">--</strong>
-                </div>
-                <div class="mini-stat-card">
-                    <span>Family Coverage</span>
-                    <strong id="dashboardResourceFamilyCoverage">--</strong>
-                </div>
-            </div>
-
-            <div class="drilldown-actions">
-                <a href="resources.html" class="drilldown-btn">
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                    Review Resource Details
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Trends -->
-    <section class="dashboard-chart-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Readiness by Domain</h3>
-                    <p>Visual comparison of current readiness scores across support areas</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardReadinessChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Event Trend Analytics</h3>
-                    <p>Combined incident and calamity trend movement across recent operational days</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardEventTrendChart"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <section class="dashboard-chart-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>5-Year Budget Trend</h3>
-                    <p>Budget amount, obligations, and remaining balance across recent years</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardBudgetTrendChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Budget Category Allocation</h3>
-                    <p>Current budget distribution across operational categories</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardBudgetCategoryChart"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <section class="dashboard-chart-grid">
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Evacuation Occupancy Trend</h3>
-                    <p>Capacity pressure across currently active evacuation centers</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardEvacuationTrendChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card-section">
-            <div class="section-header">
-                <div>
-                    <h3>Top Consumed Resources</h3>
-                    <p>Most used or highest-turnover inventory items for operational support</p>
-                </div>
-            </div>
-
-            <div class="chart-shell">
-                <canvas id="dashboardTopResourcesChart"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <section class="card-section">
-        <div class="section-header">
-            <div>
-                <h3>Quick Drilldown Actions</h3>
-                <p>Navigate directly to the most relevant operational modules</p>
-            </div>
-        </div>
-
-        <div class="dashboard-drilldown-grid">
-            <a href="weather-forecast.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon weather">
-                    <i class="fas fa-cloud-rain"></i>
-                </div>
-                <div>
-                    <h4>Weather Forecast</h4>
-                    <p>View full municipal forecast, barangay risks, and recommendations</p>
-                </div>
-            </a>
-
-            <a href="alerts-and-warnings.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon alerts">
+            <li class="menu-item">
+                <a href="alerts-and-warnings.html">
                     <i class="fas fa-bell"></i>
-                </div>
-                <div>
-                    <h4>Alerts & Warnings</h4>
-                    <p>Review active warnings, readiness gaps, and operational concerns</p>
-                </div>
-            </a>
+                    <span>Alerts & Warnings</span>
+                </a>
+            </li>
 
-            <a href="operations.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon operations">
+            <li class="menu-item">
+                <a href="disaster-management.html">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Disaster Management</span>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="operations.html">
                     <i class="fas fa-tasks"></i>
-                </div>
-                <div>
-                    <h4>Operations</h4>
-                    <p>Open the live operations board for incidents and calamities</p>
-                </div>
-            </a>
+                    <span>Operations</span>
+                </a>
+            </li>
 
-            <a href="resources.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon resources">
-                    <i class="fas fa-box-open"></i>
-                </div>
-                <div>
-                    <h4>Resources</h4>
-                    <p>Review budget, inventory, relief goods, and evacuation resources</p>
-                </div>
-            </a>
+            <li class="menu-item">
+                <a href="resources.html">
+                    <i class="fas fa-cube"></i>
+                    <span>Resources</span>
+                </a>
+            </li>
 
-            <a href="disaster-management.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon disaster">
-                    <i class="fas fa-house-flood-water"></i>
-                </div>
-                <div>
-                    <h4>Disaster Management</h4>
-                    <p>Open event records, calamities, incidents, and disaster profiles</p>
-                </div>
-            </a>
+            <li class="menu-item">
+                <a href="admin.html">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
 
-            <a href="reports.html" class="drilldown-tile">
-                <div class="drilldown-tile-icon reports">
+            <li class="menu-item">
+                <a href="reports.html">
                     <i class="fas fa-file-alt"></i>
-                </div>
-                <div>
-                    <h4>Reports</h4>
-                    <p>Generate and review official summaries and analytical reports</p>
-                </div>
-            </a>
-        </div>
-    </section>
+                    <span>Reports</span>
+                </a>
+            </li>
 
-</main>
+            <li class="menu-item">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
 
-<!-- Logout Confirmation Modal -->
-<div class="modal" id="logoutModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirm Logout</h3>
-            <button class="modal-close" id="logoutModalClose">
-                <i class="fas fa-times"></i>
-            </button>
+    <main class="page-content main-content dashboard-page">
+        <div class="container-fluid px-0">
+
+            <section class="dashboard-hero card-section">
+                <div class="dashboard-hero-content">
+                    <div class="section-badge">Municipal Command Overview</div>
+                    <h2>Dashboard</h2>
+                    <p>
+                        High-level operational overview for MDRRMO Batad across weather,
+                        readiness, incidents, calamities, evacuation, resources, and budget.
+                    </p>
+                </div>
+            </section>
+
+            <section class="dashboard-summary-grid">
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon blue">
+                                <i class="fas fa-shield-halved"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Overall Readiness</h3>
+                                <div class="summary-value" id="dashboardOverallReadinessStat">--</div>
+                                <span>Current municipal operational posture</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon red">
+                                <i class="fas fa-triangle-exclamation"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Active Incidents</h3>
+                                <div class="summary-value" id="dashboardActiveIncidentsStat">--</div>
+                                <span>Ongoing field incidents requiring response</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon orange">
+                                <i class="fas fa-house-flood-water"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Active Calamities</h3>
+                                <div class="summary-value" id="dashboardActiveCalamitiesStat">--</div>
+                                <span>Current monitored calamity events</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon cyan">
+                                <i class="fas fa-house-user"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Open Evacuation Centers</h3>
+                                <div class="summary-value" id="dashboardOpenCentersStat">--</div>
+                                <span>Currently active evacuation sites</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon teal">
+                                <i class="fas fa-people-group"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Current Evacuees</h3>
+                                <div class="summary-value" id="dashboardCurrentEvacueesStat">--</div>
+                                <span>Total evacuees across open centers</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-4">
+                        <div class="summary-card h-100">
+                            <div class="summary-icon slate">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Remaining Budget</h3>
+                                <div class="summary-value" id="dashboardRemainingBudgetStat">--</div>
+                                <span>Available budget for operational support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-main-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-4">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Situation Overview</h3>
+                                    <p>Current municipal operational snapshot across key command indicators</p>
+                                </div>
+                                <span class="status-badge neutral" id="dashboardSituationStatusBadge">--</span>
+                            </div>
+
+                            <div class="overview-stat-grid" id="overviewStatGrid">
+                                <div class="overview-stat-card">
+                                    <span>Available Responders</span>
+                                    <strong id="dashboardAvailableRespondersValue">--</strong>
+                                </div>
+                                <div class="overview-stat-card">
+                                    <span>Active Warnings</span>
+                                    <strong id="dashboardActiveWarningsValue">--</strong>
+                                </div>
+                                <div class="overview-stat-card">
+                                    <span>Critical Gaps</span>
+                                    <strong id="dashboardCriticalGapsValue">--</strong>
+                                </div>
+                                <div class="overview-stat-card">
+                                    <span>Near Full Centers</span>
+                                    <strong id="dashboardNearFullCentersValue">--</strong>
+                                </div>
+                                <div class="overview-stat-card">
+                                    <span>Low Stock Items</span>
+                                    <strong id="dashboardLowStockItemsValue">--</strong>
+                                </div>
+                                <div class="overview-stat-card">
+                                    <span>Budget Utilization</span>
+                                    <strong id="dashboardBudgetUtilizationValue">--</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-8">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Weather Snapshot</h3>
+                                    <p>Latest forecast-driven conditions and municipal weather risk posture</p>
+                                </div>
+                            </div>
+
+                            <div class="weather-snapshot-card" id="weatherSnapshotCard">
+                                <div class="weather-snapshot-top">
+                                    <div class="weather-visual">
+                                        <div class="weather-icon-badge" id="dashboardWeatherIconBadge">
+                                            <i class="fas fa-cloud"></i>
+                                        </div>
+                                        <div class="weather-visual-text">
+                                            <span class="snapshot-label">Rainfall Outlook</span>
+                                            <strong id="dashboardRainfallOutlook">--</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="weather-risk-block">
+                                        <span class="snapshot-label">Risk Level</span>
+                                        <span class="weather-risk-pill neutral" id="dashboardWeatherRiskPill">--</span>
+                                    </div>
+                                </div>
+
+                                <div class="snapshot-secondary-list">
+                                    <div class="snapshot-row">
+                                        <span>High Risk Barangays</span>
+                                        <strong id="dashboardHighRiskBarangays">--</strong>
+                                    </div>
+                                    <div class="snapshot-row">
+                                        <span>Monitored Barangays</span>
+                                        <strong id="dashboardMonitoredBarangays">--</strong>
+                                    </div>
+                                    <div class="snapshot-row">
+                                        <span>Recommendation</span>
+                                        <strong id="dashboardWeatherRecommendation">--</strong>
+                                    </div>
+                                </div>
+
+                                <div class="drilldown-actions">
+                                    <a href="weather-forecast.html" class="drilldown-btn">
+                                        <i class="fas fa-arrow-up-right-from-square"></i>
+                                        Open Weather Forecast
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-split-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Readiness Snapshot</h3>
+                                    <p>Current readiness posture across core support domains</p>
+                                </div>
+                            </div>
+
+                            <div class="readiness-score-list" id="dashboardReadinessScoreList">
+                                <div class="empty-state-card">Loading readiness snapshot...</div>
+                            </div>
+
+                            <div class="drilldown-actions">
+                                <a href="alerts-and-warnings.html" class="drilldown-btn">
+                                    <i class="fas fa-arrow-up-right-from-square"></i>
+                                    Open Alerts & Warnings
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Critical Attention Areas</h3>
+                                    <p>Most urgent operational gaps and immediate concerns</p>
+                                </div>
+                            </div>
+
+                            <div class="attention-list" id="dashboardAttentionList">
+                                <div class="empty-state-card">Loading critical attention areas...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card-section">
+                <div class="section-header">
+                    <div>
+                        <h3>Event Overview</h3>
+                        <p>Combined incident and calamity posture for current municipal operations</p>
+                    </div>
+                </div>
+
+                <div class="event-overview-grid">
+                    <div class="event-overview-block">
+                        <h4>Incidents</h4>
+                        <div class="mini-stat-grid">
+                            <div class="mini-stat-card">
+                                <span>Active Incidents</span>
+                                <strong id="dashboardActiveIncidentsOverviewCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Reported</span>
+                                <strong id="dashboardIncidentReportedCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Dispatched</span>
+                                <strong id="dashboardIncidentDispatchedCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>On Site</span>
+                                <strong id="dashboardIncidentOnSiteCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Resolved Today</span>
+                                <strong id="dashboardIncidentResolvedTodayCount">--</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-overview-block">
+                        <h4>Calamities</h4>
+                        <div class="mini-stat-grid">
+                            <div class="mini-stat-card">
+                                <span>Active Calamities</span>
+                                <strong id="dashboardCalamityActiveCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Monitoring</span>
+                                <strong id="dashboardCalamityMonitoringCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Resolved Today</span>
+                                <strong id="dashboardCalamityResolvedTodayCount">--</strong>
+                            </div>
+                            <div class="mini-stat-card">
+                                <span>Ended</span>
+                                <strong id="dashboardCalamityEndedCount">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="event-overview-footer">
+                    <div class="event-summary-note" id="dashboardEventOverviewNote">
+                        Current event conditions are being monitored across incidents and calamities.
+                    </div>
+
+                    <div class="drilldown-actions">
+                        <a href="operations.html" class="drilldown-btn">
+                            <i class="fas fa-arrow-up-right-from-square"></i>
+                            Open Operations
+                        </a>
+                        <a href="disaster-management.html" class="drilldown-btn">
+                            <i class="fas fa-arrow-up-right-from-square"></i>
+                            Open Disaster Management
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-split-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Evacuation & Community Impact</h3>
+                                    <p>Current displacement support and center capacity overview</p>
+                                </div>
+                            </div>
+
+                            <div class="impact-stat-grid">
+                                <div class="impact-stat-card">
+                                    <span>Open Centers</span>
+                                    <strong id="dashboardEvacuationOpenCenters">--</strong>
+                                </div>
+                                <div class="impact-stat-card">
+                                    <span>Total Capacity</span>
+                                    <strong id="dashboardEvacuationTotalCapacity">--</strong>
+                                </div>
+                                <div class="impact-stat-card">
+                                    <span>Current Evacuees</span>
+                                    <strong id="dashboardEvacuationCurrentEvacuees">--</strong>
+                                </div>
+                                <div class="impact-stat-card">
+                                    <span>Available Slots</span>
+                                    <strong id="dashboardEvacuationAvailableSlots">--</strong>
+                                </div>
+                            </div>
+
+                            <div class="capacity-progress-block">
+                                <div class="capacity-progress-meta">
+                                    <span>Occupancy Rate</span>
+                                    <strong id="dashboardOccupancyRateText">--</strong>
+                                </div>
+                                <div class="readiness-score-bar">
+                                    <div class="readiness-score-fill fill-limited" id="dashboardOccupancyRateBar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Community Impact Notes</h3>
+                                    <p>Short operational observations on displacement and support load</p>
+                                </div>
+                            </div>
+
+                            <div class="notes-grid" id="dashboardCommunityImpactNotes">
+                                <div class="empty-state-card">Loading community impact notes...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-split-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Budget Snapshot</h3>
+                                    <p>Current year budget position and operational spending posture</p>
+                                </div>
+                            </div>
+
+                            <div class="budget-stat-grid">
+                                <div class="mini-stat-card">
+                                    <span>Total Budget</span>
+                                    <strong id="dashboardBudgetTotal">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Total Obligated</span>
+                                    <strong id="dashboardBudgetObligated">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Remaining</span>
+                                    <strong id="dashboardBudgetRemaining">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Utilization</span>
+                                    <strong id="dashboardBudgetUtilization">--</strong>
+                                </div>
+                            </div>
+
+                            <div class="drilldown-actions">
+                                <a href="resources.html" class="drilldown-btn">
+                                    <i class="fas fa-arrow-up-right-from-square"></i>
+                                    Open Resources
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Resource Snapshot</h3>
+                                    <p>Inventory and relief readiness summary for command-level review</p>
+                                </div>
+                            </div>
+
+                            <div class="budget-stat-grid">
+                                <div class="mini-stat-card">
+                                    <span>Low Stock Items</span>
+                                    <strong id="dashboardResourceLowStock">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Out of Stock</span>
+                                    <strong id="dashboardResourceOutOfStock">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Critical Items At Risk</span>
+                                    <strong id="dashboardResourceCriticalAtRisk">--</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span>Family Coverage</span>
+                                    <strong id="dashboardResourceFamilyCoverage">--</strong>
+                                </div>
+                            </div>
+
+                            <div class="drilldown-actions">
+                                <a href="resources.html" class="drilldown-btn">
+                                    <i class="fas fa-arrow-up-right-from-square"></i>
+                                    Review Resource Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-chart-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Readiness by Domain</h3>
+                                    <p>Visual comparison of current readiness scores across support areas</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardReadinessChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Event Trend Analytics</h3>
+                                    <p>Combined incident and calamity trend movement across recent operational days</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardEventTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-chart-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>5-Year Budget Trend</h3>
+                                    <p>Budget amount, obligations, and remaining balance across recent years</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardBudgetTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Budget Category Allocation</h3>
+                                    <p>Current budget distribution across operational categories</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardBudgetCategoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-chart-grid">
+                <div class="row g-4">
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Evacuation Occupancy Trend</h3>
+                                    <p>Capacity pressure across currently active evacuation centers</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardEvacuationTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        <div class="card-section h-100">
+                            <div class="section-header">
+                                <div>
+                                    <h3>Top Consumed Resources</h3>
+                                    <p>Most used or highest-turnover inventory items for operational support</p>
+                                </div>
+                            </div>
+
+                            <div class="chart-shell">
+                                <canvas id="dashboardTopResourcesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card-section">
+                <div class="section-header">
+                    <div>
+                        <h3>Quick Drilldown Actions</h3>
+                        <p>Navigate directly to the most relevant operational modules</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-drilldown-grid">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="weather-forecast.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon weather">
+                                    <i class="fas fa-cloud-rain"></i>
+                                </div>
+                                <div>
+                                    <h4>Weather Forecast</h4>
+                                    <p>View full municipal forecast, barangay risks, and recommendations</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="alerts-and-warnings.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon alerts">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div>
+                                    <h4>Alerts & Warnings</h4>
+                                    <p>Review active warnings, readiness gaps, and operational concerns</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="operations.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon operations">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <div>
+                                    <h4>Operations</h4>
+                                    <p>Open the live operations board for incidents and calamities</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="resources.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon resources">
+                                    <i class="fas fa-box-open"></i>
+                                </div>
+                                <div>
+                                    <h4>Resources</h4>
+                                    <p>Review budget, inventory, relief goods, and evacuation resources</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="disaster-management.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon disaster">
+                                    <i class="fas fa-house-flood-water"></i>
+                                </div>
+                                <div>
+                                    <h4>Disaster Management</h4>
+                                    <p>Open event records, calamities, incidents, and disaster profiles</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="reports.html" class="drilldown-tile h-100">
+                                <div class="drilldown-tile-icon reports">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div>
+                                    <h4>Reports</h4>
+                                    <p>Generate and review official summaries and analytical reports</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
-        <div class="modal-body">
-            <p>Are you sure you want to logout?</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-cancel" id="logoutCancel">
-                <i class="fas fa-times"></i>
+    </main>
+
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="modal-close" id="logoutModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="logoutCancel">
+                    <i class="fas fa-times"></i>
                     Cancel
-            </button>
-            <button class="btn btn-logout" id="logoutConfirm">
-                <i class="fas fa-sign-out-alt"></i>
+                </button>
+                <button class="btn btn-logout" id="logoutConfirm">
+                    <i class="fas fa-sign-out-alt"></i>
                     Logout
-            </button>
+                </button>
+            </div>
         </div>
     </div>
-</div>
-          
 
-<footer class="footer">
+    <footer class="footer">
         <div class="footer-container">
             <div class="footer-content">
                 <div class="footer-section footer-info">
@@ -794,12 +867,11 @@
         </div>
     </footer>
 
-<script src="assets/config.js"></script>>
-<script src="assets/config.js"></script>
-<script src="assets/page-loader.js"></script>
-<script src="js/loginUserInfo.js"></script>
-<script src="/js/navbar.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="js/dashboard.js"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/page-loader.js"></script>
+    <script src="js/loginUserInfo.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
