@@ -10,6 +10,79 @@
     <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
+    <!-- Login Background Animation - Weather & Emergency Response Theme -->
+    <div class="login-bg-animation" aria-hidden="true">
+        <!-- Thunder Animation at Top -->
+        <div class="thunder-container">
+            <div class="thunder-flash flash-1"></div>
+            <div class="thunder-flash flash-2"></div>
+            <div class="thunder-bolt bolt-1"></div>
+        </div>
+
+        <!-- Left Side Clouds -->
+        <div class="weather-cloud cloud-left cloud-1-left"></div>
+        <div class="weather-cloud cloud-left cloud-2-left"></div>
+        <div class="weather-cloud cloud-left cloud-3-left"></div>
+
+        <!-- Right Side Clouds -->
+        <div class="weather-cloud cloud-right cloud-1-right"></div>
+        <div class="weather-cloud cloud-right cloud-2-right"></div>
+        <div class="weather-cloud cloud-right cloud-3-right"></div>
+
+        <!-- Left Side Rain -->
+        <div class="rain-container rain-left">
+            <div class="rain-drop rain-drop-1"></div>
+            <div class="rain-drop rain-drop-2"></div>
+            <div class="rain-drop rain-drop-3"></div>
+            <div class="rain-drop rain-drop-4"></div>
+            <div class="rain-drop rain-drop-5"></div>
+        </div>
+
+        <!-- Right Side Rain -->
+        <div class="rain-container rain-right">
+            <div class="rain-drop rain-drop-1"></div>
+            <div class="rain-drop rain-drop-2"></div>
+            <div class="rain-drop rain-drop-3"></div>
+            <div class="rain-drop rain-drop-4"></div>
+            <div class="rain-drop rain-drop-5"></div>
+        </div>
+
+        <!-- Center Emergency Alert Waves -->
+        <div class="alert-wave wave-1"></div>
+        <div class="alert-wave wave-2"></div>
+        <div class="alert-wave wave-3"></div>
+
+        <!-- Left Weather Indicator -->
+        <div class="weather-indicator indicator-left indicator-1-left">
+            <i class="fas fa-cloud-rain"></i>
+        </div>
+
+        <!-- Right Weather Indicator -->
+        <div class="weather-indicator indicator-right indicator-1-right">
+            <i class="fas fa-cloud-rain"></i>
+        </div>
+
+        <!-- Left Bottom Indicator -->
+        <div class="weather-indicator indicator-left indicator-2-left">
+            <i class="fas fa-bolt"></i>
+        </div>
+
+        <!-- Right Bottom Indicator -->
+        <div class="weather-indicator indicator-right indicator-2-right">
+            <i class="fas fa-bolt"></i>
+        </div>
+
+        <!-- Typhoon Animation at Bottom -->
+        <div class="typhoon-container">
+            <div class="typhoon-spiral spiral-1"></div>
+            <div class="typhoon-spiral spiral-2"></div>
+            <div class="typhoon-spiral spiral-3"></div>
+            <div class="typhoon-wind wind-1"></div>
+            <div class="typhoon-wind wind-2"></div>
+            <div class="typhoon-wind wind-3"></div>
+        </div>
+    </div>
+
     <div class="login-container">
         <div class="login-header">
             <h1>MDRRMO Forecasting System</h1>
@@ -64,6 +137,8 @@
     </div>
 
     <script src="assets/config.js"></script>
+    <script src="assets/page-loader.js"></script>
     <script src="js/login.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </body>
 </html>

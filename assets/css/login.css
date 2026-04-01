@@ -398,7 +398,675 @@ body {
     .message-container,
     #message.loading::before,
     .btn-submit.is-loading::after,
-    .btn-submit.is-redirecting::after {
+    .btn-submit.is-redirecting::after,
+    .weather-cloud,
+    .rain-drop,
+    .alert-wave,
+    .weather-indicator,
+    .thunder-flash,
+    .thunder-bolt,
+    .typhoon-spiral,
+    .typhoon-wind {
         animation: none !important;
+    }
+}
+
+/* ===================================
+   Login Background Animation
+   Weather Forecasting & Emergency Response Theme
+   =================================== */
+
+.login-bg-animation {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: 
+        radial-gradient(circle at 70% 30%, rgba(52, 152, 219, 0.15), transparent 40%),
+        radial-gradient(circle at 20% 60%, rgba(231, 76, 60, 0.08), transparent 50%),
+        linear-gradient(180deg, rgba(26, 58, 82, 0.92) 0%, rgba(20, 40, 60, 0.95) 50%, rgba(15, 30, 50, 0.97) 100%);
+    overflow: hidden;
+}
+
+.login-container {
+    position: relative;
+    z-index: 10;
+}
+
+/* ===================================
+   Animated Clouds - Right Side
+   =================================== */
+
+.weather-cloud.cloud-right {
+    position: absolute;
+    background: 
+        radial-gradient(ellipse 140px 60px at 20% 40%, rgba(255, 255, 255, 0.8), transparent 50%),
+        radial-gradient(ellipse 120px 50px at 50% 50%, rgba(255, 255, 255, 0.7), transparent 45%),
+        radial-gradient(ellipse 100px 45px at 80% 55%, rgba(255, 255, 255, 0.75), transparent 48%);
+    width: 320px;
+    height: 100px;
+    border-radius: 50%;
+    opacity: 0.6;
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.cloud-1-right {
+    top: 15%;
+    right: -100px;
+    animation: cloudDriftRight 20s linear infinite;
+}
+
+.cloud-2-right {
+    top: 40%;
+    right: -150px;
+    animation: cloudDriftRight 25s linear infinite;
+    animation-delay: -5s;
+    opacity: 0.5;
+}
+
+.cloud-3-right {
+    top: 65%;
+    right: -120px;
+    animation: cloudDriftRight 22s linear infinite;
+    animation-delay: -10s;
+    opacity: 0.55;
+}
+
+/* ===================================
+   Animated Clouds - Left Side
+   =================================== */
+
+.weather-cloud.cloud-left {
+    position: absolute;
+    background: 
+        radial-gradient(ellipse 140px 60px at 20% 40%, rgba(255, 255, 255, 0.8), transparent 50%),
+        radial-gradient(ellipse 120px 50px at 50% 50%, rgba(255, 255, 255, 0.7), transparent 45%),
+        radial-gradient(ellipse 100px 45px at 80% 55%, rgba(255, 255, 255, 0.75), transparent 48%);
+    width: 320px;
+    height: 100px;
+    border-radius: 50%;
+    opacity: 0.6;
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.cloud-1-left {
+    top: 15%;
+    left: -100px;
+    animation: cloudDriftLeft 20s linear infinite;
+}
+
+.cloud-2-left {
+    top: 40%;
+    left: -150px;
+    animation: cloudDriftLeft 25s linear infinite;
+    animation-delay: -5s;
+    opacity: 0.5;
+}
+
+.cloud-3-left {
+    top: 65%;
+    left: -120px;
+    animation: cloudDriftLeft 22s linear infinite;
+    animation-delay: -10s;
+    opacity: 0.55;
+}
+
+/* ===================================
+   Animated Rain Drops - Right Side
+   =================================== */
+
+.rain-container.rain-right {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    pointer-events: none;
+}
+
+.rain-right .rain-drop-1 {
+    height: 18px;
+    animation-duration: 0.8s;
+    animation-delay: 0s;
+    right: 45%;
+    top: 5%;
+}
+
+.rain-right .rain-drop-2 {
+    height: 22px;
+    animation-duration: 1s;
+    animation-delay: 0.2s;
+    right: 52%;
+    top: 5%;
+}
+
+.rain-right .rain-drop-3 {
+    height: 20px;
+    animation-duration: 0.9s;
+    animation-delay: 0.4s;
+    right: 40%;
+    top: 5%;
+}
+
+.rain-right .rain-drop-4 {
+    height: 19px;
+    animation-duration: 0.85s;
+    animation-delay: 0.6s;
+    right: 48%;
+    top: 5%;
+}
+
+.rain-right .rain-drop-5 {
+    height: 21px;
+    animation-duration: 0.95s;
+    animation-delay: 0.8s;
+    right: 44%;
+    top: 5%;
+}
+
+/* ===================================
+   Animated Rain Drops - Left Side
+   =================================== */
+
+.rain-container.rain-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    pointer-events: none;
+}
+
+.rain-left .rain-drop-1 {
+    height: 18px;
+    animation-duration: 0.8s;
+    animation-delay: 0s;
+    left: 45%;
+    top: 5%;
+}
+
+.rain-left .rain-drop-2 {
+    height: 22px;
+    animation-duration: 1s;
+    animation-delay: 0.2s;
+    left: 52%;
+    top: 5%;
+}
+
+.rain-left .rain-drop-3 {
+    height: 20px;
+    animation-duration: 0.9s;
+    animation-delay: 0.4s;
+    left: 40%;
+    top: 5%;
+}
+
+.rain-left .rain-drop-4 {
+    height: 19px;
+    animation-duration: 0.85s;
+    animation-delay: 0.6s;
+    left: 48%;
+    top: 5%;
+}
+
+.rain-left .rain-drop-5 {
+    height: 21px;
+    animation-duration: 0.95s;
+    animation-delay: 0.8s;
+    left: 44%;
+    top: 5%;
+}
+
+.rain-drop {
+    position: absolute;
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, rgba(100, 175, 240, 0.6), rgba(100, 175, 240, 0));
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: rainFall linear infinite;
+}
+
+/* ===================================
+   Emergency Alert Waves
+   =================================== */
+
+.alert-wave {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.wave-1 {
+    width: 200px;
+    height: 200px;
+    animation: alertPulse 3s ease-out infinite;
+}
+
+.wave-2 {
+    width: 300px;
+    height: 300px;
+    animation: alertPulse 3s ease-out infinite;
+    animation-delay: 0.8s;
+    border-color: rgba(241, 196, 15, 0.2);
+}
+
+.wave-3 {
+    width: 400px;
+    height: 400px;
+    animation: alertPulse 3s ease-out infinite;
+    animation-delay: 1.6s;
+    border-color: rgba(52, 152, 219, 0.15);
+}
+
+/* ===================================
+   Weather Indicators - Right Side
+   =================================== */
+
+.weather-indicator.indicator-right {
+    position: absolute;
+    font-size: 80px;
+    opacity: 0.12;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 20px rgba(26, 58, 82, 0.3));
+}
+
+.indicator-1-right {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 10%;
+    right: 15%;
+    color: #3498db;
+    animation: weatherFloat 6s ease-in-out infinite;
+}
+
+.indicator-2-right {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    bottom: 15%;
+    right: 20%;
+    color: #e74c3c;
+    animation: weatherFloat 8s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+/* ===================================
+   Weather Indicators - Left Side
+   =================================== */
+
+.weather-indicator.indicator-left {
+    position: absolute;
+    font-size: 80px;
+    opacity: 0.12;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 20px rgba(26, 58, 82, 0.3));
+}
+
+.indicator-1-left {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 10%;
+    left: 15%;
+    color: #3498db;
+    animation: weatherFloat 6s ease-in-out infinite;
+}
+
+.indicator-2-left {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    bottom: 15%;
+    left: 20%;
+    color: #e74c3c;
+    animation: weatherFloat 8s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+/* ===================================
+   Thunder Animation - Top
+   =================================== */
+
+.thunder-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 25%;
+    pointer-events: none;
+}
+
+.thunder-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0);
+    pointer-events: none;
+}
+
+.flash-1 {
+    animation: thunderFlash 4s infinite;
+    animation-delay: 2s;
+}
+
+.flash-2 {
+    animation: thunderFlash 4s infinite;
+    animation-delay: 6s;
+}
+
+.thunder-bolt {
+    position: absolute;
+    width: 4px;
+    height: 120px;
+    background: linear-gradient(180deg, rgba(255, 255, 150, 0.8), rgba(255, 200, 100, 0.6), transparent);
+    left: 35%;
+    top: 10%;
+    pointer-events: none;
+    filter: blur(1px);
+    opacity: 0;
+    animation: thunderBolt 0.3s infinite;
+}
+
+.bolt-1 {
+    animation-delay: 2.1s;
+}
+
+/* ===================================
+   Typhoon Animation - Bottom
+   =================================== */
+
+.typhoon-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 25%;
+    pointer-events: none;
+}
+
+.typhoon-spiral {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 2px solid rgba(52, 152, 219, 0.2);
+    border-radius: 50%;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spiral-1 {
+    width: 150px;
+    height: 150px;
+    animation: typhoonSpin 6s linear infinite;
+}
+
+.spiral-2 {
+    width: 250px;
+    height: 250px;
+    animation: typhoonSpin 8s linear infinite;
+    animation-direction: reverse;
+    opacity: 0.4;
+    border-color: rgba(241, 196, 15, 0.15);
+}
+
+.spiral-3 {
+    width: 350px;
+    height: 350px;
+    animation: typhoonSpin 10s linear infinite;
+    opacity: 0.25;
+    border-color: rgba(231, 76, 60, 0.1);
+}
+
+.typhoon-wind {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.wind-1 {
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(100, 175, 240, 0.4), transparent);
+    animation: typhoonWind 2s ease-in-out infinite;
+    animation-delay: 0s;
+}
+
+.wind-2 {
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(100, 175, 240, 0.3), transparent);
+    animation: typhoonWind 2.5s ease-in-out infinite;
+    animation-delay: 0.3s;
+}
+
+.wind-3 {
+    width: 90px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(100, 175, 240, 0.35), transparent);
+    animation: typhoonWind 2.2s ease-in-out infinite;
+    animation-delay: 0.6s;
+}
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(100vw);
+    }
+}
+
+@keyframes cloudDriftLeft {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100vw);
+    }
+}
+
+@keyframes rainFall {
+    from {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(100vh);
+        opacity: 0.2;
+    }
+}
+
+@keyframes alertPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes weatherFloat {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(5deg);
+    }
+}
+
+@keyframes thunderFlash {
+    0%, 90%, 100% {
+        background: rgba(255, 255, 255, 0);
+    }
+    92% {
+        background: rgba(255, 255, 255, 0.4);
+    }
+    94% {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    96% {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    98% {
+        background: rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes thunderBolt {
+    0%, 10%, 15%, 100% {
+        opacity: 0;
+    }
+    5% {
+        opacity: 0.8;
+    }
+    12% {
+        opacity: 0.9;
+    }
+}
+
+@keyframes typhoonSpin {
+    from {
+        transform: translateX(-50%) rotate(0deg);
+    }
+    to {
+        transform: translateX(-50%) rotate(360deg);
+    }
+}
+
+@keyframes typhoonWind {
+    0%, 100% {
+        transform: translateX(-50%) scaleX(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(-50%) scaleX(1.2);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .weather-cloud.cloud-left,
+    .weather-cloud.cloud-right {
+        width: 240px;
+        height: 75px;
+    }
+
+    .cloud-1-left, .cloud-2-left, .cloud-3-left {
+        left: -80px;
+    }
+
+    .cloud-1-right, .cloud-2-right, .cloud-3-right {
+        right: -80px;
+    }
+
+    .alert-wave {
+        left: 50%;
+        top: 50%;
+    }
+
+    .wave-1 {
+        width: 140px;
+        height: 140px;
+    }
+
+    .wave-2 {
+        width: 210px;
+        height: 210px;
+    }
+
+    .wave-3 {
+        width: 280px;
+        height: 280px;
+    }
+
+    .weather-indicator {
+        font-size: 60px;
+    }
+
+    .indicator-1-left,
+    .indicator-1-right {
+        width: 110px;
+        height: 110px;
+        top: 15%;
+    }
+
+    .indicator-1-left {
+        left: 10%;
+    }
+
+    .indicator-1-right {
+        right: 10%;
+    }
+
+    .indicator-2-left,
+    .indicator-2-right {
+        width: 90px;
+        height: 90px;
+        bottom: 18%;
+    }
+
+    .indicator-2-left {
+        left: 12%;
+    }
+
+    .indicator-2-right {
+        right: 12%;
+    }
+
+    /* Thunder responsive */
+    .thunder-bolt {
+        height: 80px;
+        left: 40%;
+    }
+
+    /* Typhoon responsive */
+    .spiral-1 {
+        width: 100px;
+        height: 100px;
+    }
+
+    .spiral-2 {
+        width: 170px;
+        height: 170px;
+    }
+
+    .spiral-3 {
+        width: 240px;
+        height: 240px;
+    }
+
+    .wind-1 {
+        width: 70px;
+    }
+
+    .wind-2 {
+        width: 85px;
+    }
+
+    .wind-3 {
+        width: 65px;
     }
 }

@@ -73,7 +73,7 @@ function setBoardMode(mode) {
 
 async function loadIncidentBoard() {
     try {
-        const incidents = await apiRequest(`${API_BASE}/incidents`);
+        const incidents = await apiRequest(`${window.APP_CONFIG.API_BASE}/incidents`);
         incidentBoardData = Array.isArray(incidents) ? incidents : [];
         applyIncidentFilters();
     } catch (error) {
@@ -84,7 +84,7 @@ async function loadIncidentBoard() {
 
 async function loadCalamityBoard() {
     try {
-        const calamities = await apiRequest(`${API_BASE}/calamities`);
+        const calamities = await apiRequest(`${window.APP_CONFIG.API_BASE}/calamities`);
         calamityBoardData = Array.isArray(calamities) ? calamities : [];
         applyCalamityFilters();
     } catch (error) {
