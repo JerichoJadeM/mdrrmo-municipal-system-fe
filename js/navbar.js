@@ -357,9 +357,12 @@ function updateUserAvatar(profileImageUrl, fullName) {
     avatarNode.innerHTML = "";
     avatarNode.textContent = initials;
 }
+
 async function refreshGlobalAdminBadges() {
     const token = localStorage.getItem("jwtToken");
     if (!token) return;
+
+    const apiBase = window.APP_CONFIG?.API_BASE || "http://localhost:8080/api";
 
     const headers = {
         "Content-Type": "application/json",
@@ -368,8 +371,8 @@ async function refreshGlobalAdminBadges() {
 
     try {
         const [notificationsRes, conversationsRes] = await Promise.all([
-            fetch(window.APP_CONFIG.API_BASE+"/notifications", { headers }),
-            fetch(window.APP_CONFIG.API_BASE+"/messages/conversations", { headers })
+            fetch(`${apiBase}/notifications`, { headers }),
+            fetch(`${apiBase}/messages/conversations`, { headers })
         ]);
 
         let unreadNotifications = 0;
