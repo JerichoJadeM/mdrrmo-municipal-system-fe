@@ -926,25 +926,7 @@ function renderTopResourcesChart(rows) {
                 borderRadius: 8
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: "y",
-            plugins: {
-                legend: {
-                    display: true
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: "Usage Count"
-                    }
-                }
-            }
-        }
+        options: buildChartOptions("Usage Count")
     });
 }
 
@@ -1256,32 +1238,24 @@ function buildBudgetCategoryChartData(rows) {
 function buildTopResourcesChartData(rows) {
     return Array.isArray(rows)
         ? rows
-            .map(item => {
-                const label =
+            .map(item => ({
+                label:
                     item.itemName ||
                     item.name ||
                     item.resourceName ||
                     item.inventoryName ||
-                    item.item ||
                     item.label ||
-                    "Resource";
-
-                const value = Number(
-                    item.value ??
+                    "Resource",
+                value: Number(
                     item.usedQuantity ??
                     item.totalUsed ??
                     item.usageCount ??
-                    item.consumedQuantity ??
-                    item.totalConsumed ??
-                    item.quantityUsed ??
                     item.quantity ??
-                    item.count ??
+                    item.value ??
                     0
-                );
-
-                return { label, value };
-            })
-            .filter(item => item.label && Number.isFinite(item.value) && item.value > 0)
+                )
+            }))
+            .filter(item => item.value > 0)
             .sort((a, b) => b.value - a.value)
             .slice(0, 8)
         : [];

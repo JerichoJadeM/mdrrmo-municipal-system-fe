@@ -866,6 +866,7 @@
     padding: 18px;
     box-shadow: var(--shadow-sm);
     min-width: 0;
+    overflow: hidden;
 }
 
 .relief-pack-card-head {
@@ -900,6 +901,38 @@
 
 .relief-pack-components {
     margin-top: 14px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+.relief-pack-components .data-table {
+    width: 100%;
+    min-width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.relief-pack-components .data-table th,
+.relief-pack-components .data-table td {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+}
+
+.relief-pack-components .data-table th:nth-child(1),
+.relief-pack-components .data-table td:nth-child(1) {
+    width: 40%;
+}
+
+.relief-pack-components .data-table th:nth-child(2),
+.relief-pack-components .data-table td:nth-child(2),
+.relief-pack-components .data-table th:nth-child(3),
+.relief-pack-components .data-table td:nth-child(3),
+.relief-pack-components .data-table th:nth-child(4),
+.relief-pack-components .data-table td:nth-child(4) {
+    width: 20%;
 }
 
 .relief-pack-actions {
