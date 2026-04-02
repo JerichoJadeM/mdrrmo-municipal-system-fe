@@ -4,7 +4,7 @@
 // Uses shared apiRequest() from loginUserInfo.js
 // ===================================
 window.APP_CONFIG.API_BASE;
-const REPORTS_API_BASE = API_BASE+"/reports";
+const REPORTS_API_BASE = API_BASE + "/reports";
 
 const reportsState = {
     activeTab: "summaryTab",
@@ -21,7 +21,7 @@ const reportsState = {
     },
     incidentReport: null,
     calamityReport: null,
-    resourceReport: null,
+    resourceReport: null
 };
 
 const reportsPagination = {
@@ -82,7 +82,7 @@ function enforceManagementAccess() {
 }
 
 function initializeReportsPage() {
-    applyFrontendRbac();
+    applyFrontendRbac?.();
     bindReportTabs();
     bindResourceSubtabs();
     bindGlobalFilters();
@@ -360,8 +360,7 @@ function resetAuditFilters() {
         "auditModule",
         "auditRecordType",
         "auditActionType",
-        "auditPerformedBy",
-        "auditRecordId"
+        "auditPerformedBy"
     ];
 
     ids.forEach(id => {
@@ -417,7 +416,7 @@ function handleFrequencyChange() {
 
 async function loadSummaryReport(showSuccessMessage = false) {
     try {
-        const params = buildGlobalDateParams();
+        const params = buildGlobalDateParams({ includeYear: true });
         const url = `${REPORTS_API_BASE}/summary${params ? `?${params}` : ""}`;
         const data = await apiRequest(url);
 
@@ -482,13 +481,13 @@ async function loadAuditTrail(showSuccessMessage = false) {
 
         reportsState.searchable.actionTypes = [...new Set(
             reportsState.auditTrail
-                .map(item => readValue(item, ["actionType"]))
+                .map(item => readValue(item, ["actionType", "action"]))
                 .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
         reportsState.searchable.performedBy = [...new Set(
             reportsState.auditTrail
-                .map(item => readValue(item, ["performedBy"]))
+                .map(item => readValue(item, ["performedBy", "createdBy"]))
                 .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
@@ -500,7 +499,7 @@ async function loadAuditTrail(showSuccessMessage = false) {
 
         reportsState.searchable.recordTypes = [...new Set(
             reportsState.auditTrail
-                .map(item => readValue(item, ["recordType", "operationType"]))
+                .map(item => readValue(item, ["recordType", "operationType", "referenceType"]))
                 .filter(Boolean)
         )].sort((a, b) => String(a).localeCompare(String(b)));
 
@@ -516,7 +515,7 @@ async function loadAuditTrail(showSuccessMessage = false) {
 
 async function loadIncidentReport(showSuccessMessage = false) {
     try {
-        const params = buildGlobalDateParams();
+        const params = buildGlobalDateParams({ includeYear: false });
         const url = `${REPORTS_API_BASE}/incidents${params ? `?${params}` : ""}`;
         const data = await apiRequest(url);
 
@@ -535,7 +534,7 @@ async function loadIncidentReport(showSuccessMessage = false) {
 
 async function loadCalamityReport(showSuccessMessage = false) {
     try {
-        const params = buildGlobalDateParams();
+        const params = buildGlobalDateParams({ includeYear: false });
         const url = `${REPORTS_API_BASE}/calamities${params ? `?${params}` : ""}`;
         const data = await apiRequest(url);
 
@@ -554,7 +553,7 @@ async function loadCalamityReport(showSuccessMessage = false) {
 
 async function loadResourceReport(showSuccessMessage = false) {
     try {
-        const params = buildGlobalDateParams();
+        const params = buildGlobalDateParams({ includeYear: false });
         const url = `${REPORTS_API_BASE}/resources${params ? `?${params}` : ""}`;
         const data = await apiRequest(url);
 
@@ -571,7 +570,9 @@ async function loadResourceReport(showSuccessMessage = false) {
     }
 }
 
-function buildGlobalDateParams() {
+function buildGlobalDateParams(options = {}) {
+    const { includeYear = false } = options;
+
     const fromInput = document.getElementById("reportFromDate");
     const toInput = document.getElementById("reportToDate");
     const yearInput = document.getElementById("financialYearInput");
@@ -586,12 +587,11 @@ function buildGlobalDateParams() {
         params.append("to", toInput.value);
     }
 
-    if (yearInput && yearInput.value && /^\d{4}$/.test(yearInput.value.trim())) {
+    if (includeYear && yearInput && yearInput.value && /^\d{4}$/.test(yearInput.value.trim())) {
         params.append("year", yearInput.value.trim());
     }
 
     updateCoveredPeriodLabels();
-
     return params.toString();
 }
 
@@ -604,7 +604,6 @@ function buildAuditTrailParams() {
     const recordType = document.getElementById("auditRecordType");
     const actionType = document.getElementById("auditActionType");
     const performedBy = document.getElementById("auditPerformedBy");
-    const recordId = document.getElementById("auditRecordId");
 
     if (fromInput && fromInput.value) {
         params.append("from", fromInput.value);
@@ -628,10 +627,6 @@ function buildAuditTrailParams() {
 
     if (performedBy && performedBy.value.trim()) {
         params.append("performedBy", performedBy.value.trim());
-    }
-
-    if (recordId && recordId.value.trim()) {
-        params.append("recordId", recordId.value.trim());
     }
 
     return params.toString();
@@ -806,14 +801,14 @@ function renderAuditTrailRows(rows) {
 
     tbody.innerHTML = rows.map((item, index) => `
         <tr>
-            <td>${escapeHtml(formatDateTime(readValue(item, ["performedAt"])))}</td>
+            <td>${escapeHtml(formatDateTime(readValue(item, ["performedAt", "createdAt", "timeStamp"])))}</td>
             <td>${escapeHtml(readValue(item, ["module"]) || "--")}</td>
-            <td>${escapeHtml(readValue(item, ["recordType", "operationType"]) || "--")}</td>
-            <td>${escapeHtml(String(readValue(item, ["recordId", "operationId"]) ?? "--"))}</td>
-            <td>${escapeHtml(readValue(item, ["actionType"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["recordType", "operationType", "referenceType"]) || "--")}</td>
+            <td>${escapeHtml(String(readValue(item, ["recordId", "operationId", "referenceId"]) ?? "--"))}</td>
+            <td>${escapeHtml(readValue(item, ["actionType", "action"]) || "--")}</td>
             <td>${escapeHtml(readValue(item, ["fromStatus"]) || "--")}</td>
             <td>${escapeHtml(readValue(item, ["toStatus"]) || "--")}</td>
-            <td>${escapeHtml(readValue(item, ["performedBy"]) || "--")}</td>
+            <td>${escapeHtml(readValue(item, ["performedBy", "createdBy"]) || "--")}</td>
             <td>
                 <button class="audit-view-btn" type="button" data-page-index="${index}">
                     View
@@ -887,11 +882,11 @@ function renderIncidentRecordRows(rows) {
     tbody.innerHTML = rows.map(row => `
         <tr>
             <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
-            <td>${escapeHtml(readValue(row, ["calamityType", "type"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["type", "incidentType", "calamityType"]) || "--")}</td>
             <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["affectedArea"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["barangayName", "barangay"]) || "--")}</td>
-            <td>${escapeHtml(formatDateLong(readValue(row, ["date", "reportedAt"])))}</td>
+            <td>${escapeHtml(readValue(row, ["barangayName", "barangay", "primaryBarangayName"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["location", "affectedArea", "affectedAreaType"]) || "--")}</td>
+            <td>${escapeHtml(formatDateLong(readValue(row, ["reportedAt", "date", "createdAt"])))}</td>
         </tr>
     `).join("");
 }
@@ -941,11 +936,11 @@ function renderCalamityRecordRows(rows) {
     tbody.innerHTML = rows.map(row => `
         <tr>
             <td>${escapeHtml(String(readValue(row, ["id"]) ?? "--"))}</td>
-            <td>${escapeHtml(readValue(row, ["calamityType", "type"]) || "--")}</td>
+            <td>${escapeHtml(readValue(row, ["type", "calamityType", "eventName"]) || "--")}</td>
             <td>${escapeHtml(readValue(row, ["status"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["barangay"]) || "--")}</td>
-            <td>${escapeHtml(readValue(row, ["location", "affectedAreaTypes"]) || "--")}</td>
-            <td>${escapeHtml(formatDateLong(readValue(row, ["date"])))}</td>
+            <td>${escapeHtml(readValue(row, ["primaryBarangayName", "barangay", "barangayName"]) || "--")}</td>
+            <td>${escapeHtml(formatAffectedAreaDisplay(row))}</td>
+            <td>${escapeHtml(formatDateLong(readValue(row, ["date", "createdAt"])))}</td>
         </tr>
     `).join("");
 }
@@ -1072,16 +1067,16 @@ function openAuditDetailsModal(item) {
     if (!item) return;
 
     setText("auditDetailModule", readValue(item, ["module"]) || "OPERATIONS");
-    setText("auditDetailRecordType", readValue(item, ["recordType", "operationType"]) || "--");
-    setText("auditDetailRecordId", readValue(item, ["recordId", "operationId"]) ?? "--");
-    setText("auditDetailActionType", readValue(item, ["actionType"]) || "--");
+    setText("auditDetailRecordType", readValue(item, ["recordType", "operationType", "referenceType"]) || "--");
+    setText("auditDetailRecordId", readValue(item, ["recordId", "operationId", "referenceId"]) ?? "--");
+    setText("auditDetailActionType", readValue(item, ["actionType", "action"]) || "--");
     setText("auditDetailFromStatus", readValue(item, ["fromStatus"]) || "--");
     setText("auditDetailToStatus", readValue(item, ["toStatus"]) || "--");
-    setText("auditDetailPerformedBy", readValue(item, ["performedBy"]) || "--");
-    setText("auditDetailPerformedAt", formatDateTime(readValue(item, ["performedAt"])));
+    setText("auditDetailPerformedBy", readValue(item, ["performedBy", "createdBy"]) || "--");
+    setText("auditDetailPerformedAt", formatDateTime(readValue(item, ["performedAt", "createdAt", "timeStamp"])));
 
     setPreText("auditDetailDescription", readValue(item, ["description"]) || "--");
-    setPreText("auditDetailMetadata", formatMetadata(readValue(item, ["metadataJson"])) || "--");
+    setPreText("auditDetailMetadata", formatMetadata(readValue(item, ["metadataJson", "metadata"])) || "--");
 
     const modal = document.getElementById("auditDetailsModal");
     if (modal) {
@@ -1141,6 +1136,23 @@ function readValue(obj, keys) {
     }
 
     return null;
+}
+
+function formatAffectedAreaDisplay(row) {
+    const direct = readValue(row, ["location", "affectedAreaTypes", "affectedAreaType"]);
+    if (Array.isArray(direct)) {
+        return direct.join(", ");
+    }
+    if (typeof direct === "string" && direct.trim()) {
+        return direct;
+    }
+
+    const names = readValue(row, ["affectedBarangayNames"]);
+    if (Array.isArray(names) && names.length) {
+        return names.join(", ");
+    }
+
+    return "--";
 }
 
 function formatWholeNumber(value) {
@@ -1486,7 +1498,7 @@ async function apiDownload(url, filename) {
 
     const response = await fetch(url, {
         headers: {
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`
         }
     });
 

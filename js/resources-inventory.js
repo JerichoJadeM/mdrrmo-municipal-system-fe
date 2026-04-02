@@ -1,15 +1,11 @@
-
 const INVENTORY_CATEGORY_OPTIONS = [
     "CONSUMABLE", "SUPPLY", "TOOL", "VEHICLE", "PPE", "MEDICINE", "FOOD", "WATER", "SHELTER", "OTHER"
 ];
 
-// const TRANSITION_RESOURCE_TYPE_OPTIONS = [
-//     "RELIEF", "MEDICAL", "EQUIPMENT", "TRANSPORT", "COMMUNICATION", "SAFETY", "SHELTER", "FOOD", "WATER", "OTHER"
-// ];
-
 const INVENTORY_UNIT_OPTIONS = [
     "pcs", "box", "pack", "set", "roll", "pair", "bottle", "can", "bag", "sack", "kilo", "kilogram", "gram", "liter", "meter"
 ];
+
 const INVENTORY_LOCATION_OPTIONS = [
     "MDRRMO Warehouse",
     "MDRRMO Office",
@@ -291,8 +287,6 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
         const estimatedUnitCostValue =
             document.getElementById("inventoryEstimatedUnitCostInput")?.value?.trim() || "";
 
-        console.log("estimatedUnitCost input value:", estimatedUnitCostValue);
-
         if (estimatedUnitCostValue === "") {
             showToast("Estimated Unit Cost is required.", "error");
             return;
@@ -308,8 +302,6 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
             criticalItem: form.querySelector('[name="criticalItem"]').checked,
             estimatedUnitCost: Number(estimatedUnitCostValue || 0)
         };
-
-        console.log("inventory payload:", payload);
 
         try {
             if (mode === "create") {
@@ -328,6 +320,303 @@ function openInventoryFormModal({ mode, title, submitLabel, item = null }) {
             showToast("Failed to save inventory.", "error");
         }
     });
+}
+
+window.openNewInventoryProcurementModal = async function () {
+    if (!canOperateInventory()) return;
+
+    const [budgetOptions, incidentOptions, calamityOptions] = await Promise.all([
+        loadBudgetCategoryOptions(),
+        loadIncidentOptions(),
+        loadCalamityOptions()
+    ]);
+
+    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const submitLabel = isElevated ? "Create & Procure" : "Request New Item Procurement";
+
+    openResourcesModal({
+        title: "Procure New Inventory Item",
+        bodyHtml: `
+            <form id="newInventoryProcurementForm" class="form-grid">
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" name="name" required>
+                </div>
+
+                <div class="form-group searchable-group">
+                    <label>Category</label>
+                    <input type="text" id="newInventoryCategoryInput" autocomplete="off" required>
+                    <div class="searchable-dropdown" id="newInventoryCategoryDropdown"></div>
+                </div>
+
+                <div class="form-group searchable-group">
+                    <label>Unit</label>
+                    <input type="text" id="newInventoryUnitInput" autocomplete="off" required>
+                    <div class="searchable-dropdown" id="newInventoryUnitDropdown"></div>
+                </div>
+
+                <div class="form-group searchable-group">
+                    <label>Location</label>
+                    <input type="text" id="newInventoryLocationInput" autocomplete="off" required>
+                    <div class="searchable-dropdown" id="newInventoryLocationDropdown"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Reorder Level</label>
+                    <input type="number" name="reorderLevel" min="0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Estimated Unit Cost</label>
+                    <input type="number" name="estimatedUnitCost" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group full inventory-checkbox-row">
+                    <label class="inventory-checkbox-label">
+                        <input type="checkbox" name="criticalItem">
+                        <span>Critical item</span>
+                    </label>
+                </div>
+
+                <div class="form-group searchable-group full">
+                    <label>Budget Category</label>
+                    <input type="text" id="newProcurementBudgetCategoryInput" autocomplete="off" placeholder="Search budget section/category" required>
+                    <input type="hidden" id="newProcurementBudgetCategoryIdInput">
+                    <div class="searchable-dropdown" id="newProcurementBudgetCategoryDropdown"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Initial Quantity Procured</label>
+                    <input type="number" name="quantityAdded" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Total Cost</label>
+                    <input type="number" name="totalCost" min="0.01" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Expense Date</label>
+                    <input type="date" name="expenseDate" value="${new Date().toISOString().slice(0, 10)}">
+                </div>
+
+                <div class="form-group searchable-group">
+                    <label>Incident (Optional)</label>
+                    <input type="text" id="newProcurementIncidentInput" autocomplete="off" placeholder="Search incident">
+                    <input type="hidden" id="newProcurementIncidentIdInput">
+                    <div class="searchable-dropdown" id="newProcurementIncidentDropdown"></div>
+                </div>
+
+                <div class="form-group searchable-group">
+                    <label>Calamity (Optional)</label>
+                    <input type="text" id="newProcurementCalamityInput" autocomplete="off" placeholder="Search calamity">
+                    <input type="hidden" id="newProcurementCalamityIdInput">
+                    <div class="searchable-dropdown" id="newProcurementCalamityDropdown"></div>
+                </div>
+
+                <div class="form-group full">
+                    <label>Description</label>
+                    <textarea name="description" rows="3" placeholder="Procurement note / purchase description"></textarea>
+                </div>
+
+                <div class="form-group full">
+                    <div class="metric-card">
+                        <div class="metric-label">Projected Unit Cost from Total Cost</div>
+                        <div class="metric-value" id="newProcurementProjectedUnitCost">₱ --</div>
+                    </div>
+                </div>
+            </form>
+        `,
+        footerHtml: `
+            <button class="btn btn-secondary" id="cancelNewInventoryProcurementBtn">Cancel</button>
+            <button class="btn btn-primary" id="submitNewInventoryProcurementBtn">${submitLabel}</button>
+        `
+    });
+
+    bindSearchableDropdown({
+        inputId: "newInventoryCategoryInput",
+        dropdownId: "newInventoryCategoryDropdown",
+        options: INVENTORY_CATEGORY_OPTIONS
+    });
+
+    bindSearchableDropdown({
+        inputId: "newInventoryUnitInput",
+        dropdownId: "newInventoryUnitDropdown",
+        options: INVENTORY_UNIT_OPTIONS
+    });
+
+    bindSearchableDropdown({
+        inputId: "newInventoryLocationInput",
+        dropdownId: "newInventoryLocationDropdown",
+        options: INVENTORY_LOCATION_OPTIONS
+    });
+
+    bindSearchableDropdown({
+        inputId: "newProcurementBudgetCategoryInput",
+        dropdownId: "newProcurementBudgetCategoryDropdown",
+        hiddenInputId: "newProcurementBudgetCategoryIdInput",
+        options: budgetOptions,
+        getLabel: option => option.label,
+        getValue: option => option.value
+    });
+
+    bindSearchableDropdown({
+        inputId: "newProcurementIncidentInput",
+        dropdownId: "newProcurementIncidentDropdown",
+        hiddenInputId: "newProcurementIncidentIdInput",
+        options: incidentOptions,
+        getLabel: option => option.label,
+        getValue: option => option.value,
+        onSelect: () => {
+            const calamityHidden = document.getElementById("newProcurementCalamityIdInput");
+            const calamityInput = document.getElementById("newProcurementCalamityInput");
+            if (calamityHidden) calamityHidden.value = "";
+            if (calamityInput) calamityInput.value = "";
+        }
+    });
+
+    bindSearchableDropdown({
+        inputId: "newProcurementCalamityInput",
+        dropdownId: "newProcurementCalamityDropdown",
+        hiddenInputId: "newProcurementCalamityIdInput",
+        options: calamityOptions,
+        getLabel: option => option.label,
+        getValue: option => option.value,
+        onSelect: () => {
+            const incidentHidden = document.getElementById("newProcurementIncidentIdInput");
+            const incidentInput = document.getElementById("newProcurementIncidentInput");
+            if (incidentHidden) incidentHidden.value = "";
+            if (incidentInput) incidentInput.value = "";
+        }
+    });
+
+    bindNewInventoryProcurementCostPreview();
+
+    document.getElementById("cancelNewInventoryProcurementBtn")?.addEventListener("click", closeResourcesModal);
+
+    document.getElementById("submitNewInventoryProcurementBtn")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const originalText = button.textContent;
+
+        const form = document.getElementById("newInventoryProcurementForm");
+        const formData = new FormData(form);
+
+        const categoryIdRaw = document.getElementById("newProcurementBudgetCategoryIdInput")?.value?.trim();
+        const incidentIdRaw = document.getElementById("newProcurementIncidentIdInput")?.value?.trim();
+        const calamityIdRaw = document.getElementById("newProcurementCalamityIdInput")?.value?.trim();
+
+        if (!categoryIdRaw) {
+            showToast("Please select a budget category.", "error");
+            return;
+        }
+
+        if (incidentIdRaw && calamityIdRaw) {
+            showToast("Choose only one operation link: either incident or calamity.", "error");
+            return;
+        }
+
+        const payload = {
+            name: formData.get("name")?.toString().trim(),
+            category: document.getElementById("newInventoryCategoryInput")?.value?.trim(),
+            unit: document.getElementById("newInventoryUnitInput")?.value?.trim(),
+            location: document.getElementById("newInventoryLocationInput")?.value?.trim(),
+            reorderLevel: Number(formData.get("reorderLevel") || 0),
+            criticalItem: form.querySelector('[name="criticalItem"]').checked,
+            estimatedUnitCost: Number(formData.get("estimatedUnitCost") || 0),
+            categoryId: Number(categoryIdRaw),
+            quantityAdded: Number(formData.get("quantityAdded") || 0),
+            totalCost: Number(formData.get("totalCost") || 0),
+            expenseDate: formData.get("expenseDate")?.toString() || null,
+            description: formData.get("description")?.toString().trim() || null,
+            incidentId: incidentIdRaw ? Number(incidentIdRaw) : null,
+            calamityId: calamityIdRaw ? Number(calamityIdRaw) : null
+        };
+
+        if (!payload.name || !payload.category || !payload.unit || !payload.location) {
+            showToast("Please complete the item details.", "error");
+            return;
+        }
+
+        if (payload.quantityAdded <= 0) {
+            showToast("Initial quantity procured must be greater than 0.", "error");
+            return;
+        }
+
+        if (payload.totalCost <= 0) {
+            showToast("Total cost must be greater than 0.", "error");
+            return;
+        }
+
+        if (payload.estimatedUnitCost < 0) {
+            showToast("Estimated unit cost cannot be negative.", "error");
+            return;
+        }
+
+        try {
+            button.disabled = true;
+            button.textContent = isElevated ? "Saving..." : "Submitting...";
+
+            const result = await apiSend("/inventory/procure-new", "POST", payload);
+
+            closeResourcesModal();
+
+            const message =
+                (result && typeof result === "object" && result.message)
+                    ? result.message
+                    : (isElevated
+                        ? "New inventory item procured successfully."
+                        : "New inventory procurement request submitted for approval.");
+
+            showToast(message, isElevated ? "success" : "info");
+
+            if (isElevated) {
+                await refreshResourcesHeader();
+                await window.loadInventorySection();
+                if (window.loadReliefSection) await window.loadReliefSection();
+                if (window.loadBudgetSection) await window.loadBudgetSection();
+            } else {
+                await refreshGlobalAdminBadgesIfAvailable();
+            }
+        } catch (error) {
+            const parsed = await parseResourceError(error);
+
+            if (isApprovalSubmittedMessage(parsed.message)) {
+                closeResourcesModal();
+                showToast(parsed.message || "New inventory procurement request submitted for approval.", "info");
+                await refreshGlobalAdminBadgesIfAvailable();
+                return;
+            }
+
+            console.error("Failed to procure new inventory item", error);
+            showToast(parsed.message || "Failed to procure new inventory item.", "error");
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    });
+};
+
+function bindNewInventoryProcurementCostPreview() {
+    const form = document.getElementById("newInventoryProcurementForm");
+    if (!form) return;
+
+    const quantityInput = form.querySelector('[name="quantityAdded"]');
+    const totalCostInput = form.querySelector('[name="totalCost"]');
+    const output = document.getElementById("newProcurementProjectedUnitCost");
+
+    const recalc = () => {
+        const quantity = Number(quantityInput?.value || 0);
+        const totalCost = Number(totalCostInput?.value || 0);
+
+        if (quantity > 0 && totalCost > 0) {
+            output.textContent = formatPeso(totalCost / quantity);
+        } else {
+            output.textContent = "₱ --";
+        }
+    };
+
+    quantityInput?.addEventListener("input", recalc);
+    totalCostInput?.addEventListener("input", recalc);
 }
 
 window.openInventoryAdjustModal = async function (item) {

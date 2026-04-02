@@ -187,6 +187,12 @@ function bindResourcesGlobalActions() {
         }
     });
 
+    document.getElementById("procureNewInventoryBtn")?.addEventListener("click", () => {
+        if (canOperateInventory() && window.openNewInventoryProcurementModal) {
+            window.openNewInventoryProcurementModal();
+        }
+    });
+
     document.getElementById("addCenterBtn")?.addEventListener("click", () => {
         if (canManageCenters() && window.openEvacuationCenterCreateModal) {
             window.openEvacuationCenterCreateModal();
@@ -261,6 +267,11 @@ function applyResourcesRBAC() {
     const addInventoryBtn = document.getElementById("addInventoryBtn");
     if (addInventoryBtn) {
         addInventoryBtn.classList.toggle("hidden", !canOperateInventory());
+    }
+
+    const procureNewInventoryBtn = document.getElementById("procureNewInventoryBtn");
+    if (procureNewInventoryBtn) {
+        procureNewInventoryBtn.classList.toggle("hidden", !canOperateInventory());
     }
 
     const addCenterBtn = document.getElementById("addCenterBtn");
