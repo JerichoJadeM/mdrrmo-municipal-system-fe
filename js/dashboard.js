@@ -1157,7 +1157,7 @@ function buildEventTrendData(incidents, calamities) {
     const last7 = [];
     const counts = new Map();
 
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 30; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const key = formatDateKey(date);
