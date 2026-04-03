@@ -959,7 +959,7 @@ html, body {
     }
 
     .navbar-user {
-        order: 1;
+        order: 3;
         min-width: fit-content;
     }
 
@@ -974,7 +974,7 @@ html, body {
     }
 
     .menu-toggle {
-        order: 3;
+        order: 4;
         width: 36px;
         height: 36px;
         font-size: 16px;
