@@ -1675,25 +1675,28 @@ function renderTransitionAcknowledgements(warnings) {
             const overrideReason = (document.getElementById("transitionOverrideReason")?.value || "").trim();
 
             try {
-                const created = await submitApprovalRequest({
-                    requestType: "OPERATION_ACKNOWLEDGEMENT",
-                    title: config.type === "INCIDENT"
-                        ? `Acknowledgement request for incident #${data.id}`
-                        : `Acknowledgement request for calamity #${data.id}`,
-                    description: [
-                        `Acknowledgement required before proceeding with ${config.mode}.`,
-                        description ? `Update: ${description}` : ""
-                    ].filter(Boolean).join(" "),
-                    referenceType: config.type,
-                    referenceId: data.id,
-                    payloadJson: JSON.stringify({
-                        mode: config.mode,
-                        type: config.type,
-                        eventId: data.id,
-                        description,
-                        responderId: responderId ? Number(responderId) : null,
-                        overrideReason,
-                        warnings: warningItems
+                const created = await apiRequest(`${API_BASE}/approval-requests`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        requestType: "OPERATION_ACKNOWLEDGEMENT",
+                        title: config.type === "INCIDENT"
+                            ? `Acknowledgement request for incident #${data.id}`
+                            : `Acknowledgement request for calamity #${data.id}`,
+                        description: [
+                            `Acknowledgement required before proceeding with ${config.mode}.`,
+                            description ? `Update: ${description}` : ""
+                        ].filter(Boolean).join(" "),
+                        referenceType: config.type,
+                        referenceId: data.id,
+                        payloadJson: JSON.stringify({
+                            mode: config.mode,
+                            type: config.type,
+                            eventId: data.id,
+                            description,
+                            responderId: responderId ? Number(responderId) : null,
+                            overrideReason,
+                            warnings: warningItems
+                        })
                     })
                 });
 
@@ -1708,8 +1711,7 @@ function renderTransitionAcknowledgements(warnings) {
                 await refreshGlobalAdminBadgesIfAvailable();
             } catch (error) {
                 console.error("Failed to request acknowledgement:", error);
-                const parsed = await parseApiError(error);
-                showToastSafe(parsed.message || "Failed to request acknowledgement.", "error");
+                showToastSafe(error.message || "Failed to request acknowledgement.", "error");
             }
         });
     }
@@ -1883,11 +1885,9 @@ async function confirmTransitionReview() {
     } catch (error) {
         console.error("Error confirming transition review:", error);
 
-        const parsed = await parseApiError(error);
-        const message = String(parsed.message || "").toLowerCase();
+        const message = String(error.message || "").toLowerCase();
 
         const approvalRequired =
-            parsed.code === "APPROVAL_REQUIRED" ||
             message.includes("approval required") ||
             message.includes("acknowledgement approval required");
 
@@ -1899,7 +1899,7 @@ async function confirmTransitionReview() {
             return;
         }
 
-        showToastSafe(parsed.message || "Failed to update operation.", "error");
+        showToastSafe(error.message || "Failed to update operation.", "error");
     }
 }
 
