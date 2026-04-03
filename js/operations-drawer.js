@@ -1659,53 +1659,60 @@ function renderTransitionAcknowledgements(warnings) {
 
     overrideBlock.classList.add("hidden");
 
-    document.getElementById("transitionRequestAcknowledgementBtn")?.addEventListener("click", async () => {
-        if (!pendingTransitionReview) return;
+    const ackBtn = document.getElementById("transitionRequestAcknowledgementBtn");
+    if (ackBtn) {
+        // Clone and replace to remove all existing event listeners
+        const newBtn = ackBtn.cloneNode(true);
+        ackBtn.parentNode.replaceChild(newBtn, ackBtn);
 
-        const config = pendingTransitionReview;
-        const data = config.data;
-        const description = (document.getElementById("transitionReviewDescription")?.value || "").trim();
-        const responderId = document.getElementById("transitionResponderId")?.value || "";
-        const overrideReason = (document.getElementById("transitionOverrideReason")?.value || "").trim();
+        newBtn.addEventListener("click", async () => {
+            if (!pendingTransitionReview) return;
 
-        try {
-            const created = await submitApprovalRequest({
-                requestType: "OPERATION_ACKNOWLEDGEMENT",
-                title: config.type === "INCIDENT"
-                    ? `Acknowledgement request for incident #${data.id}`
-                    : `Acknowledgement request for calamity #${data.id}`,
-                description: [
-                    `Acknowledgement required before proceeding with ${config.mode}.`,
-                    description ? `Update: ${description}` : ""
-                ].filter(Boolean).join(" "),
-                referenceType: config.type,
-                referenceId: data.id,
-                payloadJson: JSON.stringify({
-                    mode: config.mode,
-                    type: config.type,
-                    eventId: data.id,
-                    description,
-                    responderId: responderId ? Number(responderId) : null,
-                    overrideReason,
-                    warnings: warningItems
-                })
-            });
+            const config = pendingTransitionReview;
+            const data = config.data;
+            const description = (document.getElementById("transitionReviewDescription")?.value || "").trim();
+            const responderId = document.getElementById("transitionResponderId")?.value || "";
+            const overrideReason = (document.getElementById("transitionOverrideReason")?.value || "").trim();
 
-            pendingTransitionAcknowledgementState.requestStatus = "PENDING";
-            pendingTransitionAcknowledgementState.requestId = created?.id || null;
+            try {
+                const created = await submitApprovalRequest({
+                    requestType: "OPERATION_ACKNOWLEDGEMENT",
+                    title: config.type === "INCIDENT"
+                        ? `Acknowledgement request for incident #${data.id}`
+                        : `Acknowledgement request for calamity #${data.id}`,
+                    description: [
+                        `Acknowledgement required before proceeding with ${config.mode}.`,
+                        description ? `Update: ${description}` : ""
+                    ].filter(Boolean).join(" "),
+                    referenceType: config.type,
+                    referenceId: data.id,
+                    payloadJson: JSON.stringify({
+                        mode: config.mode,
+                        type: config.type,
+                        eventId: data.id,
+                        description,
+                        responderId: responderId ? Number(responderId) : null,
+                        overrideReason,
+                        warnings: warningItems
+                    })
+                });
 
-            renderTransitionAcknowledgementHeaderStatus();
-            renderTransitionAcknowledgements(warnings);
-            syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+                pendingTransitionAcknowledgementState.requestStatus = "PENDING";
+                pendingTransitionAcknowledgementState.requestId = created?.id || null;
 
-            showToastSafe("Acknowledgement request submitted.", "info");
-            await refreshGlobalAdminBadgesIfAvailable();
-        } catch (error) {
-            console.error("Failed to request acknowledgement:", error);
-            const parsed = await parseApiError(error);
-            showToastSafe(parsed.message || "Failed to request acknowledgement.", "error");
-        }
-    });
+                renderTransitionAcknowledgementHeaderStatus();
+                renderTransitionAcknowledgements(warnings);
+                syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
+
+                showToastSafe("Acknowledgement request submitted.", "info");
+                await refreshGlobalAdminBadgesIfAvailable();
+            } catch (error) {
+                console.error("Failed to request acknowledgement:", error);
+                const parsed = await parseApiError(error);
+                showToastSafe(parsed.message || "Failed to request acknowledgement.", "error");
+            }
+        });
+    }
 
     renderTransitionAcknowledgementHeaderStatus();
     syncTransitionReviewButtonLabel(warnings);
