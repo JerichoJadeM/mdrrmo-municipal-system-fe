@@ -55,10 +55,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    if (menuToggle && sidebar && overlay) {
+    // Menu toggle handler - attach even if elements are hidden via CSS
+    if (menuToggle) {
         menuToggle.addEventListener("click", function () {
-            sidebar.classList.toggle("active");
-            overlay.classList.toggle("active");
+            if (sidebar) sidebar.classList.toggle("active");
+            if (overlay) overlay.classList.toggle("active");
             menuToggle.classList.toggle("active");
         });
     }
@@ -191,12 +192,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     window.addEventListener("resize", function () {
+        // Close sidebar and overlay when resizing to desktop (>= 768px)
         if (window.innerWidth >= 768) {
             if (sidebar) sidebar.classList.remove("active");
             if (overlay) overlay.classList.remove("active");
             if (menuToggle) menuToggle.classList.remove("active");
         }
     });
+    
+    // Trigger initial resize check to set correct state based on viewport
+    window.dispatchEvent(new Event("resize"));
 });
 
 function initializeUserInfo() {
