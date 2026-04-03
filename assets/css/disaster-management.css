@@ -1783,3 +1783,348 @@ body.modal-open {
         opacity: 0.34;
     }
 }
+
+/* =========================================================
+   RESPONSIVE DESIGN - TABLET & MOBILE
+========================================================= */
+
+/* Tablet: 768px - 992px */
+@media (max-width: 992px) {
+    .dm-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dm-sitrep-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dm-library-tabs {
+        grid-template-columns: 1fr;
+    }
+
+    .dm-toolbar-left {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile: 768px and below */
+@media (max-width: 768px) {
+    .dm-page {
+        gap: 18px;
+    }
+
+    /* Summary Cards - Stack to 1 column */
+    .dm-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .dm-summary-card {
+        min-height: 100px;
+        padding: 14px 16px;
+        gap: 10px;
+    }
+
+    .dm-summary-main {
+        gap: 12px;
+    }
+
+    .dm-summary-card .summary-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .dm-summary-card .summary-value {
+        font-size: 28px;
+    }
+
+    .dm-summary-card .summary-label {
+        font-size: 11px;
+    }
+
+    /* SitRep Grid - Stack vertically */
+    .dm-sitrep-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .dm-sitrep-map-shell {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .dm-sitrep-map-stage {
+        min-height: 280px;
+    }
+
+    .dm-map-legend {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .dm-legend-card {
+        padding: 12px 14px;
+    }
+
+    .dm-legend-card strong {
+        font-size: 13px;
+    }
+
+    .dm-legend-card p {
+        font-size: 12px;
+    }
+
+    .dm-sitrep-aside {
+        gap: 12px;
+    }
+
+    .dm-metric-card {
+        min-height: 100px;
+        padding: 14px;
+        gap: 8px;
+    }
+
+    .dm-metric-card .summary-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .dm-metric-card strong {
+        font-size: 1.8rem;
+    }
+
+    .dm-metric-card .summary-label {
+        font-size: 11px;
+    }
+
+    .dm-metric-card p {
+        font-size: 12px;
+    }
+
+    /* Library Tabs - Stack vertically */
+    .dm-library-tabs {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .dm-tab-dual {
+        min-height: 38px;
+        padding: 0 14px;
+        font-size: 13px;
+    }
+
+    /* Toolbar - Adjust layout */
+    .dm-library-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .dm-toolbar-left {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .app-page-size-wrap {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Item cards - Compact layout */
+    .dm-item-card {
+        padding: 14px;
+    }
+
+    .dm-item-card-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .dm-item-title {
+        font-size: 1rem;
+    }
+
+    .dm-item-meta {
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .meta-pill {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .dm-item-description {
+        margin-top: 10px;
+        font-size: 13px;
+    }
+
+    .dm-card-actions {
+        margin-top: 12px;
+        gap: 8px;
+    }
+
+    /* Forms */
+    .dm-form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .dm-form {
+        gap: 14px;
+        padding: 16px 16px 18px;
+    }
+
+    /* View sections */
+    .dm-view-content {
+        gap: 14px;
+        padding: 16px 16px 8px;
+    }
+
+    .dm-profile-grid {
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .dm-profile-summary {
+        grid-template-columns: 1fr;
+        gap: 10px 12px;
+    }
+
+    .dm-view-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .dm-view-summary-card {
+        min-height: 80px;
+        padding: 14px 16px;
+    }
+
+    .dm-view-summary-label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .dm-view-summary-card strong {
+        font-size: 14px;
+    }
+}
+
+/* Extra Small: 480px and below */
+@media (max-width: 480px) {
+    .dm-page {
+        gap: 14px;
+    }
+
+    .dm-summary-card {
+        min-height: 90px;
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    .dm-summary-main {
+        gap: 10px;
+    }
+
+    .dm-summary-card .summary-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .dm-summary-card .summary-value {
+        font-size: 24px;
+    }
+
+    .dm-summary-card .summary-label {
+        font-size: 10px;
+    }
+
+    .dm-sitrep-map-shell {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .dm-sitrep-map-stage {
+        min-height: 240px;
+    }
+
+    .dm-map-legend {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .dm-legend-card {
+        padding: 10px 12px;
+    }
+
+    .dm-metric-card {
+        min-height: 90px;
+        padding: 12px;
+        gap: 6px;
+    }
+
+    .dm-metric-card .summary-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .dm-metric-card strong {
+        font-size: 1.5rem;
+    }
+
+    .dm-tab-dual {
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 12px;
+    }
+
+    .dm-item-card {
+        padding: 12px;
+    }
+
+    .dm-item-title {
+        font-size: 0.95rem;
+    }
+
+    .dm-item-badges {
+        gap: 6px;
+    }
+
+    .dl-item-description {
+        font-size: 12px;
+    }
+
+    .dm-form {
+        padding: 14px 12px 14px;
+    }
+
+    .dm-form label {
+        font-size: 12px;
+    }
+
+    .dm-filter-input,
+    .dm-sort-select,
+    .dm-form input,
+    .dm-form select,
+    .dm-form textarea {
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .dm-view-summary-card {
+        min-height: 70px;
+        padding: 12px 14px;
+    }
+
+    .dm-view-summary-label {
+        font-size: 10px;
+    }
+
+    .dm-view-summary-card strong {
+        font-size: 13px;
+    }
+}
