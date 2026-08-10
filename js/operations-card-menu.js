@@ -21,7 +21,7 @@ function buildIncidentCardMenu(incident) {
 
     if (status === "RESOLVED") {
         items.push(`<div class="board-card-menu-divider"></div>`);
-        items.push(`<button type="button" class="board-card-menu-item danger" data-action="remove-board">Remove from board</button>`);
+        items.push(`<button type="button" class="board-card-menu-item danger" data-action="archive">Archive</button>`);
     }
 
     return `
@@ -59,7 +59,7 @@ function buildCalamityCardMenu(calamity) {
 
     if (status === "RESOLVED" || status === "ENDED") {
         items.push(`<div class="board-card-menu-divider"></div>`);
-        items.push(`<button type="button" class="board-card-menu-item danger" data-action="remove-board">Remove from board</button>`);
+        items.push(`<button type="button" class="board-card-menu-item danger" data-action="archive">Archive</button>`);
     }
 
     return `
@@ -115,83 +115,6 @@ function openCalamityEditOnly(calamity) {
     }
 }
 
-function getArchiveStorageSafe() {
-    try {
-        return JSON.parse(localStorage.getItem("operationsHiddenBoardCards") || "{}");
-    } catch {
-        return {};
-    }
-}
-
-function saveArchiveStorageSafe(storage) {
-    localStorage.setItem("operationsHiddenBoardCards", JSON.stringify(storage || {}));
-}
-
-function getArchiveSourceByType(type) {
-    if (type === "INCIDENT") {
-        return typeof incidentBoardData !== "undefined" && Array.isArray(incidentBoardData) ? incidentBoardData : [];
-    }
-    return typeof calamityBoardData !== "undefined" && Array.isArray(calamityBoardData) ? calamityBoardData : [];
-}
-
-function getHiddenCardsByType(type) {
-    const storage = getArchiveStorageSafe();
-    return getArchiveSourceByType(type).filter(item => {
-        const state = storage[`${type}:${item.id}`];
-        return state && state !== "CLEARED";
-    });
-}
-
-function restoreHiddenCardsByType(type) {
-    const storage = getArchiveStorageSafe();
-    let changed = false;
-
-    Object.keys(storage).forEach(key => {
-        if (key.startsWith(`${type}:`) && storage[key] && storage[key] !== "CLEARED") {
-            delete storage[key];
-            changed = true;
-        }
-    });
-
-    if (changed) saveArchiveStorageSafe(storage);
-    return changed;
-}
-
-function clearArchiveByType(type) {
-    const storage = getArchiveStorageSafe();
-    let changed = false;
-
-    Object.keys(storage).forEach(key => {
-        if (key.startsWith(`${type}:`) && storage[key] && storage[key] !== "CLEARED") {
-            storage[key] = "CLEARED";
-            changed = true;
-        }
-    });
-
-    if (changed) saveArchiveStorageSafe(storage);
-    return changed;
-}
-
-function restoreHiddenCard(type, id) {
-    const storage = getArchiveStorageSafe();
-    const key = `${type}:${id}`;
-    if (!storage[key] || storage[key] === "CLEARED") return false;
-
-    delete storage[key];
-    saveArchiveStorageSafe(storage);
-    return true;
-}
-
-function clearArchivedCard(type, id) {
-    const storage = getArchiveStorageSafe();
-    const key = `${type}:${id}`;
-    if (!storage[key] || storage[key] === "CLEARED") return false;
-
-    storage[key] = "CLEARED";
-    saveArchiveStorageSafe(storage);
-    return true;
-}
-
 function refreshBoardByType(type) {
     if (type === "INCIDENT") {
         applyIncidentFilters();
@@ -203,7 +126,7 @@ function refreshBoardByType(type) {
 function buildArchiveDrawerCard(type, item) {
     const title = type === "INCIDENT"
         ? (item.type || "-")
-        : (item.type || item.calamityName || "-");
+        : getCalamityDisplayName(item);
 
     const meta = type === "INCIDENT"
         ? `Barangay: ${item.barangay || "-"}<br>Status: ${item.status || "-"}<br>Severity: ${item.severity || "-"}`
@@ -229,12 +152,16 @@ function bindArchiveDrawerActions() {
             const type = btn.dataset.type;
             const id = Number(btn.dataset.id);
 
-            const changed = action === "restore"
-                ? restoreHiddenCard(type, id)
-                : clearArchivedCard(type, id);
+            let success = false;
 
-            if (!changed) {
-                showToast(action === "restore" ? "Item could not be restored." : "Item could not be cleared.", "info");
+            if (action === "restore") {
+                success = await restoreArchivedCard(type, id);
+            } else if (action === "clear") {
+                success = await hideArchivedCard(type, id);
+            }
+
+            if (!success) {
+                showToast("Action failed.", "error");
                 return;
             }
 
@@ -245,15 +172,19 @@ function bindArchiveDrawerActions() {
     });
 }
 
-function renderArchiveDrawer(type) {
+async function renderArchiveDrawer(type) {
     const drawer = document.getElementById("archiveDrawer");
     const overlay = document.getElementById("archiveDrawerOverlay");
     const title = document.getElementById("archiveDrawerTitle");
     const body = document.getElementById("archiveDrawerBody");
     if (!drawer || !overlay || !title || !body) return;
 
-    const archived = getHiddenCardsByType(type);
-    title.textContent = type === "INCIDENT" ? "Archived Incidents" : "Archived Calamities";
+    const archived = await fetchArchivedCards(type);
+
+    title.textContent = type === "INCIDENT"
+        ? "Archived Incidents"
+        : "Archived Calamities";
+
     body.innerHTML = archived.length
         ? archived.map(item => buildArchiveDrawerCard(type, item)).join("")
         : `<p>No archived cards.</p>`;
@@ -275,9 +206,9 @@ async function executeArchiveAction(type, action) {
     }
 
     if (action === "restore") {
-        const changed = restoreHiddenCardsByType(type);
-        if (!changed) {
-            showToast("No archived cards to restore.", "info");
+        const result = await bulkRestoreArchivedCards(type);
+        if (!result) {
+            showToast("Failed to restore archived cards.", "error");
             return;
         }
         refreshBoardByType(type);
@@ -287,9 +218,9 @@ async function executeArchiveAction(type, action) {
     }
 
     if (action === "clear") {
-        const changed = clearArchiveByType(type);
-        if (!changed) {
-            showToast("No archived cards to clear.", "info");
+        const result = await bulkClearArchivedCards(type);
+        if (!result) {
+            showToast("Failed to clear archive.", "error");
             return;
         }
         refreshBoardByType(type);
@@ -361,12 +292,19 @@ async function executeMenuAction(type, data, action) {
         return;
     }
 
-    if (action === "remove-board") {
-        hideBoardCard(type, data.id);
+    if (action === "archive") {
+        await archiveCard(type, data.id);
         refreshBoardByType(type);
-        showToast("Card archived from board.", "success");
+        showToast("Card archived.", "success");
         return;
     }
+
+    // if (action === "remove-board") {
+    //     hideBoardCard(type, data.id);
+    //     refreshBoardByType(type);
+    //     showToast("Card archived from board.", "success");
+    //     return;
+    // }
 
     if (type === "INCIDENT") {
         if (action === "move-dispatch") {
@@ -421,4 +359,75 @@ function initCardMenuEvents(card, type, data) {
             await executeMenuAction(type, data, item.dataset.action);
         });
     });
+}
+
+async function fetchArchivedCards(type) {
+    try {
+        const endpoint = type === "INCIDENT"
+            ? "/incidents/archived"
+            : "/calamities/archived";
+
+        const data = await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, { method: "GET" });
+        return Array.isArray(data) ? data : [];
+    } catch (err) {
+        console.error(err);
+        showToast("Failed to load archived data.", "error");
+        return [];
+    }
+}
+
+async function restoreArchivedCard(type, id) {
+    try {
+        const endpoint = type === "INCIDENT"
+            ? `/incidents/${id}/restore`
+            : `/calamities/${id}/restore`;
+
+        await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, { method: "PUT" });
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+async function hideArchivedCard(type, id) {
+    try {
+        const endpoint = type === "INCIDENT"
+            ? `/incidents/${id}/archive/clear`
+            : `/calamities/${id}/archive/clear`;
+
+        await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, { method: "PUT" });
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+async function bulkRestoreArchivedCards(type) {
+    try {
+        const endpoint = type === "INCIDENT"
+            ? "/incidents/archived/restore-all"
+            : "/calamities/archived/restore-all";
+
+        await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, { method: "PUT" });
+        return true;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+}
+
+async function bulkClearArchivedCards(type) {
+    try {
+        const endpoint = type === "INCIDENT"
+            ? "/incidents/archived/clear-all"
+            : "/calamities/archived/clear-all";
+
+        await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, { method: "PUT" });
+        return true;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }

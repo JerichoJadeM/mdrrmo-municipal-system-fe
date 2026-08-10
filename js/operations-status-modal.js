@@ -38,7 +38,7 @@ function renderStatusUpdateSummary(type, data) {
             <div class="dispatch-summary-grid">
                 <div class="dispatch-summary-item">
                     <strong>Type</strong>
-                    <span>${data.type || data.calamityName || "-"}</span>
+                    <span>${getCalamityDisplayName(data)}</span>
                 </div>
                 <div class="dispatch-summary-item">
                     <strong>Affected Area</strong>

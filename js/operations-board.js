@@ -353,7 +353,7 @@ function createCalamityCard(calamity) {
 
     card.innerHTML = `
         <div class="board-card-header">
-            <div class="board-card-title">${escapeHtml(calamity.type || calamity.calamityName || "-")}</div>
+            <div class="board-card-title">${escapeHtml(getCalamityDisplayName(calamity))}</div>
             ${typeof buildCalamityCardMenu === "function" ? buildCalamityCardMenu(calamity) : ""}
         </div>
 
@@ -728,10 +728,27 @@ function getCurrentBoardItemsByTypeAndStatus(type, status) {
     return source.filter(item => String(item.status || "").toUpperCase() === String(status || "").toUpperCase());
 }
 
-function hideBoardCard(type, id) {
-    const hidden = getHiddenBoardCardsSafe();
-    hidden[`${type}:${id}`] = true;
-    saveHiddenBoardCardsSafe(hidden);
+async function archiveCard(type, id) {
+    const endpoint = type === "INCIDENT"
+        ? `/incidents/${id}/archive`
+        : `/calamities/${id}/archive`;
+
+    try {
+        await apiRequest(`${window.APP_CONFIG.API_BASE}${endpoint}`, {
+            method: "PUT"
+        });
+
+        showToastSafe("Archived successfully", "success");
+
+        if (type === "INCIDENT") {
+            await loadIncidentBoard();
+        } else {
+            await loadCalamityBoard();
+        }
+
+    } catch (e) {
+        showToastSafe("Failed to archive", "error");
+    }
 }
 
 function filterVisibleBoardCards(type, items) {

@@ -331,7 +331,7 @@ window.openNewInventoryProcurementModal = async function () {
         loadCalamityOptions()
     ]);
 
-    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const isElevated = hasAnyRole("ADMIN");
     const submitLabel = isElevated ? "Create & Procure" : "Request New Item Procurement";
 
     openResourcesModal({
@@ -622,9 +622,9 @@ function bindNewInventoryProcurementCostPreview() {
 window.openInventoryAdjustModal = async function (item) {
     if (!canOperateInventory()) return;
 
-    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const isElevated = hasAnyRole("ADMIN");
     if (!isElevated) {
-        showToast("Only manager/admin can adjust stock directly.", "error");
+        showToast("Only admin can adjust stock directly.", "error");
         return;
     }
 
@@ -744,7 +744,7 @@ window.openInventoryProcurementModal = async function (item) {
         loadCalamityOptions()
     ]);
 
-    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const isElevated = hasAnyRole("ADMIN");
     const submitLabel = isElevated ? "Save Procurement" : "Request Procurement";
 
     openResourcesModal({

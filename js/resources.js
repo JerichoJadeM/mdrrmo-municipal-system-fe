@@ -96,7 +96,7 @@ async function loadReliefOperationOptions() {
     }));
 
     const calamityOptions = (Array.isArray(calamities) ? calamities : []).map(item => ({
-        label: `Calamity - ${item.eventName || item.type || "Unknown"}${item.primaryBarangayName ? ` (${item.primaryBarangayName})` : ""}`,
+        label: `Calamity - ${getCalamityDisplayName(item)}${item.primaryBarangayName ? ` (${item.primaryBarangayName})` : ""}`,
         value: `CALAMITY:${item.id}`,
         meta: {
             type: "CALAMITY",
@@ -105,6 +105,19 @@ async function loadReliefOperationOptions() {
     }));
 
     return [...incidentOptions, ...calamityOptions];
+}
+
+function getCalamityDisplayName(calamity) {
+    if (!calamity) return "-";
+
+    const type = String(calamity.type || "").trim();
+    const eventName = String(calamity.eventName || calamity.calamityName || "").trim();
+
+    if (type.toLowerCase() === "typhoon" && eventName) {
+        return eventName;
+    }
+
+    return eventName || type || "Calamity Event";
 }
 
 function parseResourceError(error) {
@@ -133,7 +146,7 @@ async function refreshGlobalAdminBadgesIfAvailable() {
 
 function canManageReliefTemplates() {
     const roles = getUserRoles();
-    return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    return roles.includes("ROLE_ADMIN");
 }
 
 function bindResourcesTabs() {
@@ -248,19 +261,19 @@ function hasAnyRole(...roles) {
 }
 
 function canOperateInventory() {
-    return hasAnyRole("USER", "MANAGER", "ADMIN");
+    return hasAnyRole("USER", "ADMIN");
 }
 
 function canManageInventoryMasterData() {
-    return hasAnyRole("MANAGER", "ADMIN");
+    return hasAnyRole("ADMIN");
 }
 
 function canManageBudgets() {
-    return hasAnyRole("MANAGER", "ADMIN");
+    return hasAnyRole("ADMIN");
 }
 
 function canManageCenters() {
-    return hasAnyRole("MANAGER", "ADMIN");
+    return hasAnyRole("ADMIN");
 }
 
 function applyResourcesRBAC() {
@@ -447,7 +460,7 @@ async function loadCalamityOptions() {
     try {
         const rows = await apiGet(CALAMITIES_LOOKUP_PATH);
         resourcesState.calamityOptions = (rows || []).map(item => ({
-            label: item.type || `Calamity ${item.id}`,
+            label: getCalamityDisplayName(item) || `Calamity ${item.id}`,
             value: item.id,
             status: item.status || "",
             severity: item.severity || "",

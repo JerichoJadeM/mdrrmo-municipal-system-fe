@@ -12,7 +12,7 @@ async function loadOperationalReadiness(type, id) {
             : `${API_BASE}/operations/forecast/calamities/${id}`;
 
         const data = await apiRequest(endpoint);
-        renderOperationalReadiness(data);
+        renderOperationalReadiness(data, type, id);
     } catch (error) {
         console.error("Error loading operational readiness:", error);
         showReadinessEmptyState("Unable to load operational readiness.");
@@ -73,14 +73,14 @@ function showReadinessContent() {
     }
 }
 
-function renderOperationalReadiness(data) {
+function renderOperationalReadiness(data, type, id) {
     if (!data) {
         showReadinessEmptyState("No operational readiness data available.");
         return;
     }
 
     showReadinessContent();
-    renderReadinessSummary(data);
+    renderReadinessSummary(data, type, id);
     renderReadinessWarnings(data.warnings || []);
     renderReadinessResources(data.recommendedResources || []);
     renderReadinessStockChecks(data.stockChecks || []);
@@ -89,10 +89,21 @@ function renderOperationalReadiness(data) {
     renderReadinessCostDrivers(data.costDrivers || []);
 }
 
-function renderReadinessSummary(data) {
-    setText("readinessForecastedBudget", formatCurrency(data.forecastedBudget));
-    setText("readinessActualCost", formatCurrency(data.actualCostToDate));
-    setText("readinessVariance", formatCurrency(data.variance));
+function renderReadinessSummary(data, type, id) {
+    const currentItem = (window.currentSelection?.type === type && Number(window.currentSelection?.data?.id) === Number(id))
+        ? window.currentSelection.data
+        : { id, status: "" };
+    const metrics = typeof getOperationForecastDisplay === "function"
+        ? getOperationForecastDisplay(type, currentItem, data, [])
+        : {
+            forecastedBudget: Number(data?.forecastedBudget || 0),
+            actualCostToDate: Number(data?.actualCostToDate || 0),
+            variance: Number(data?.variance || 0)
+        };
+
+    setText("readinessForecastedBudget", formatCurrency(metrics.forecastedBudget));
+    setText("readinessActualCost", formatCurrency(metrics.actualCostToDate));
+    setText("readinessVariance", formatCurrency(metrics.variance));
     setText("readinessEvacuationFlag", data.evacuationRecommended ? "Yes" : "No");
     setText("readinessReliefFlag", data.reliefRecommended ? "Yes" : "No");
 }

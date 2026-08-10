@@ -64,7 +64,7 @@ function hasAuthority(user, role) {
 }
 
 function canAccessManagementPages(user) {
-    return hasAuthority(user, "ROLE_ADMIN") || hasAuthority(user, "ROLE_MANAGER");
+    return hasAuthority(user, "ROLE_ADMIN");
 }
 
 function enforceManagementAccess() {

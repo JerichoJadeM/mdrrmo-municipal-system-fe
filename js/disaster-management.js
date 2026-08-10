@@ -172,7 +172,7 @@ function getCurrentUserRoles() {
 }
 
 function canManageEvents() {
-    return currentUserRoles.includes("ROLE_ADMIN") || currentUserRoles.includes("ROLE_MANAGER");
+    return currentUserRoles.includes("ROLE_ADMIN");
 }
 
 async function apiRequest(url, options = {}) {

@@ -58,6 +58,19 @@ function formatCalamityArea(calamity) {
     return calamity?.primaryBarangayName || calamity?.barangay || "-";
 }
 
+function getCalamityDisplayName(calamity) {
+    if (!calamity) return "-";
+
+    const type = String(calamity.type || "").trim();
+    const eventName = String(calamity.eventName || calamity.calamityName || "").trim();
+
+    if (type.toLowerCase() === "typhoon" && eventName) {
+        return eventName;
+    }
+
+    return eventName || type || "Calamity Event";
+}
+
 function getCurrentUserRoles() {
     try {
         const raw = localStorage.getItem("userAuthorities") || sessionStorage.getItem("userAuthorities");
@@ -74,7 +87,7 @@ function getCurrentUserRoles() {
 
 function canManageHiddenStorage() {
     const roles = getCurrentUserRoles();
-    return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    return roles.includes("ROLE_ADMIN");
 }
 
 function canManageArchiveClear() {

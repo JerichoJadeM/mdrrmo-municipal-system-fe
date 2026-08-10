@@ -1,16 +1,19 @@
 window.loadBudgetSection = async function () {
     try {
-        const [budgets, currentSummary, historyRows, forecast, breakdown] = await Promise.all([
+        const [budgets, currentSummary, historyRows, forecast, breakdown, previousYears] = await Promise.all([
             apiGet("/budgets"),
             apiGet("/budgets/current-summary"),
             apiGet("/budgets/history"),
             apiGet("/budgets/forecast/next-year"),
-            apiGet("/budgets/forecast/next-year/breakdown").catch(() => null)
+            apiGet("/budgets/forecast/next-year/breakdown").catch(() => null),
+            apiGet("/budgets/previous-years").catch(() => [])
         ]);
+
+        const mergedHistoryRows = mergeBudgetHistoryRows(historyRows || [], previousYears || [], currentSummary);
 
         renderBudgetToolbar();
         renderCurrentBudgetSummary(currentSummary);
-        renderBudgetHistory(historyRows || []);
+        renderBudgetHistory(mergedHistoryRows);
         renderNextYearForecast(forecast, breakdown);
 
         const selectedYear = Number(
@@ -132,6 +135,13 @@ function renderCurrentBudgetSummary(summary) {
                         Allocate Category
                     </button>
                 ` : ""}
+
+                ${canManagePreviousYearBudget() ? `
+                    <button class="btn btn-light" id="addPreviousYearBudgetBtn">
+                        <i class="fas fa-history"></i>
+                        Add Previous Year
+                    </button>
+                ` : ""}
             </div>
         </div>
 
@@ -183,6 +193,7 @@ function renderCurrentBudgetSummary(summary) {
 function bindCurrentBudgetActions(currentSummary) {
     const addBudgetBtn = document.getElementById("addBudgetBtn");
     const allocateBtn = document.getElementById("allocateBudgetCategoryBtn");
+    const addPreviousYearBtn = document.getElementById("addPreviousYearBudgetBtn");
 
     if (addBudgetBtn && !addBudgetBtn.dataset.bound) {
         addBudgetBtn.dataset.bound = "true";
@@ -197,6 +208,66 @@ function bindCurrentBudgetActions(currentSummary) {
             openAllocateBudgetCategoryModal(currentSummary);
         });
     }
+
+    if (addPreviousYearBtn && !addPreviousYearBtn.dataset.bound) {
+        addPreviousYearBtn.dataset.bound = "true";
+        addPreviousYearBtn.addEventListener("click", () => {
+            openAddPreviousYearModal(currentSummary?.year);
+        });
+    }
+}
+
+function mergeBudgetHistoryRows(historyRows = [], previousYears = [], currentSummary = null) {
+    const rows = [...historyRows.map(normalizeBudgetHistoryRow)];
+
+    if (currentSummary) {
+        const currentYear = Number(currentSummary.year);
+        const currentRow = normalizeBudgetHistoryRow({
+            year: currentYear,
+            allotment: currentSummary.totalAllotment ?? currentSummary.allotment,
+            obligations: currentSummary.totalObligations ?? currentSummary.obligations,
+            remainingBalance: currentSummary.totalRemaining ?? currentSummary.remainingBalance,
+            utilizationRate: currentSummary.utilizationRate ?? currentSummary.utilization
+        });
+
+        const hasCurrentYear = rows.some(row => Number(row.year) === currentYear);
+        if (!hasCurrentYear && currentRow) {
+            rows.unshift(currentRow);
+        }
+    }
+
+    previousYears.forEach(item => {
+        const normalized = normalizeBudgetHistoryRow(item);
+        if (!normalized) return;
+
+        const year = Number(normalized.year);
+        const alreadyExists = rows.some(row => Number(row.year) === year);
+        if (!alreadyExists) {
+            rows.push(normalized);
+        }
+    });
+
+    return rows.sort((a, b) => Number(b.year) - Number(a.year));
+}
+
+function normalizeBudgetHistoryRow(row) {
+    if (!row || row === null) return null;
+
+    const year = Number(row.year);
+    if (!Number.isFinite(year)) return null;
+
+    const allotment = Number(row.allotment ?? row.totalAllotment ?? row.amount ?? 0);
+    const obligations = Number(row.obligations ?? row.totalObligations ?? row.totalSpent ?? 0);
+    const remainingBalance = Number(row.remainingBalance ?? (Number.isFinite(allotment) ? Math.max(allotment - obligations, 0) : 0));
+    const utilizationRate = Number(row.utilizationRate ?? (allotment > 0 ? (obligations / allotment) * 100 : 0));
+
+    return {
+        year,
+        allotment: Number.isFinite(allotment) ? allotment : 0,
+        obligations: Number.isFinite(obligations) ? obligations : 0,
+        remainingBalance: Number.isFinite(remainingBalance) ? remainingBalance : 0,
+        utilizationRate: Number.isFinite(utilizationRate) ? utilizationRate : 0
+    };
 }
 
 function renderBudgetHistory(historyRows) {
@@ -300,7 +371,8 @@ function renderNextYearForecast(forecast, breakdown) {
                 </div>
                 ${renderOperationTypeForecastTable(
                     breakdown.incidentTypeForecasts,
-                    "No incident type forecasts available."
+                    "No incident type forecasts available.",
+                    "INCIDENT"
                 )}
             </div>
 
@@ -313,7 +385,8 @@ function renderNextYearForecast(forecast, breakdown) {
                 </div>
                 ${renderOperationTypeForecastTable(
                     breakdown.calamityTypeForecasts,
-                    "No calamity type forecasts available."
+                    "No calamity type forecasts available.",
+                    "CALAMITY"
                 )}
             </div>
         `;
@@ -384,7 +457,46 @@ function renderNextYearForecast(forecast, breakdown) {
         : `<div class="empty-state">No category forecast available.</div>`;
 }
 
-function renderOperationTypeForecastTable(rows, emptyMessage) {
+function getOperationForecastActualValue(row, operationType) {
+    const candidates = [
+        row?.actualCost,
+        row?.actualCostToDate,
+        row?.operationsActualCost,
+        row?.operationsCost,
+        row?.operationalActualCost,
+        row?.liveActualCost
+    ];
+
+    const backendValue = candidates.find(item => item !== undefined && item !== null && item !== "");
+    if (backendValue !== undefined) {
+        return Number(backendValue || 0);
+    }
+
+    return getPersistedOperationActualCostByType(operationType, row?.type);
+}
+
+function getPersistedOperationActualCostByType(operationType, forecastType) {
+    if (!forecastType) return 0;
+
+    try {
+        const raw = localStorage.getItem("mdrrmoOperationActualCosts");
+        const state = raw ? JSON.parse(raw) : {};
+        const normalizedType = String(operationType || "").toUpperCase();
+        const normalizedForecastType = String(forecastType || "").trim().toLowerCase();
+
+        return Object.values(state || {})
+            .filter(entry =>
+                String(entry?.type || "").toUpperCase() === normalizedType &&
+                String(entry?.eventType || "").trim().toLowerCase() === normalizedForecastType
+            )
+            .reduce((sum, entry) => sum + Number(entry?.actualCost || 0), 0);
+    } catch (error) {
+        console.warn("Unable to read persisted operation actual costs:", error);
+        return 0;
+    }
+}
+
+function renderOperationTypeForecastTable(rows, emptyMessage, operationType) {
     if (!rows || !rows.length) {
         return `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
     }
@@ -399,6 +511,7 @@ function renderOperationTypeForecastTable(rows, emptyMessage) {
                         <th>Historical Cost</th>
                         <th>Avg. Cost</th>
                         <th>Forecast</th>
+                        <th>Ops Actual</th>
                         <th>Share</th>
                         <th>Note</th>
                     </tr>
@@ -411,6 +524,7 @@ function renderOperationTypeForecastTable(rows, emptyMessage) {
                             <td>${formatPeso(row.historicalCost)}</td>
                             <td>${formatPeso(row.historicalAverageCost)}</td>
                             <td><strong>${formatPeso(row.forecastAmount)}</strong></td>
+                            <td>${formatPeso(getOperationForecastActualValue(row, operationType))}</td>
                             <td>${formatPercent(row.sharePercent)}</td>
                             <td>${escapeHtml(row.note || "-")}</td>
                         </tr>
@@ -630,15 +744,147 @@ function renderDismissibleReadinessWarnings(items) {
 function canManageBudget() {
     if (typeof getUserRoles === "function") {
         const roles = getUserRoles();
-        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+        return roles.includes("ROLE_ADMIN");
     }
 
     try {
         const roles = JSON.parse(localStorage.getItem("userAuthorities") || "[]");
-        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+        return roles.includes("ROLE_ADMIN");
     } catch (e) {
         return false;
     }
+}
+
+function canManagePreviousYearBudget() {
+    if (typeof getUserRoles === "function") {
+        return getUserRoles().includes("ROLE_ADMIN");
+    }
+
+    try {
+        const roles = JSON.parse(localStorage.getItem("userAuthorities") || "[]");
+        return roles.includes("ROLE_ADMIN");
+    } catch (e) {
+        return false;
+    }
+}
+
+function openAddPreviousYearModal(defaultYear) {
+    const previousYear = Number(defaultYear || new Date().getFullYear()) - 1;
+
+    openResourcesModal({
+        title: "Add Previous Year",
+        bodyHtml: `
+            <form id="addPreviousYearForm" class="form-grid">
+                <div class="form-group">
+                    <label>Year</label>
+                    <input type="number" id="previousYearInput" name="year" min="2000" step="1" value="${previousYear}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Allotment</label>
+                    <input type="number" id="previousYearAllotmentInput" name="allotment" min="0" step="0.01" placeholder="1500000" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Obligations</label>
+                    <input type="number" id="previousYearObligationsInput" name="obligations" min="0" step="0.01" placeholder="1350000" required>
+                </div>
+
+                <div class="form-group full" style="margin-top: 10px;">
+                    <div class="metric-row" style="margin: 0;">
+                        <div class="metric-card" style="flex: 1;">
+                            <div class="metric-label">Remaining</div>
+                            <div class="metric-value" id="previousYearRemainingValue">₱0.00</div>
+                        </div>
+                        <div class="metric-card" style="flex: 1;">
+                            <div class="metric-label">Utilization</div>
+                            <div class="metric-value" id="previousYearUtilizationValue">0.00%</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        `,
+        footerHtml: `
+            <button class="btn btn-light" id="cancelAddPreviousYearBtn">Cancel</button>
+            <button class="btn btn-primary" id="submitAddPreviousYearBtn">Save</button>
+        `
+    });
+
+    const yearInput = document.getElementById("previousYearInput");
+    const allotmentInput = document.getElementById("previousYearAllotmentInput");
+    const obligationsInput = document.getElementById("previousYearObligationsInput");
+    const remainingValue = document.getElementById("previousYearRemainingValue");
+    const utilizationValue = document.getElementById("previousYearUtilizationValue");
+
+    const updatePreviousYearSummary = () => {
+        const allotment = Number(allotmentInput?.value || 0);
+        const obligations = Number(obligationsInput?.value || 0);
+        const remaining = Math.max(allotment - obligations, 0);
+        const utilization = allotment > 0 ? (obligations / allotment) * 100 : 0;
+
+        if (remainingValue) {
+            remainingValue.textContent = formatPeso(remaining);
+        }
+
+        if (utilizationValue) {
+            utilizationValue.textContent = `${utilization.toFixed(2)}%`;
+        }
+    };
+
+    [allotmentInput, obligationsInput].forEach(input => {
+        input?.addEventListener("input", updatePreviousYearSummary);
+    });
+
+    updatePreviousYearSummary();
+
+    document.getElementById("cancelAddPreviousYearBtn")?.addEventListener("click", closeResourcesModal);
+
+    document.getElementById("submitAddPreviousYearBtn")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const originalText = button.textContent;
+
+        const form = document.getElementById("addPreviousYearForm");
+        const formData = new FormData(form);
+
+        const payload = {
+            year: Number(formData.get("year")),
+            allotment: Number(formData.get("allotment")),
+            obligations: Number(formData.get("obligations"))
+        };
+
+        if (!payload.year || Number.isNaN(payload.year) || payload.year < 2000) {
+            showToast("Please enter a valid year.", "error");
+            return;
+        }
+
+        if (!Number.isFinite(payload.allotment) || payload.allotment < 0) {
+            showToast("Please enter a valid allotment amount.", "error");
+            return;
+        }
+
+        if (!Number.isFinite(payload.obligations) || payload.obligations < 0) {
+            showToast("Please enter a valid obligations amount.", "error");
+            return;
+        }
+
+        try {
+            button.disabled = true;
+            button.textContent = "Saving...";
+
+            await apiSend("/budgets/previous-years", "POST", payload);
+
+            closeResourcesModal();
+            showToast("Previous year budget saved successfully.", "success");
+            await window.loadBudgetSection();
+            await refreshResourcesHeader();
+        } catch (error) {
+            console.error("Failed to save previous year budget", error);
+            showToast("Failed to save previous year budget.", "error");
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    });
 }
 
 function openAddBudgetModal(defaultYear) {

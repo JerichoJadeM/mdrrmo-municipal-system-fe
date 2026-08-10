@@ -40,12 +40,12 @@ window.loadReliefSection = async function () {
 function canManageReliefTemplates() {
     if (typeof getUserRoles === "function") {
         const roles = getUserRoles();
-        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+        return roles.includes("ROLE_ADMIN");
     }
 
     try {
         const roles = JSON.parse(localStorage.getItem("userAuthorities") || "[]");
-        return roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+        return roles.includes("ROLE_ADMIN");
     } catch (e) {
         return false;
     }
@@ -578,7 +578,7 @@ function openDeleteReliefPackTemplateModal(templateId, templateName) {
 async function openReliefPackDistributionModal(readiness) {
     const operations = await loadReliefOperationOptions();
     const centers = await loadEvacuationActivationOptions();
-    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const isElevated = hasAnyRole("ADMIN");
     const submitLabel = isElevated ? "Distribute Pack" : "Request Pack Distribution";
 
     openResourcesModal({
@@ -621,7 +621,7 @@ async function openReliefPackDistributionModal(readiness) {
                     <div class="form-group full">
                         <div class="info-pill">
                             <i class="fas fa-clipboard-check"></i>
-                            This pack distribution may require manager/admin approval before execution.
+                            This pack distribution may require admin approval before execution.
                         </div>
                     </div>
                 `
@@ -829,7 +829,7 @@ function bindReliefPackEvacuationDropdown(options) {
 async function openReliefDistributionModal(item) {
     const operations = await loadReliefOperationOptions();
     const centers = await loadEvacuationActivationOptions();
-    const isElevated = hasAnyRole("MANAGER", "ADMIN");
+    const isElevated = hasAnyRole("ADMIN");
     const submitLabel = isElevated ? "Distribute Item" : "Request Distribution";
 
     openResourcesModal({
@@ -872,7 +872,7 @@ async function openReliefDistributionModal(item) {
                     <div class="form-group full">
                         <div class="info-pill">
                             <i class="fas fa-clipboard-check"></i>
-                            This distribution may require manager/admin approval before execution.
+                            This distribution may require admin approval before execution.
                         </div>
                     </div>
                 `

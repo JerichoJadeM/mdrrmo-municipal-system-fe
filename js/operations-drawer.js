@@ -9,6 +9,29 @@ let pendingTransitionWarnings = [];
 let pendingTransitionCostDrivers = [];
 let pendingTransitionEvacuationAssignments = [];
 let pendingEvacuationCenterCatalog = [];
+let operationActualCostState = {};
+
+const OPERATION_ACTUAL_COST_STORAGE_KEY = "mdrrmoOperationActualCosts";
+
+function loadOperationActualCostStateFromStorage() {
+    try {
+        const raw = localStorage.getItem(OPERATION_ACTUAL_COST_STORAGE_KEY);
+        operationActualCostState = raw ? (JSON.parse(raw) || {}) : {};
+    } catch (error) {
+        console.warn("Unable to read persisted operation actual costs:", error);
+        operationActualCostState = {};
+    }
+}
+
+function persistOperationActualCostState() {
+    try {
+        localStorage.setItem(OPERATION_ACTUAL_COST_STORAGE_KEY, JSON.stringify(operationActualCostState));
+    } catch (error) {
+        console.warn("Unable to persist operation actual costs:", error);
+    }
+}
+
+loadOperationActualCostStateFromStorage();
 
 let transitionEvacuationFormVisible = false;
 let transitionEvacuationUpdateTargetId = null;
@@ -201,6 +224,104 @@ function renderOperationsDrawerLoading() {
     }
 }
 
+function normalizeOperationStatus(status) {
+    return String(status || "").toUpperCase();
+}
+
+function getOperationActualCostStateKey(type, data) {
+    return `${String(type || "").toUpperCase()}:${String(data?.id ?? "")}`;
+}
+
+function getOperationActualCostState(type, data) {
+    return operationActualCostState[getOperationActualCostStateKey(type, data)] || null;
+}
+
+function setOperationActualCostState(type, data, actualCost, selectedResources = []) {
+    const key = getOperationActualCostStateKey(type, data);
+    operationActualCostState[key] = {
+        type: String(type || "").toUpperCase(),
+        id: String(data?.id ?? ""),
+        eventType: data?.type || "",
+        actualCost: Number(actualCost || 0),
+        selectedResources: Array.isArray(selectedResources) ? selectedResources : [],
+        status: normalizeOperationStatus(data?.status),
+        updatedAt: Date.now()
+    };
+    persistOperationActualCostState();
+}
+
+function calculateTransitionResourceCost(resources = [], inventoryCatalog = []) {
+    let total = 0;
+    const catalog = Array.isArray(inventoryCatalog) ? inventoryCatalog : [];
+
+    (resources || []).forEach(resource => {
+        const quantity = Number(resource?.quantity ?? resource?.suggestedQuantity ?? 0) || 0;
+        if (!quantity) return;
+
+        const itemName = String(resource?.itemName || "").trim().toLowerCase();
+        const matchedCatalog = catalog.find(item => String(item?.itemName || item?.name || "").trim().toLowerCase() === itemName);
+        const unitCost = Number(
+            resource?.unitCost ??
+            matchedCatalog?.unitCost ??
+            matchedCatalog?.estimatedUnitCost ??
+            matchedCatalog?.cost ??
+            resource?.cost ??
+            0
+        );
+
+        if (unitCost > 0) {
+            total += quantity * unitCost;
+        }
+    });
+
+    return total;
+}
+
+function getOperationActualCost(type, data, forecast, selectedResources = []) {
+    const normalizedStatus = normalizeOperationStatus(data?.status);
+    const state = getOperationActualCostState(type, data);
+    const resourceList = Array.isArray(selectedResources) && selectedResources.length
+        ? selectedResources
+        : (Array.isArray(state?.selectedResources) && state.selectedResources.length
+            ? state.selectedResources
+            : (Array.isArray(forecast?.recommendedResources) ? forecast.recommendedResources : []));
+
+    const inventoryCatalog = Array.isArray(forecast?.inventoryCatalog)
+        ? forecast.inventoryCatalog
+        : (Array.isArray(pendingTransitionInventoryCatalog) ? pendingTransitionInventoryCatalog : []);
+
+    const derivedCost = calculateTransitionResourceCost(resourceList, inventoryCatalog);
+    const previousCost = Number(state?.actualCost || 0);
+    const previousResources = Array.isArray(state?.selectedResources) ? state.selectedResources : [];
+    const previousResourceCost = calculateTransitionResourceCost(previousResources, inventoryCatalog);
+
+    const reportedStatuses = ["ACTIVE", "ONGOING", "REPORTED", "NEW", "PENDING", "OPEN", "INITIAL"];
+    const dispatchStatuses = ["IN_PROGRESS", "MONITORING", "DISPATCHED", "ASSIGNED"];
+
+    if (reportedStatuses.includes(normalizedStatus)) {
+        return 0;
+    }
+
+    if (dispatchStatuses.includes(normalizedStatus)) {
+        return derivedCost || previousCost || 0;
+    }
+
+    const delta = derivedCost - previousResourceCost;
+    const nextCost = previousCost + delta;
+    return Math.max(0, nextCost);
+}
+
+function getOperationForecastDisplay(type, data, forecast, selectedResources = []) {
+    const forecastedBudget = Number(forecast?.forecastedBudget || 0);
+    const actualCostToDate = getOperationActualCost(type, data, forecast, selectedResources);
+
+    return {
+        forecastedBudget,
+        actualCostToDate,
+        variance: forecastedBudget - actualCostToDate
+    };
+}
+
 function renderOperationsDrawerSummary(type, data) {
     document.getElementById("operationsDrawerEmpty")?.classList.add("hidden");
     document.getElementById("operationsDrawerContent")?.classList.remove("hidden");
@@ -210,7 +331,7 @@ function renderOperationsDrawerSummary(type, data) {
 
     const title = type === "INCIDENT"
         ? (data.type || "-")
-        : (data.type || data.calamityName || "-");
+        : getCalamityDisplayName(data);
 
     const location = type === "INCIDENT"
         ? (data.barangay || "-")
@@ -284,7 +405,7 @@ async function loadOperationsDrawerForecast(type, data) {
         currentDrawerForecast = forecast;
 
         renderOperationsDrawerWarnings(forecast.warnings || []);
-        renderOperationsDrawerReadiness(forecast);
+        renderOperationsDrawerReadiness(forecast, type, data);
     } catch (error) {
         console.error("Error loading drawer forecast:", error);
 
@@ -326,10 +447,18 @@ function renderOperationsDrawerWarnings(warnings) {
     });
 }
 
-function renderOperationsDrawerReadiness(forecast) {
-    setDrawerText("drawerForecastedBudget", formatCurrencySafe(forecast.forecastedBudget));
-    setDrawerText("drawerActualCost", formatCurrencySafe(forecast.actualCostToDate));
-    setDrawerText("drawerVariance", formatCurrencySafe(forecast.variance));
+function renderOperationsDrawerReadiness(forecast, type, data) {
+    const selectedResources = getEditableTransitionResources()
+        .filter(item => item.included && Number(item.quantity || 0) > 0)
+        .map(item => ({
+            ...item,
+            quantity: Number(item.quantity || 0)
+        }));
+    const metrics = getOperationForecastDisplay(type, data, forecast, selectedResources);
+
+    setDrawerText("drawerForecastedBudget", formatCurrencySafe(metrics.forecastedBudget));
+    setDrawerText("drawerActualCost", formatCurrencySafe(metrics.actualCostToDate));
+    setDrawerText("drawerVariance", formatCurrencySafe(metrics.variance));
 
     const quick = document.getElementById("drawerReadinessQuick");
     if (!quick) return;
@@ -502,7 +631,7 @@ function renderTransitionReviewSummary(config) {
         <div class="dispatch-summary-grid">
             <div class="dispatch-summary-item">
                 <strong>Type</strong>
-                <span>${escapeHtml(type === "INCIDENT" ? data.type || "-" : data.type || data.calamityName || "-")}</span>
+                <span>${escapeHtml(type === "INCIDENT" ? data.type || "-" : getCalamityDisplayName(data))}</span>
             </div>
             <div class="dispatch-summary-item">
                 <strong>Status</strong>
@@ -985,7 +1114,8 @@ async function preloadTransitionInventoryCatalog() {
                 resourceType: item.resourceType || item.type || "",
                 category: item.category || "",
                 unit: item.unit || "",
-                availableQuantity: Number(item.availableQuantity ?? item.quantity ?? 0) || 0
+                availableQuantity: Number(item.availableQuantity ?? item.quantity ?? 0) || 0,
+                estimatedUnitCost: Number(item.estimatedUnitCost ?? item.unitCost ?? item.cost ?? 0) || 0
             }));
             return;
         }
@@ -1557,7 +1687,7 @@ function renderTransitionAcknowledgements(warnings) {
     if (!container || !overrideBlock) return;
 
     const roles = getCurrentUserRolesSafe();
-    const isElevated = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    const isElevated = roles.includes("ROLE_ADMIN");
 
     const warningItems = warnings.filter(w => {
         const level = String(w.level || "").toUpperCase();
@@ -1607,10 +1737,10 @@ function renderTransitionAcknowledgements(warnings) {
     }
 
     const status = String(pendingTransitionAcknowledgementState.requestStatus || "NONE").toUpperCase();
-    const reviewedBy = pendingTransitionAcknowledgementState.reviewedByName || "Manager/Admin";
+    const reviewedBy = pendingTransitionAcknowledgementState.reviewedByName || "Admin";
     const remarks = pendingTransitionAcknowledgementState.remarks || "";
 
-    let helperText = "Manager/Admin acknowledgement is required before this transition can proceed.";
+    let helperText = "Admin acknowledgement is required before this transition can proceed.";
     let buttonText = "Request Acknowledgement";
     let buttonDisabled = false;
 
@@ -1741,9 +1871,20 @@ async function confirmTransitionReview() {
     const responderId = document.getElementById("transitionResponderId")?.value || "";
     const responderName = document.getElementById("transitionResponderSearch")?.value || "";
     const overrideReason = (document.getElementById("transitionOverrideReason")?.value || "").trim();
+    const selectedResources = (config.selectedResources || []).map(item => ({
+        ...item,
+        quantity: Number(item.quantity || 0)
+    }));
+    const previousState = getOperationActualCostState(config.type, data);
+    const previousResources = Array.isArray(previousState?.selectedResources) ? previousState.selectedResources : [];
+    const previousResourceCost = calculateTransitionResourceCost(previousResources, pendingTransitionInventoryCatalog);
+    const currentResourceCost = calculateTransitionResourceCost(selectedResources, pendingTransitionInventoryCatalog);
+    const delta = currentResourceCost - previousResourceCost;
+    const nextActualCost = Math.max(0, Number(previousState?.actualCost || 0) + delta);
+    setOperationActualCostState(config.type, data, nextActualCost, selectedResources);
 
     const roles = getCurrentUserRolesSafe();
-    const isElevated = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    const isElevated = roles.includes("ROLE_ADMIN");
 
     const warningItems = (pendingTransitionWarnings || []).filter(w => {
         const level = String(w.level || "").toUpperCase();
@@ -1754,7 +1895,7 @@ async function confirmTransitionReview() {
     const ackStatus = String(pendingTransitionAcknowledgementState.requestStatus || "NONE").toUpperCase();
 
     if (requiresAcknowledgement && !isElevated && ackStatus !== "APPROVED") {
-        showToastSafe("Manager/Admin acknowledgement is required before continuing.", "info");
+        showToastSafe("Admin acknowledgement is required before continuing.", "info");
         return;
     }
 
@@ -1790,7 +1931,9 @@ async function confirmTransitionReview() {
                     body: JSON.stringify({
                         responderId: Number(responderId),
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1800,7 +1943,9 @@ async function confirmTransitionReview() {
                     method: "PUT",
                     body: JSON.stringify({
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1810,7 +1955,9 @@ async function confirmTransitionReview() {
                     method: "PUT",
                     body: JSON.stringify({
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1822,7 +1969,9 @@ async function confirmTransitionReview() {
                     method: "PUT",
                     body: JSON.stringify({
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1832,7 +1981,9 @@ async function confirmTransitionReview() {
                     method: "PUT",
                     body: JSON.stringify({
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1842,7 +1993,9 @@ async function confirmTransitionReview() {
                     method: "PUT",
                     body: JSON.stringify({
                         description: description || null,
-                        overrideReason: overrideReason || null
+                        overrideReason: overrideReason || null,
+                        selectedResources: config.selectedResources || [],
+                        actualCost: nextActualCost
                     })
                 });
             }
@@ -1892,7 +2045,7 @@ async function confirmTransitionReview() {
             message.includes("acknowledgement approval required");
 
         if (approvalRequired) {
-            showToastSafe("This transition still requires manager/admin acknowledgement.", "error");
+            showToastSafe("This transition still requires admin acknowledgement.", "error");
             await loadTransitionAcknowledgementStatus(config);
             renderTransitionAcknowledgements(pendingTransitionWarnings || []);
             syncTransitionReviewButtonLabel(pendingTransitionWarnings || []);
@@ -1914,7 +2067,7 @@ function syncTransitionReviewButtonLabel(warnings = []) {
 
     const requiresAcknowledgement = warningItems.length > 0;
     const roles = getCurrentUserRolesSafe();
-    const isElevated = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_MANAGER");
+    const isElevated = roles.includes("ROLE_ADMIN");
     const ackStatus = String(pendingTransitionAcknowledgementState?.requestStatus || "NONE").toUpperCase();
 
     if (!requiresAcknowledgement) {

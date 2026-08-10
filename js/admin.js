@@ -121,8 +121,6 @@ function formatDateTime(value) {
 function derivePrimaryRole(authorities = []) {
     const normalized = authorities.map(v => String(v).toUpperCase());
     if (normalized.includes("ROLE_ADMIN") || normalized.includes("ADMIN")) return "ADMIN";
-    if (normalized.includes("ROLE_MANAGER") || normalized.includes("MANAGER")) return "MANAGER";
-    if (normalized.includes("ROLE_VIEWER") || normalized.includes("VIEWER")) return "VIEWER";
     return "USER";
 }
 
@@ -131,8 +129,7 @@ function isAdmin() {
 }
 
 function isAdminOrManager() {
-    const role = derivePrimaryRole(state.profile?.authorities || []);
-    return role === "ADMIN" || role === "MANAGER";
+    return derivePrimaryRole(state.profile?.authorities || []) === "ADMIN";
 }
 
 function canEditUsers() {
@@ -584,7 +581,7 @@ function renderApprovalRows(pageRows) {
                 ${item.requestedByName ? `<span class="report-tag">Requester: ${escapeHtml(item.requestedByName)}</span>` : ""}
                 ${item.reviewedByName ? `<span class="report-tag">Reviewed by: ${escapeHtml(item.reviewedByName)}</span>` : ""}
             </div>
-            ${item.payloadJson ? `<div class="admin-approval-payload">${escapeHtml(prettyPayload(item.payloadJson))}</div>` : ""}
+            ${item.payloadJson ? formatApprovalPayloadHtml(item.payloadJson, getApprovalModuleLabel(item)) : ""}
             <div class="admin-approval-actions">
                 ${state.approvalView === "PENDING" && isAdminOrManager() && String(item.status).toUpperCase() === "PENDING" ? `
                     <button class="action-btn secondary-btn approval-approve-btn" type="button" data-id="${item.id}">Approve</button>
@@ -603,11 +600,86 @@ function renderApprovalRows(pageRows) {
     });
 }
 
-function prettyPayload(payload) {
+function formatApprovalDateOnly(value) {
+    if (!value) return "";
+
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+    const parsed = match
+        ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+        : new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) return String(value);
+
+    return parsed.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+function getApprovalModuleLabel(item) {
+    const requestType = String(item?.requestType || "").toUpperCase();
+
+    const moduleLabels = {
+        PROCUREMENT: "Procurement",
+        STOCK_ADJUSTMENT: "Stock Adjustment",
+        RELIEF_DISTRIBUTION: "Relief Distribution",
+        OPERATION_ACKNOWLEDGEMENT: "Operation"
+    };
+
+    if (moduleLabels[requestType]) return moduleLabels[requestType];
+
+    if (!requestType) return "Request";
+
+    return requestType
+        .toLowerCase()
+        .split("_")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
+function formatApprovalPayloadHtml(payload, moduleLabel = "Request") {
     try {
-        return JSON.stringify(JSON.parse(payload), null, 2);
+        const value = typeof payload === "string" ? JSON.parse(payload) : payload;
+        if (!value || typeof value !== "object") return "";
+
+        const fieldDefs = [
+            { key: "name", label: "Name" },
+            { key: "category", label: "Category" },
+            { key: "unit", label: "Unit" },
+            { key: "location", label: "Location" },
+            { key: "reorderLevel", label: "Reorder Level" },
+            { key: "criticalItem", label: "Critical Item", format: v => (v === true ? "Yes" : "No") },
+            { key: "estimatedUnitCost", label: "Estimated Unit Cost" },
+            { key: "quantityAdded", label: "Quantity Added" },
+            { key: "totalCost", label: "Total Cost" },
+            { key: "expenseDate", label: "Expense Date", format: formatApprovalDateOnly },
+            { key: "description", label: "Description" }
+        ];
+
+        const rows = fieldDefs
+            .filter(field => Object.prototype.hasOwnProperty.call(value, field.key))
+            .map(field => {
+                const rawValue = value[field.key];
+                const displayValue = field.format
+                    ? field.format(rawValue)
+                    : (rawValue === null || typeof rawValue === "undefined" ? "-" : rawValue);
+
+                return `
+                    <div class="admin-approval-payload-row">
+                        <span class="admin-approval-payload-label">${escapeHtml(field.label)}</span>
+                        <span class="admin-approval-payload-value">${escapeHtml(String(displayValue))}</span>
+                    </div>
+                `;
+            })
+            .join("");
+
+        if (!rows) return "";
+
+        return `
+            <div class="admin-approval-payload">
+                <div class="admin-approval-payload-title">${escapeHtml(moduleLabel)} Request Details</div>
+                ${rows}
+            </div>
+        `;
     } catch {
-        return payload;
+        return "";
     }
 }
 
