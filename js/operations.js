@@ -51,8 +51,7 @@ function formatCalamityArea(calamity) {
 
     if (areaType === "MULTI_BARANGAY") {
         if (!affectedNames.length) return "-";
-        if (affectedNames.length === 1) return affectedNames[0];
-        return `${affectedNames.length} Barangays`;
+        return affectedNames.join(", ");
     }
 
     return calamity?.primaryBarangayName || calamity?.barangay || "-";

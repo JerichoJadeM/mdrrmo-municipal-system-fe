@@ -15,6 +15,7 @@ window.loadBudgetSection = async function () {
         renderCurrentBudgetSummary(currentSummary);
         renderBudgetHistory(mergedHistoryRows);
         renderNextYearForecast(forecast, breakdown);
+        //renderBudgetForecastChart(forecast);
 
         const selectedYear = Number(
             document.getElementById("budgetYearAnalyticsSelect")?.value || currentSummary?.year
@@ -360,6 +361,24 @@ function renderNextYearForecast(forecast, breakdown) {
             <strong>Assumptions:</strong> ${escapeHtml(forecast.assumptions || "-")}
         </div>
     `;
+
+    // ================================================================
+    // BUDGET FORECAST CHARTS
+    // ================================================================
+    // The backend provides:
+    //
+    // actualSeries:
+    //   Historical actual annual budget values.
+    //
+    // predictiveSeries:
+    //   Current actual year + next-year predictive forecast.
+    //
+    // The frontend only visualizes these values.
+    //
+    // No forecasting calculation is performed here.
+    // ================================================================
+    renderBudgetForecastChart(forecast);
+    
     if (breakdown) {
         breakdownContainer.innerHTML = `
             <div>
@@ -455,6 +474,604 @@ function renderNextYearForecast(forecast, breakdown) {
             </div>
         `
         : `<div class="empty-state">No category forecast available.</div>`;
+}
+
+// FOR CHART
+function renderBudgetForecastChart(forecast) {
+
+    const canvas = document.getElementById("budgetForecastChart");
+
+    if (!canvas || !forecast) {
+        return;
+    }
+
+    /*
+     * ================================================================
+     * BUDGET FORECAST TREND
+     * ================================================================
+     *
+     * Historical:
+     *     2022
+     *     2023
+     *     2024
+     *     2025
+     *     2026
+     *
+     * Predictive:
+     *     2022
+     *     2023
+     *     2024
+     *     2025
+     *     2026
+     *     Jan 2027
+     *     Feb 2027
+     *     ...
+     *     Dec 2027
+     *
+     * Historical predictive values mirror the actual historical
+     * budget values.
+     *
+     * The predictive line becomes monthly only when it reaches
+     * the forecast year.
+     *
+     * The official annual forecast still comes from the backend.
+     * ================================================================
+     */
+
+    const actualSeries = Array.isArray(forecast.actualSeries)
+        ? forecast.actualSeries
+        : [];
+
+    const predictiveSeries = Array.isArray(forecast.predictiveSeries)
+        ? forecast.predictiveSeries
+        : [];
+
+    if (!actualSeries.length && !predictiveSeries.length) {
+        console.warn("No budget forecast data available.");
+        return;
+    }
+
+
+    /*
+     * ================================================================
+     * DESTROY PREVIOUS CHART
+     * ================================================================
+     */
+
+    if (window.__budgetForecastChart) {
+        window.__budgetForecastChart.destroy();
+        window.__budgetForecastChart = null;
+    }
+
+
+    /*
+     * ================================================================
+     * NORMALIZE HISTORICAL DATA
+     * ================================================================
+     */
+
+    const historical = actualSeries
+        .map(point => ({
+            year: Number(point.year),
+            amount: Number(
+                point.amount ??
+                point.value ??
+                0
+            )
+        }))
+        .filter(point =>
+            Number.isFinite(point.year) &&
+            Number.isFinite(point.amount)
+        )
+        .sort((a, b) => a.year - b.year);
+
+
+    if (!historical.length) {
+        console.warn("No historical budget data available.");
+        return;
+    }
+
+
+    /*
+     * ================================================================
+     * DETERMINE FORECAST YEAR
+     * ================================================================
+     *
+     * Example:
+     *
+     * Historical:
+     * 2022 - 2026
+     *
+     * Forecast:
+     * 2027
+     */
+
+    let forecastYear = null;
+
+    if (predictiveSeries.length) {
+
+        const predictiveYears = predictiveSeries
+            .map(point => Number(point.year))
+            .filter(year => Number.isFinite(year));
+
+        if (predictiveYears.length) {
+            forecastYear = Math.max(...predictiveYears);
+        }
+    }
+
+    /*
+     * If the backend does not provide a separate forecast year,
+     * use the year after the latest historical year.
+     */
+
+    if (!forecastYear) {
+        forecastYear =
+            Math.max(...historical.map(point => point.year)) + 1;
+    }
+
+
+    /*
+     * ================================================================
+     * FIND OFFICIAL ANNUAL FORECAST
+     * ================================================================
+     *
+     * The backend may provide:
+     *
+     * predictiveSeries:
+     *
+     * 2026 = current actual
+     * 2027 = forecast
+     *
+     * We use the final predictive point as the official
+     * next-year forecast.
+     */
+
+    let annualForecast = null;
+
+    if (predictiveSeries.length) {
+
+        const forecastPoint = predictiveSeries
+            .map(point => ({
+                year: Number(point.year),
+                amount: Number(
+                    point.amount ??
+                    point.value ??
+                    0
+                )
+            }))
+            .filter(point =>
+                point.year === forecastYear &&
+                Number.isFinite(point.amount)
+            )
+            .pop();
+
+        if (forecastPoint) {
+            annualForecast = forecastPoint.amount;
+        }
+    }
+
+
+    /*
+     * Fallback:
+     *
+     * If the predictive series does not contain 2027,
+     * use forecast.totalForecast.
+     */
+
+    if (
+        annualForecast === null &&
+        forecast.totalForecast !== undefined &&
+        forecast.totalForecast !== null
+    ) {
+        annualForecast = Number(forecast.totalForecast);
+    }
+
+
+    if (!Number.isFinite(annualForecast)) {
+        console.warn("Unable to determine annual forecast.");
+        return;
+    }
+
+
+    /*
+     * ================================================================
+     * BUILD CHART LABELS
+     * ================================================================
+     *
+     * Historical section:
+     *
+     * 2022
+     * 2023
+     * 2024
+     * 2025
+     * 2026
+     *
+     * Forecast section:
+     *
+     * Jan 2027
+     * Feb 2027
+     * ...
+     * Dec 2027
+     */
+
+    const labels = historical.map(point =>
+        String(point.year)
+    );
+
+
+    const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+    ];
+
+
+    monthNames.forEach(month => {
+        labels.push(`${month} ${forecastYear}`);
+    });
+
+
+    /*
+     * ================================================================
+     * ACTUAL DATASET
+     * ================================================================
+     *
+     * Actual budget exists only for historical years.
+     *
+     * There is no actual value for the future months.
+     */
+
+    const actualData = historical.map(point =>
+        point.amount
+    );
+
+
+    /*
+     * Add empty values for Jan-Dec forecast months.
+     */
+
+    for (let i = 0; i < 12; i++) {
+        actualData.push(null);
+    }
+
+
+    /*
+     * ================================================================
+     * PREDICTIVE DATASET
+     * ================================================================
+     *
+     * Historical years:
+     *
+     * predictive = actual
+     *
+     * This intentionally makes the predictive line overlap
+     * the historical budget line from 2022-2026.
+     */
+
+    const predictiveData = historical.map(point =>
+        point.amount
+    );
+
+
+    /*
+     * ================================================================
+     * MONTHLY FORECAST MODEL FOR DISPLAY
+     * ================================================================
+     *
+     * We have an annual forecast amount from the backend.
+     *
+     * Since the current date is August 2026, the requested design
+     * uses:
+     *
+     * January - September:
+     *     progressive forecast movement
+     *
+     * October - December:
+     *     flat projection
+     *
+     * IMPORTANT:
+     *
+     * This is a VISUAL MONTHLY DISTRIBUTION of the official
+     * annual forecast. It is not replacing the backend
+     * forecasting algorithm.
+     *
+     * The annual forecast remains the authoritative value.
+     * ================================================================
+     */
+
+
+    const currentMonth = new Date().getMonth() + 1;
+
+    /*
+     * For the current project date:
+     *
+     * August = 8
+     *
+     * Therefore:
+     *
+     * January - September = trend section
+     * October - December = flat section
+     *
+     * We intentionally allow September to be part of the
+     * active trend as requested.
+     */
+
+    const trendEndMonth = Math.min(
+        Math.max(currentMonth + 1, 9),
+        12
+    );
+
+
+    /*
+     * ================================================================
+     * DETERMINE STARTING VALUE
+     * ================================================================
+     *
+     * Start the forecast from the latest historical budget.
+     */
+
+    const latestHistoricalAmount =
+        historical[historical.length - 1]?.amount || 0;
+
+
+    /*
+     * We want the monthly predictive line to transition
+     * smoothly from the historical 2026 budget toward the
+     * official 2027 forecast.
+     */
+
+    const monthlyForecast = [];
+
+
+    /*
+     * Number of months participating in the trend.
+     */
+
+    const trendMonths = Math.max(
+        trendEndMonth,
+        1
+    );
+
+
+    /*
+     * ================================================================
+     * CREATE MONTHLY VALUES
+     * ================================================================
+     *
+     * We interpolate from:
+     *
+     * 2026 actual
+     *
+     * toward:
+     *
+     * 2027 official forecast
+     *
+     * during January-September.
+     *
+     * October-December remain at the September forecast level.
+     */
+
+    for (let month = 1; month <= 12; month++) {
+
+        let value;
+
+        if (month <= trendMonths) {
+
+            /*
+             * Progress through the active forecast period.
+             *
+             * Example for September:
+             *
+             * progress = 9 / 9 = 1
+             */
+
+            const progress =
+                month / trendMonths;
+
+            value =
+                latestHistoricalAmount +
+                (
+                    (annualForecast - latestHistoricalAmount)
+                    * progress
+                );
+
+        } else {
+
+            /*
+             * No additional event-driven change after
+             * the active trend period.
+             *
+             * Keep the value flat.
+             */
+
+            value = annualForecast;
+        }
+
+        monthlyForecast.push(value);
+    }
+
+
+    /*
+     * ================================================================
+     * APPEND MONTHLY FORECAST VALUES
+     * ================================================================
+     */
+
+    monthlyForecast.forEach(value => {
+        predictiveData.push(value);
+    });
+
+
+    /*
+     * ================================================================
+     * CREATE CHART
+     * ================================================================
+     */
+
+    const ctx = canvas.getContext("2d");
+
+
+    window.__budgetForecastChart = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+
+                /*
+                 * ----------------------------------------------------
+                 * ACTUAL / HISTORICAL BUDGET
+                 * ----------------------------------------------------
+                 */
+
+                {
+                    label: "Actual Budget",
+
+                    data: actualData,
+
+                    tension: 0.3,
+
+                    spanGaps: false,
+
+                    pointRadius: 4,
+
+                    pointHoverRadius: 6,
+
+                    borderWidth: 3
+                },
+
+
+                /*
+                 * ----------------------------------------------------
+                 * PREDICTIVE BUDGET
+                 * ----------------------------------------------------
+                 *
+                 * This line:
+                 *
+                 * 2022 ── 2023 ── 2024 ── 2025 ── 2026
+                 *                                      \
+                 *                                       Jan
+                 *                                         \
+                 *                                          Feb
+                 *                                           ...
+                 *                                               Sep
+                 *                                               │
+                 *                                               Oct
+                 *                                               Nov
+                 *                                               Dec
+                 */
+
+                {
+                    label: "Predictive Budget",
+
+                    data: predictiveData,
+
+                    tension: 0.3,
+
+                    spanGaps: false,
+
+                    pointRadius: 3,
+
+                    pointHoverRadius: 6,
+
+                    borderWidth: 3
+                }
+            ]
+        },
+
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+
+
+            plugins: {
+
+                legend: {
+                    display: true,
+                    position: "top"
+                },
+
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            const value =
+                                Number(context.raw || 0);
+
+                            return (
+                                `${context.dataset.label}: ` +
+                                formatPeso(value)
+                            );
+                        }
+                    }
+                }
+            },
+
+
+            scales: {
+
+                x: {
+
+                    title: {
+                        display: true,
+                        text: "Year / Forecast Month"
+                    },
+
+                    ticks: {
+
+                        autoSkip: false,
+
+                        maxRotation: 45,
+
+                        minRotation: 0
+                    }
+                },
+
+
+                y: {
+
+                    beginAtZero: true,
+
+                    title: {
+                        display: true,
+                        text: "Budget Amount"
+                    },
+
+
+                    ticks: {
+
+                        callback: function(value) {
+                            return formatPeso(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 function getOperationForecastActualValue(row, operationType) {

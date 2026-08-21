@@ -3,7 +3,7 @@ const INVENTORY_CATEGORY_OPTIONS = [
 ];
 
 const INVENTORY_UNIT_OPTIONS = [
-    "pcs", "box", "pack", "set", "roll", "pair", "bottle", "can", "bag", "sack", "kilo", "kilogram", "gram", "liter", "meter"
+    "pcs", "box", "pack", "set", "roll", "pair", "bottle", "can", "bag", "sack", "kilo", "kilogram", "gram", "liter", "meter", "unit"
 ];
 
 const INVENTORY_LOCATION_OPTIONS = [

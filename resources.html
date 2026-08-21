@@ -286,6 +286,24 @@
                     </div>
                 </div>
 
+                <!-- Actual and Predictive, Budget forecast chart -->
+                <div class="panel-card">
+                    <div class="section-header compact-head">
+                        <div>
+                            <h3>Budget Forecast Trend</h3>
+                            <p>Actual historical budget compared with the next-year predictive forecast.</p>
+                        </div>
+                    </div>
+
+                    <div style="position: relative; height:380px;">
+                        <canvas id="budgetForecastChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2 charts -->
+
+             
+
                 <div class="panel-card">
                     <div class="section-header compact-head">
                         <div>
@@ -522,6 +540,7 @@
     <script src="/js/resources-readiness.js"></script>
     <script src="/assets/ui-js/ui-pagination.js"></script>
     <script src="/js/resources-inventory.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/resources-budget.js"></script>
     <script src="/js/resources-relief.js"></script>
     <script src="/js/resources-evacuation-centers.js"></script>
