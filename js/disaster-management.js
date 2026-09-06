@@ -53,10 +53,12 @@ let editingEventType = null;
 
 let selectedPrimaryBarangay = null;
 let selectedMultiBarangays = [];
-let selectedCoordinator = null;
+// Calamity respondents (current backend field: coordinatorIds/coordinatorNames).
+let selectedCoordinators = [];
 
 let selectedIncidentBarangay = null;
-let selectedResponder = null;
+// Incident respondents (backend field: assignedResponderIds/assignedResponderNames).
+let selectedIncidentResponders = [];
 
 let activeModalId = null;
 
@@ -477,7 +479,7 @@ function getFilteredAndSortedCalamities() {
             calamity.eventName,
             calamity.primaryBarangayName,
             ...(calamity.affectedBarangayNames || []),
-            calamity.coordinatorName,
+            ...getCoordinatorNamesList(calamity),
             calamity.severity,
             calamity.status,
             calamity.description,
@@ -503,7 +505,7 @@ function getFilteredAndSortedIncidents() {
             incident.severity,
             incident.status,
             incident.description,
-            incident.assignedResponderName,
+            ...getResponderNamesList(incident),
             incident.reportedAt,
             incident.date
         ].filter(Boolean).join(" ").toLowerCase();
@@ -558,6 +560,32 @@ function formatAffectedArea(calamity) {
     }
 
     return calamity.primaryBarangayName || "-";
+}
+
+// Calamity respondents currently persist under coordinatorIds/coordinatorNames,
+// but are treated as the Calamity's multiple Assigned Respondents in the UI.
+function getCoordinatorNamesList(calamity) {
+    if (Array.isArray(calamity?.coordinatorNames) && calamity.coordinatorNames.length) {
+        return calamity.coordinatorNames.filter(Boolean);
+    }
+    return calamity?.coordinatorName ? [calamity.coordinatorName] : [];
+}
+
+function getCoordinatorNamesDisplay(calamity) {
+    const names = getCoordinatorNamesList(calamity);
+    return names.length ? names.join(", ") : "-";
+}
+
+function getResponderNamesList(incident) {
+    if (Array.isArray(incident?.assignedResponderNames) && incident.assignedResponderNames.length) {
+        return incident.assignedResponderNames.filter(Boolean);
+    }
+    return incident?.assignedResponderName ? [incident.assignedResponderName] : [];
+}
+
+function getResponderNamesDisplay(incident) {
+    const names = getResponderNamesList(incident);
+    return names.length ? names.join(", ") : "-";
 }
 
 function getCalamityCardTitle(calamity) {
@@ -799,13 +827,13 @@ async function renderEventDetailsView() {
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Event Type</span><strong>Calamity</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Calamity Type</span><strong>${escapeHtml(selectedEvent.type || "-")}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Affected Area</span><strong>${escapeHtml(formatAffectedArea(selectedEvent) || "-")}</strong></div>
-                    <div class="dm-view-summary-card"><span class="dm-view-summary-label">Coordinator</span><strong>${escapeHtml(selectedEvent.coordinatorName || "-")}</strong></div>
+                    <div class="dm-view-summary-card"><span class="dm-view-summary-label">Assigned Responders</span><strong>${escapeHtml(getCoordinatorNamesDisplay(selectedEvent))}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Damage Cost</span><strong>${selectedEvent.damageCost ? escapeHtml(formatCurrency(selectedEvent.damageCost)) : "-"}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Casualties</span><strong>${escapeHtml(String(selectedEvent.casualties ?? 0))}</strong></div>
                 ` : `
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Event Type</span><strong>${escapeHtml(selectedEvent.type || "-")}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Barangay</span><strong>${escapeHtml(selectedEvent.barangay || "-")}</strong></div>
-                    <div class="dm-view-summary-card"><span class="dm-view-summary-label">Responder</span><strong>${escapeHtml(selectedEvent.assignedResponderName || "-")}</strong></div>
+                    <div class="dm-view-summary-card"><span class="dm-view-summary-label">Assigned Responders</span><strong>${escapeHtml(getResponderNamesDisplay(selectedEvent))}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Severity</span><strong>${escapeHtml(selectedEvent.severity || "-")}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Status</span><strong>${escapeHtml(selectedEvent.status || "-")}</strong></div>
                     <div class="dm-view-summary-card"><span class="dm-view-summary-label">Reported</span><strong>${escapeHtml(formatDateTime(selectedEvent.reportedAt || selectedEvent.date))}</strong></div>
@@ -872,7 +900,7 @@ function renderSelectedEventProfile() {
             createMetaPill(getEventTypeIcon(selectedEvent.type), selectedEvent.type || "-"),
             createMetaPill("fas fa-location-dot", formatAffectedArea(selectedEvent)),
             createMetaPill("fas fa-calendar-days", formatDate(selectedEvent.date)),
-            selectedEvent.coordinatorName ? createMetaPill("fas fa-user-tie", selectedEvent.coordinatorName) : "",
+            getCoordinatorNamesList(selectedEvent).length ? createMetaPill("fas fa-user-tie", getCoordinatorNamesDisplay(selectedEvent)) : "",
             createMetaPill("fas fa-wave-square", selectedEvent.status || "-")
         ].join("");
 
@@ -880,7 +908,7 @@ function renderSelectedEventProfile() {
             { label: "Event Type", value: "Calamity" },
             { label: "Calamity Type", value: selectedEvent.type || "-" },
             { label: "Affected Area", value: formatAffectedArea(selectedEvent) },
-            { label: "Coordinator", value: selectedEvent.coordinatorName || "-" },
+            { label: "Assigned Responders", value: getCoordinatorNamesDisplay(selectedEvent) },
             { label: "Status", value: selectedEvent.status || "-" },
             { label: "Damage Cost", value: selectedEvent.damageCost ? formatCurrency(selectedEvent.damageCost) : "-" },
             { label: "Casualties", value: selectedEvent.casualties ?? 0 },
@@ -896,14 +924,14 @@ function renderSelectedEventProfile() {
             createMetaPill(getEventTypeIcon(selectedEvent.type), selectedEvent.type || "-"),
             createMetaPill("fas fa-location-dot", selectedEvent.barangay || "-"),
             createMetaPill("fas fa-clock", formatDateTime(selectedEvent.reportedAt || selectedEvent.date)),
-            selectedEvent.assignedResponderName ? createMetaPill("fas fa-user-shield", selectedEvent.assignedResponderName) : "",
+            getResponderNamesList(selectedEvent).length ? createMetaPill("fas fa-user-shield", getResponderNamesDisplay(selectedEvent)) : "",
             createMetaPill("fas fa-wave-square", selectedEvent.status || "-")
         ].join("");
 
         summary.innerHTML = renderProfileSummaryItems([
             { label: "Event Type", value: selectedEvent.type || "-" },
             { label: "Barangay", value: selectedEvent.barangay || "-" },
-            { label: "Responder", value: selectedEvent.assignedResponderName || "-" },
+            { label: "Assigned Responders", value: getResponderNamesDisplay(selectedEvent) },
             { label: "Severity", value: selectedEvent.severity || "-" },
             { label: "Status", value: selectedEvent.status || "-" },
             { label: "Reported", value: formatDateTime(selectedEvent.reportedAt || selectedEvent.date) }
@@ -958,7 +986,7 @@ async function openViewEventModal() {
             createMetaPill(getEventTypeIcon(selectedEvent.type), selectedEvent.type || "-"),
             createMetaPill("fas fa-location-dot", formatAffectedArea(selectedEvent)),
             createMetaPill("fas fa-calendar-days", formatDate(selectedEvent.date)),
-            selectedEvent.coordinatorName ? createMetaPill("fas fa-user-tie", selectedEvent.coordinatorName) : "",
+            getCoordinatorNamesList(selectedEvent).length ? createMetaPill("fas fa-user-tie", getCoordinatorNamesDisplay(selectedEvent)) : "",
             createMetaPill("fas fa-wave-square", selectedEvent.status || "-")
         ].join("");
 
@@ -966,7 +994,7 @@ async function openViewEventModal() {
             { label: "Event Type", value: "Calamity" },
             { label: "Calamity Type", value: selectedEvent.type || "-" },
             { label: "Affected Area", value: formatAffectedArea(selectedEvent) },
-            { label: "Coordinator", value: selectedEvent.coordinatorName || "-" },
+            { label: "Assigned Responders", value: getCoordinatorNamesDisplay(selectedEvent) },
             { label: "Status", value: selectedEvent.status || "-" },
             { label: "Damage Cost", value: selectedEvent.damageCost ? formatCurrency(selectedEvent.damageCost) : "-" },
             { label: "Casualties", value: selectedEvent.casualties ?? 0 },
@@ -982,14 +1010,14 @@ async function openViewEventModal() {
             createMetaPill(getEventTypeIcon(selectedEvent.type), selectedEvent.type || "-"),
             createMetaPill("fas fa-location-dot", selectedEvent.barangay || "-"),
             createMetaPill("fas fa-clock", formatDateTime(selectedEvent.reportedAt || selectedEvent.date)),
-            selectedEvent.assignedResponderName ? createMetaPill("fas fa-user-shield", selectedEvent.assignedResponderName) : "",
+            getResponderNamesList(selectedEvent).length ? createMetaPill("fas fa-user-shield", getResponderNamesDisplay(selectedEvent)) : "",
             createMetaPill("fas fa-wave-square", selectedEvent.status || "-")
         ].join("");
 
         summary.innerHTML = renderProfileSummaryItems([
             { label: "Event Type", value: selectedEvent.type || "-" },
             { label: "Barangay", value: selectedEvent.barangay || "-" },
-            { label: "Responder", value: selectedEvent.assignedResponderName || "-" },
+            { label: "Assigned Responders", value: getResponderNamesDisplay(selectedEvent) },
             { label: "Severity", value: selectedEvent.severity || "-" },
             { label: "Status", value: selectedEvent.status || "-" },
             { label: "Reported", value: formatDateTime(selectedEvent.reportedAt || selectedEvent.date) }
@@ -1140,7 +1168,7 @@ function resetCalamityForm() {
     document.getElementById("calamityModalTitle").textContent = "Add Calamity";
     document.getElementById("saveCalamityBtn").textContent = "Save Calamity";
 
-    selectedCoordinator = null;
+    selectedCoordinators = [];
     selectedPrimaryBarangay = null;
     selectedMultiBarangays = [];
 
@@ -1150,6 +1178,7 @@ function resetCalamityForm() {
     const eventNameInput = document.getElementById("eventNameInput");
     const primarySelected = document.getElementById("primaryBarangaySelected");
     const selectedBarangaysBox = document.getElementById("selectedBarangays");
+    const selectedCoordinatorsBox = document.getElementById("selectedCoordinators");
 
     if (primaryInput) primaryInput.value = "";
     if (barangaySearchInput) barangaySearchInput.value = "";
@@ -1163,6 +1192,10 @@ function resetCalamityForm() {
 
     if (selectedBarangaysBox) {
         selectedBarangaysBox.innerHTML = "";
+    }
+
+    if (selectedCoordinatorsBox) {
+        selectedCoordinatorsBox.innerHTML = "";
     }
 
     hideSearchResults("primaryBarangayResults");
@@ -1185,13 +1218,15 @@ function resetIncidentForm() {
     document.getElementById("saveIncidentBtn").textContent = "Save Incident";
 
     selectedIncidentBarangay = null;
-    selectedResponder = null;
+    selectedIncidentResponders = [];
 
     const barangayInput = document.getElementById("incidentBarangayInput");
     const responderInput = document.getElementById("incidentResponderInput");
+    const selectedRespondersBox = document.getElementById("selectedIncidentResponders");
 
     if (barangayInput) barangayInput.value = "";
     if (responderInput) responderInput.value = "";
+    if (selectedRespondersBox) selectedRespondersBox.innerHTML = "";
 
     hideSearchResults("incidentBarangayResults");
     hideSearchResults("incidentResponderResults");
@@ -1323,12 +1358,16 @@ function initSearchPickers() {
         sourceGetter: () => coordinators,
         labelGetter: (item) => item.fullName || item.name || "-",
         onSelect: (item) => {
-            selectedCoordinator = item;
+            if (!selectedCoordinators.some(c => c.id === item.id)) {
+                selectedCoordinators.push(item);
+                renderSelectedCoordinators();
+            }
             const input = document.getElementById("coordinatorInput");
-            if (input) input.value = item.fullName || item.name || "";
+            if (input) input.value = "";
             hideSearchResults("coordinatorResults");
         },
-        emptyLabel: "No coordinator found."
+        emptyLabel: "No respondent found.",
+        filterExclude: () => selectedCoordinators.map(c => c.id)
     });
 
     bindSearchableInput({
@@ -1351,12 +1390,16 @@ function initSearchPickers() {
         sourceGetter: () => responders,
         labelGetter: (item) => item.fullName || item.name || "-",
         onSelect: (item) => {
-            selectedResponder = item;
+            if (!selectedIncidentResponders.some(r => r.id === item.id)) {
+                selectedIncidentResponders.push(item);
+                renderSelectedIncidentResponders();
+            }
             const input = document.getElementById("incidentResponderInput");
-            if (input) input.value = item.fullName || item.name || "";
+            if (input) input.value = "";
             hideSearchResults("incidentResponderResults");
         },
-        emptyLabel: "No responder found."
+        emptyLabel: "No respondent found.",
+        filterExclude: () => selectedIncidentResponders.map(r => r.id)
     });
 
     document.addEventListener("click", (event) => {
@@ -1406,7 +1449,8 @@ function buildCalamityPayload() {
             affectedAreaType === "MULTI_BARANGAY"
                 ? selectedMultiBarangays.map(b => Number(b.id))
                 : [],
-        coordinatorId: selectedCoordinator ? Number(selectedCoordinator.id) : null,
+        // Calamity respondents map to the current backend's coordinatorIds contract.
+        coordinatorIds: selectedCoordinators.map(c => Number(c.id)).filter(id => !Number.isNaN(id)),
         severity: document.getElementById("calamitySeveritySelect")?.value || "",
         status: document.getElementById("calamityStatusSelect")?.value || "",
         date: document.getElementById("calamityDateInput")?.value || "",
@@ -1420,7 +1464,7 @@ function buildIncidentPayload() {
     return {
         type: (document.getElementById("incidentTypeSelect")?.value || "").trim(),
         barangayId: selectedIncidentBarangay ? Number(selectedIncidentBarangay.id) : null,
-        assignedResponderId: selectedResponder ? Number(selectedResponder.id) : null,
+        assignedResponderIds: selectedIncidentResponders.map(r => Number(r.id)).filter(id => !Number.isNaN(id)),
         severity: document.getElementById("incidentSeveritySelect")?.value || "",
         status: document.getElementById("incidentStatusSelect")?.value || "",
         date: document.getElementById("incidentDateInput")?.value || "",
@@ -1493,7 +1537,7 @@ function populateCalamityFormForEdit(calamity) {
 
     selectedPrimaryBarangay = null;
     selectedMultiBarangays = [];
-    selectedCoordinator = null;
+    selectedCoordinators = [];
 
     const primaryBarangayId = calamity.primaryBarangayId || calamity.barangayId || null;
     if (primaryBarangayId != null) {
@@ -1518,19 +1562,22 @@ function populateCalamityFormForEdit(calamity) {
         renderSelectedMultiBarangays();
     }
 
-    if (calamity.coordinatorId != null) {
-        const found = coordinators.find(c => String(c.id) === String(calamity.coordinatorId));
-        if (found) {
-            selectedCoordinator = found;
-            const coordinatorInput = document.getElementById("coordinatorInput");
-            if (coordinatorInput) {
-                coordinatorInput.value = found.fullName || found.name || "";
-            }
-        }
-    } else if (calamity.coordinatorName) {
-        const coordinatorInput = document.getElementById("coordinatorInput");
-        if (coordinatorInput) coordinatorInput.value = calamity.coordinatorName;
+    // Calamity respondents: current backend contract is coordinatorIds/coordinatorNames.
+    const coordinatorIds = Array.isArray(calamity.coordinatorIds)
+        ? calamity.coordinatorIds
+        : (calamity.coordinatorId != null ? [calamity.coordinatorId] : []);
+    const coordinatorNames = Array.isArray(calamity.coordinatorNames)
+        ? calamity.coordinatorNames
+        : (calamity.coordinatorName ? [calamity.coordinatorName] : []);
+
+    if (coordinatorIds.length) {
+        selectedCoordinators = coordinatorIds.map((id, index) =>
+            coordinators.find(c => String(c.id) === String(id)) || { id, fullName: coordinatorNames[index] || "" }
+        );
+    } else if (coordinatorNames.length) {
+        selectedCoordinators = coordinatorNames.map((name, index) => ({ id: `name-${index}`, fullName: name }));
     }
+    renderSelectedCoordinators();
 
     updateAffectedAreaUI();
     applyDateInputLimits();
@@ -1552,7 +1599,7 @@ function populateIncidentFormForEdit(incident) {
     document.getElementById("incidentDescriptionInput").value = incident.description || "";
 
     selectedIncidentBarangay = null;
-    selectedResponder = null;
+    selectedIncidentResponders = [];
 
     if (incident.barangayId != null) {
         const found = barangays.find(b => String(b.id) === String(incident.barangayId));
@@ -1566,17 +1613,22 @@ function populateIncidentFormForEdit(incident) {
         if (input) input.value = incident.barangay;
     }
 
-    if (incident.assignedResponderId != null) {
-        const found = responders.find(r => String(r.id) === String(incident.assignedResponderId));
-        if (found) {
-            selectedResponder = found;
-            const input = document.getElementById("incidentResponderInput");
-            if (input) input.value = found.fullName || found.name || "";
-        }
-    } else if (incident.assignedResponderName) {
-        const input = document.getElementById("incidentResponderInput");
-        if (input) input.value = incident.assignedResponderName;
+    // Incident respondents: backend contract is assignedResponderIds/assignedResponderNames.
+    const responderIds = Array.isArray(incident.assignedResponderIds)
+        ? incident.assignedResponderIds
+        : (incident.assignedResponderId != null ? [incident.assignedResponderId] : []);
+    const responderNames = Array.isArray(incident.assignedResponderNames)
+        ? incident.assignedResponderNames
+        : (incident.assignedResponderName ? [incident.assignedResponderName] : []);
+
+    if (responderIds.length) {
+        selectedIncidentResponders = responderIds.map((id, index) =>
+            responders.find(r => String(r.id) === String(id)) || { id, fullName: responderNames[index] || "" }
+        );
+    } else if (responderNames.length) {
+        selectedIncidentResponders = responderNames.map((name, index) => ({ id: `name-${index}`, fullName: name }));
     }
+    renderSelectedIncidentResponders();
 
     applyDateInputLimits();
 }
@@ -1990,6 +2042,54 @@ function renderSelectedMultiBarangays() {
         chip.querySelector(".dm-chip-remove")?.addEventListener("click", () => {
             selectedMultiBarangays = selectedMultiBarangays.filter((b) => b.id !== barangay.id);
             renderSelectedMultiBarangays();
+        });
+
+        container.appendChild(chip);
+    });
+}
+
+function renderSelectedCoordinators() {
+    const container = document.getElementById("selectedCoordinators");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    selectedCoordinators.forEach((coordinator) => {
+        const name = coordinator.fullName || coordinator.name || "-";
+        const chip = document.createElement("div");
+        chip.className = "dm-chip";
+        chip.innerHTML = `
+            <span>${escapeHtml(name)}</span>
+            <button type="button" class="dm-chip-remove" aria-label="Remove ${escapeHtml(name)}">&times;</button>
+        `;
+
+        chip.querySelector(".dm-chip-remove")?.addEventListener("click", () => {
+            selectedCoordinators = selectedCoordinators.filter((c) => c.id !== coordinator.id);
+            renderSelectedCoordinators();
+        });
+
+        container.appendChild(chip);
+    });
+}
+
+function renderSelectedIncidentResponders() {
+    const container = document.getElementById("selectedIncidentResponders");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    selectedIncidentResponders.forEach((responder) => {
+        const name = responder.fullName || responder.name || "-";
+        const chip = document.createElement("div");
+        chip.className = "dm-chip";
+        chip.innerHTML = `
+            <span>${escapeHtml(name)}</span>
+            <button type="button" class="dm-chip-remove" aria-label="Remove ${escapeHtml(name)}">&times;</button>
+        `;
+
+        chip.querySelector(".dm-chip-remove")?.addEventListener("click", () => {
+            selectedIncidentResponders = selectedIncidentResponders.filter((r) => r.id !== responder.id);
+            renderSelectedIncidentResponders();
         });
 
         container.appendChild(chip);
@@ -2415,7 +2515,7 @@ function renderEventTableRows(rows) {
             <tr class="${isSelectedEvent(incident.id, "incident") ? "is-selected" : ""}">
                 <td>${escapeHtml(getIncidentCardTitle(incident))}</td>
                 <td>${escapeHtml(incident.barangay || "-")}</td>
-                <td>${escapeHtml(incident.assignedResponderName || "-")}</td>
+                <td>${escapeHtml(getResponderNamesDisplay(incident))}</td>
                 <td><span class="severity-badge ${getSeverityClass(incident.severity)}">${escapeHtml(incident.severity || "-")}</span></td>
                 <td><span class="status-badge ${getStatusClass(incident.status)}">${escapeHtml(incident.status || "-")}</span></td>
                 <td>${escapeHtml(formatDateTime(incident.reportedAt || incident.date))}</td>
@@ -2559,10 +2659,10 @@ function renderCalamityTimeline(calamity) {
         });
     }
 
-    if (calamity.coordinatorName) {
+    if (getCoordinatorNamesList(calamity).length) {
         items.push({
             time: calamity.date,
-            text: `${calamity.coordinatorName} assigned as coordinator.`
+            text: `${getCoordinatorNamesDisplay(calamity)} assigned as respondent(s).`
         });
     }
 

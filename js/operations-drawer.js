@@ -338,8 +338,8 @@ function renderOperationsDrawerSummary(type, data) {
         : getSafeCalamityArea(data);
 
     const assigned = type === "INCIDENT"
-        ? (data.assignedResponderName || "-")
-        : (data.coordinatorName || "-");
+        ? getIncidentResponderNamesDisplay(data)
+        : getCalamityRespondentNamesDisplay(data);
 
     const dateTime = type === "INCIDENT"
         ? formatDateTimeSafe(data.reportedAt)
@@ -620,8 +620,8 @@ function renderTransitionReviewSummary(config) {
         : getSafeCalamityArea(data);
 
     const assigned = type === "INCIDENT"
-        ? (data.assignedResponderName || "-")
-        : (data.coordinatorName || "-");
+        ? getIncidentResponderNamesDisplay(data)
+        : getCalamityRespondentNamesDisplay(data);
 
     const dateTime = type === "INCIDENT"
         ? formatDateTimeSafe(data.reportedAt)
@@ -670,8 +670,16 @@ function preloadTransitionReviewForm(config) {
     responderBlock?.classList.toggle("hidden", !showResponder);
 
     if (showResponder) {
-        if (responderSearch) responderSearch.value = data.assignedResponderName || "";
-        if (responderId) responderId.value = data.assignedResponderId || "";
+        if (responderSearch) {
+            responderSearch.value = Array.isArray(data.assignedResponderNames)
+                ? (data.assignedResponderNames[0] || "")
+                : (data.assignedResponderName || "");
+        }
+        if (responderId) {
+            responderId.value = Array.isArray(data.assignedResponderIds)
+                ? (data.assignedResponderIds[0] || "")
+                : (data.assignedResponderId || "");
+        }
     } else {
         if (responderSearch) responderSearch.value = "";
         if (responderId) responderId.value = "";
@@ -2087,12 +2095,19 @@ function syncTransitionReviewButtonLabel(warnings = []) {
 }
 
 async function updateIncidentForTransition(data, description, responderId) {
+    const existingIds = Array.isArray(data.assignedResponderIds)
+        ? data.assignedResponderIds
+        : (data.assignedResponderId != null ? [data.assignedResponderId] : []);
+    const nextIds = responderId
+        ? Array.from(new Set([...existingIds, Number(responderId)]))
+        : existingIds;
+
     await apiRequest(`${API_BASE}/incidents/${data.id}`, {
         method: "PUT",
         body: JSON.stringify({
             type: data.type,
             barangayId: data.barangayId,
-            assignedResponderId: responderId ? Number(responderId) : (data.assignedResponderId || null),
+            assignedResponderIds: nextIds,
             severity: data.severity,
             description: description
         })
@@ -2100,6 +2115,10 @@ async function updateIncidentForTransition(data, description, responderId) {
 }
 
 async function updateCalamityForTransition(data, description) {
+    const coordinatorIds = Array.isArray(data.coordinatorIds)
+        ? data.coordinatorIds
+        : (data.coordinatorId != null ? [data.coordinatorId] : []);
+
     await apiRequest(`${API_BASE}/calamities/${data.id}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -2108,7 +2127,7 @@ async function updateCalamityForTransition(data, description) {
             affectedAreaType: data.affectedAreaType,
             barangayId: data.barangayId ?? data.primaryBarangayId ?? null,
             barangayIds: data.affectedBarangayIds || [],
-            coordinatorId: data.coordinatorId || null,
+            coordinatorIds,
             severity: data.severity,
             date: data.date || null,
             damageCost: data.damageCost ?? 0,

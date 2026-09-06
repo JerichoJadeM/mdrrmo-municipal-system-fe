@@ -136,13 +136,13 @@ function applyIncidentFilters() {
             incident.severity,
             incident.status,
             incident.description,
-            incident.assignedResponderName
+            ...(Array.isArray(incident.assignedResponderNames) ? incident.assignedResponderNames : [incident.assignedResponderName])
         ].filter(Boolean).join(" ").toLowerCase();
 
         const matchKeyword = !keyword || searchable.includes(keyword);
         const matchSeverity = !severity || incidentSeverity === severity;
         const matchBarangay = !barangay || String(incident.barangay || "").toLowerCase().includes(barangay);
-        const matchResponder = !responder || String(incident.assignedResponderName || "").toLowerCase().includes(responder);
+        const matchResponder = !responder || getIncidentResponderNamesDisplay(incident).toLowerCase().includes(responder);
 
         return matchKeyword && matchSeverity && matchBarangay && matchResponder;
     });
@@ -165,7 +165,8 @@ function applyCalamityFilters() {
             calamity.status,
             calamity.description,
             calamity.primaryBarangayName,
-            ...(calamity.affectedBarangayNames || [])
+            ...(calamity.affectedBarangayNames || []),
+            ...(Array.isArray(calamity.coordinatorNames) ? calamity.coordinatorNames : [calamity.coordinatorName])
         ].filter(Boolean).join(" ").toLowerCase();
 
         const matchKeyword = !keyword || searchable.includes(keyword);
@@ -258,7 +259,7 @@ function createIncidentCard(incident) {
             </div>
             <div class="board-card-meta-row"><strong>Barangay:</strong> ${escapeHtml(incident.barangay || "-")}</div>
             <div class="board-card-meta-row"><strong>Status:</strong> ${escapeHtml(incident.status || "-")}</div>
-            <div class="board-card-meta-row"><strong>Responder:</strong> ${escapeHtml(incident.assignedResponderName || "-")}</div>
+            <div class="board-card-meta-row"><strong>Responder:</strong> ${escapeHtml(getIncidentResponderNamesDisplay(incident))}</div>
         </div>
     `;
 
@@ -363,7 +364,7 @@ function createCalamityCard(calamity) {
             </div>
             <div class="board-card-meta-row"><strong>Area:</strong> ${escapeHtml(area)}</div>
             <div class="board-card-meta-row"><strong>Status:</strong> ${escapeHtml(calamity.status || "-")}</div>
-            <div class="board-card-meta-row"><strong>Coordinator:</strong> ${escapeHtml(calamity.coordinatorName || "-")}</div>
+            <div class="board-card-meta-row"><strong>Assigned Respondents:</strong> ${escapeHtml(getCalamityRespondentNamesDisplay(calamity))}</div>
         </div>
     `;
 

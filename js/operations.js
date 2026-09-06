@@ -70,6 +70,23 @@ function getCalamityDisplayName(calamity) {
     return eventName || type || "Calamity Event";
 }
 
+// Incident respondents: assignedResponderIds/assignedResponderNames.
+function getIncidentResponderNamesDisplay(incident) {
+    if (Array.isArray(incident?.assignedResponderNames) && incident.assignedResponderNames.length) {
+        return incident.assignedResponderNames.filter(Boolean).join(", ");
+    }
+    return incident?.assignedResponderName || "-";
+}
+
+// Calamity respondents currently persist under coordinatorIds/coordinatorNames
+// but represent the Calamity's multiple Assigned Respondents.
+function getCalamityRespondentNamesDisplay(calamity) {
+    if (Array.isArray(calamity?.coordinatorNames) && calamity.coordinatorNames.length) {
+        return calamity.coordinatorNames.filter(Boolean).join(", ");
+    }
+    return calamity?.coordinatorName || "-";
+}
+
 function getCurrentUserRoles() {
     try {
         const raw = localStorage.getItem("userAuthorities") || sessionStorage.getItem("userAuthorities");
