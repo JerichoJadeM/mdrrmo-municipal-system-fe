@@ -105,12 +105,16 @@ function closeStatusUpdateModal() {
 }
 
 async function updateIncidentDescriptionOnly(incident, newDescription) {
+    const assignedResponderIds = Array.isArray(incident.assignedResponderIds)
+        ? incident.assignedResponderIds
+        : (incident.assignedResponderId != null ? [incident.assignedResponderId] : []);
+
     await apiRequest(`${API_BASE}/incidents/${incident.id}`, {
         method: "PUT",
         body: JSON.stringify({
             type: incident.type,
             barangayId: incident.barangayId,
-            assignedResponderId: incident.assignedResponderId || null,
+            assignedResponderIds,
             severity: incident.severity,
             description: newDescription
         })
@@ -118,6 +122,10 @@ async function updateIncidentDescriptionOnly(incident, newDescription) {
 }
 
 async function updateCalamityDescriptionOnly(calamity, newDescription) {
+    const coordinatorIds = Array.isArray(calamity.coordinatorIds)
+        ? calamity.coordinatorIds
+        : (calamity.coordinatorId != null ? [calamity.coordinatorId] : []);
+
     await apiRequest(`${API_BASE}/calamities/${calamity.id}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -126,7 +134,7 @@ async function updateCalamityDescriptionOnly(calamity, newDescription) {
             affectedAreaType: calamity.affectedAreaType,
             barangayId: calamity.barangayId ?? calamity.primaryBarangayId ?? null,
             barangayIds: calamity.affectedBarangayIds || [],
-            coordinatorId: calamity.coordinatorId || null,
+            coordinatorIds,
             severity: calamity.severity,
             date: calamity.date || null,
             damageCost: calamity.damageCost ?? 0,

@@ -414,10 +414,11 @@
                             <input type="date" id="calamityDateInput" required>
                         </div>
 
-                         <div class="form-group dm-picker-block">
-                            <label for="coordinatorInput">Assign Coordinator</label>
+                         <div class="form-group dm-picker-block" id="coordinatorGroup">
+                            <label for="coordinatorInput">Assigned Responders</label>
+                            <div id="selectedCoordinators" class="dm-selected-chips"></div>
                             <div class="dm-picker-input-wrap dm-searchable-group">
-                                <input type="text" id="coordinatorInput" class="dm-picker-input" placeholder="Search coordinator" autocomplete="off">
+                                <input type="text" id="coordinatorInput" class="dm-picker-input" placeholder="Search respondents" autocomplete="off">
                             </div>
                             <div id="coordinatorResults" class="dm-search-results"></div>
                         </div>
@@ -533,9 +534,10 @@
                         </div>
 
                         <div class="form-group dm-picker-block">
-                            <label for="incidentResponderInput">Assign Responder</label>
+                            <label for="incidentResponderInput">Assigned Responders</label>
+                            <div id="selectedIncidentResponders" class="dm-selected-chips"></div>
                             <div class="dm-picker-input-wrap dm-searchable-group">
-                                <input type="text" id="incidentResponderInput" class="dm-picker-input" placeholder="Search responder" autocomplete="off">
+                                <input type="text" id="incidentResponderInput" class="dm-picker-input" placeholder="Search respondents" autocomplete="off">
                             </div>
                             <div id="incidentResponderResults" class="dm-search-results"></div>
                         </div>

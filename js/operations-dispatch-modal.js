@@ -81,11 +81,15 @@ function openDispatchModal(incident) {
     }
 
     if (responderSearch) {
-        responderSearch.value = incident.assignedResponderName || "";
+        responderSearch.value = Array.isArray(incident.assignedResponderNames)
+            ? (incident.assignedResponderNames[0] || "")
+            : (incident.assignedResponderName || "");
     }
 
     if (responderId) {
-        responderId.value = incident.assignedResponderId || "";
+        responderId.value = Array.isArray(incident.assignedResponderIds)
+            ? (incident.assignedResponderIds[0] || "")
+            : (incident.assignedResponderId || "");
     }
 
     if (pendingDispatchIncident.modalMode === "EDIT_ONLY") {
@@ -181,12 +185,26 @@ function initDispatchModalResponderSearch() {
 }
 
 async function updateIncidentOnly(incident, description, newResponderId, newResponderName) {
+    const existingIds = Array.isArray(incident.assignedResponderIds)
+        ? incident.assignedResponderIds
+        : (incident.assignedResponderId != null ? [incident.assignedResponderId] : []);
+    const existingNames = Array.isArray(incident.assignedResponderNames)
+        ? incident.assignedResponderNames
+        : (incident.assignedResponderName ? [incident.assignedResponderName] : []);
+
+    const nextIds = newResponderId && !existingIds.includes(newResponderId)
+        ? [...existingIds, newResponderId]
+        : existingIds;
+    const nextNames = newResponderId && newResponderName && !existingIds.includes(newResponderId)
+        ? [...existingNames, newResponderName]
+        : existingNames;
+
     await apiRequest(`${API_BASE}/incidents/${incident.id}`, {
         method: "PUT",
         body: JSON.stringify({
             type: incident.type,
             barangayId: incident.barangayId,
-            assignedResponderId: newResponderId || null,
+            assignedResponderIds: nextIds,
             severity: incident.severity,
             description: description
         })
@@ -196,8 +214,8 @@ async function updateIncidentOnly(incident, description, newResponderId, newResp
         currentSelection.data = {
             ...currentSelection.data,
             description: description,
-            assignedResponderId: newResponderId || null,
-            assignedResponderName: newResponderName || currentSelection.data.assignedResponderName || "-"
+            assignedResponderIds: nextIds,
+            assignedResponderNames: nextNames
         };
         renderSelectedEventSummary("INCIDENT", currentSelection.data);
         await loadIncidentActivityFeed(incident.id);
@@ -234,17 +252,23 @@ async function confirmDispatchFromModal() {
             return;
         }
 
+        const existingResponderIds = Array.isArray(incident.assignedResponderIds)
+            ? incident.assignedResponderIds
+            : (incident.assignedResponderId != null ? [incident.assignedResponderId] : []);
+
         await apiRequest(`${API_BASE}/incidents/${incident.id}`, {
             method: "PUT",
             body: JSON.stringify({
                 type: incident.type,
                 barangayId: incident.barangayId,
-                assignedResponderId: incident.assignedResponderId || null,
+                assignedResponderIds: existingResponderIds,
                 severity: incident.severity,
                 description: description
             })
         });
 
+        // Dispatch stays a singular, additive action: it adds one responder
+        // to the incident's existing assigned respondents collection.
         await apiRequest(`${API_BASE}/incidents/${incident.id}/dispatch`, {
             method: "PUT",
             body: JSON.stringify({
@@ -256,12 +280,23 @@ async function confirmDispatchFromModal() {
         await loadIncidentBoard();
 
         if (currentSelection.type === "INCIDENT" && currentSelection.data?.id === incident.id) {
+            const existingNames = Array.isArray(currentSelection.data.assignedResponderNames)
+                ? currentSelection.data.assignedResponderNames
+                : (currentSelection.data.assignedResponderName ? [currentSelection.data.assignedResponderName] : []);
+
+            const nextIds = existingResponderIds.includes(Number(responderId))
+                ? existingResponderIds
+                : [...existingResponderIds, Number(responderId)];
+            const nextNames = existingNames.includes(responderSearch)
+                ? existingNames
+                : [...existingNames, responderSearch];
+
             const updated = {
                 ...currentSelection.data,
                 status: "IN_PROGRESS",
                 description: description || currentSelection.data.description || "",
-                assignedResponderId: Number(responderId),
-                assignedResponderName: responderSearch
+                assignedResponderIds: nextIds,
+                assignedResponderNames: nextNames
             };
 
             currentSelection.data = updated;
