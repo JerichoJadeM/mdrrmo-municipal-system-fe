@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/disaster-management.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
 <body>
     <nav class="navbar">
@@ -558,6 +559,13 @@
                             </div>
                             <div id="incidentBarangayResults" class="dm-search-results"></div>
                         </div>
+
+                        <div class="form-group form-group-full">
+                            <label>Exact Incident Location</label>
+                            <p class="dm-incident-map-hint">Click the map to pinpoint the exact location where the incident occurred.</p>
+                            <div id="incidentLocationMap" class="dm-incident-location-map"></div>
+                            <p class="dm-incident-map-coords" id="incidentLocationCoordsLabel">No location selected yet.</p>
+                        </div>
                     </div>
                 </section>
 
@@ -709,6 +717,8 @@
 <script src="/js/loginUserInfo.js"></script>
 <script src="/js/navbar.js"></script>
 <script src="/js/action-confirm-modal.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/js/disaster-location-picker.js"></script>
 <script src="/js/disaster-management.js"></script>
 </body>
 </html>

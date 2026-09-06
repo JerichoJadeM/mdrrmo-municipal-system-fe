@@ -135,9 +135,11 @@ function updateOperationsMapSelection(type, data) {
     if (!frame || !empty || !title || !subtitle || !details) return;
 
     const isIncident = type === "INCIDENT";
-    const mapLabel = isIncident
+    const locationLabel = isIncident
         ? `${data.barangay || "Batad"}, Iloilo`
         : getCalamityMapLabel(data);
+
+    const incidentCoords = isIncident ? getIncidentCoords(data) : null;
 
     title.textContent = isIncident ? "Incident Map" : "Calamity Area Map";
     subtitle.textContent = isIncident
@@ -148,13 +150,26 @@ function updateOperationsMapSelection(type, data) {
 
     details.innerHTML = `
         <div class="operations-map-detail-item"><strong>Type</strong><span>${escapeHtml(type)}</span></div>
-        <div class="operations-map-detail-item"><strong>Location</strong><span>${escapeHtml(mapLabel)}</span></div>
+        <div class="operations-map-detail-item"><strong>Location</strong><span>${escapeHtml(locationLabel)}</span></div>
         <div class="operations-map-detail-item"><strong>Status</strong><span>${escapeHtml(data.status || "-")}</span></div>
     `;
 
-    frame.src = `https://www.google.com/maps?q=${encodeURIComponent(mapLabel)}&output=embed`;
+    frame.src = incidentCoords
+        ? `https://www.google.com/maps?q=${incidentCoords.lat},${incidentCoords.lng}&z=18&t=k&output=embed`
+        : `https://www.google.com/maps?q=${encodeURIComponent(locationLabel)}&t=k&output=embed`;
     frame.classList.remove("hidden");
     empty.classList.add("hidden");
+}
+
+// Returns { lat, lng } for an Incident with valid coordinates, or null to fall back to the Barangay label.
+function getIncidentCoords(data) {
+    const lat = Number(data?.latitude);
+    const lng = Number(data?.longitude);
+
+    if (data?.latitude == null || data?.longitude == null) return null;
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+
+    return { lat, lng };
 }
 
 function resetOperationsMap() {
