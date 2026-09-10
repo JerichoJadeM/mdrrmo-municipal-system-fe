@@ -1231,6 +1231,10 @@ function resetIncidentForm() {
     hideSearchResults("incidentBarangayResults");
     hideSearchResults("incidentResponderResults");
     applyDateInputLimits();
+
+    if (typeof resetIncidentLocationPicker === "function") {
+        resetIncidentLocationPicker();
+    }
 }
 
 function updateAffectedAreaUI() {
@@ -1380,6 +1384,10 @@ function initSearchPickers() {
             const input = document.getElementById("incidentBarangayInput");
             if (input) input.value = item.name;
             hideSearchResults("incidentBarangayResults");
+
+            if (typeof focusIncidentMapOnBarangay === "function") {
+                focusIncidentMapOnBarangay(item.name);
+            }
         },
         emptyLabel: "No barangay found."
     });
@@ -1461,6 +1469,10 @@ function buildCalamityPayload() {
 }
 
 function buildIncidentPayload() {
+    const coords = typeof getIncidentLocationCoords === "function"
+        ? getIncidentLocationCoords()
+        : { latitude: null, longitude: null };
+
     return {
         type: (document.getElementById("incidentTypeSelect")?.value || "").trim(),
         barangayId: selectedIncidentBarangay ? Number(selectedIncidentBarangay.id) : null,
@@ -1468,7 +1480,9 @@ function buildIncidentPayload() {
         severity: document.getElementById("incidentSeveritySelect")?.value || "",
         status: document.getElementById("incidentStatusSelect")?.value || "",
         date: document.getElementById("incidentDateInput")?.value || "",
-        description: (document.getElementById("incidentDescriptionInput")?.value || "").trim()
+        description: (document.getElementById("incidentDescriptionInput")?.value || "").trim(),
+        latitude: coords.latitude,
+        longitude: coords.longitude
     };
 }
 
@@ -1629,6 +1643,10 @@ function populateIncidentFormForEdit(incident) {
         selectedIncidentResponders = responderNames.map((name, index) => ({ id: `name-${index}`, fullName: name }));
     }
     renderSelectedIncidentResponders();
+
+    if (typeof loadIncidentLocationPicker === "function") {
+        loadIncidentLocationPicker(incident.latitude, incident.longitude);
+    }
 
     applyDateInputLimits();
 }
